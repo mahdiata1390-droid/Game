@@ -127,6 +127,36 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         collectButton.targetGraphic = collectImage;
         collectButton.onClick.AddListener(playerInteraction.Interact);
 
+        GameObject herbButtonObject = new GameObject("Use Herb Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        herbButtonObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform herbButtonRect = herbButtonObject.GetComponent<RectTransform>();
+        herbButtonRect.anchorMin = new Vector2(1f, 0f);
+        herbButtonRect.anchorMax = new Vector2(1f, 0f);
+        herbButtonRect.pivot = new Vector2(0.5f, 0.5f);
+        herbButtonRect.anchoredPosition = new Vector2(-315f, 280f);
+        herbButtonRect.sizeDelta = new Vector2(150f, 90f);
+        Image herbButtonImage = herbButtonObject.GetComponent<Image>();
+        herbButtonImage.color = new Color(0.20f, 0.48f, 0.22f, 0.88f);
+        Button herbButton = herbButtonObject.GetComponent<Button>();
+        herbButton.targetGraphic = herbButtonImage;
+        herbButton.onClick.AddListener(playerInteraction.UseHerb);
+
+        GameObject herbLabelObject = new GameObject("Use Herb Label", typeof(RectTransform), typeof(Text));
+        herbLabelObject.transform.SetParent(herbButtonObject.transform, false);
+        RectTransform herbLabelRect = herbLabelObject.GetComponent<RectTransform>();
+        herbLabelRect.anchorMin = Vector2.zero;
+        herbLabelRect.anchorMax = Vector2.one;
+        herbLabelRect.offsetMin = Vector2.zero;
+        herbLabelRect.offsetMax = Vector2.zero;
+        Text herbLabel = herbLabelObject.GetComponent<Text>();
+        herbLabel.text = "USE HERB";
+        herbLabel.alignment = TextAnchor.MiddleCenter;
+        herbLabel.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        herbLabel.fontSize = 19;
+        herbLabel.fontStyle = FontStyle.Bold;
+        herbLabel.color = Color.white;
+        herbLabel.raycastTarget = false;
+
         GameObject collectLabelObject = new GameObject("Collect Label", typeof(RectTransform), typeof(Text));
         collectLabelObject.transform.SetParent(collectObject.transform, false);
         RectTransform collectLabelRect = collectLabelObject.GetComponent<RectTransform>();
