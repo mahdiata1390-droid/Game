@@ -14,6 +14,7 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         CreateGround();
         CreatePlayer();
         CreateTouchControls();
+        CreateEnemy();
     }
 
     private static void CreateLighting()
@@ -80,6 +81,73 @@ public sealed class PrototypeBootstrap : MonoBehaviour
 
         VirtualJoystick joystick = baseObject.AddComponent<VirtualJoystick>();
         joystick.Configure(baseRect, handleRect, 58f);
+
+        GameObject lookObject = new GameObject("Touch Look Area", typeof(RectTransform), typeof(Image));
+        lookObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform lookRect = lookObject.GetComponent<RectTransform>();
+        lookRect.anchorMin = new Vector2(0.48f, 0.12f);
+        lookRect.anchorMax = new Vector2(1f, 0.94f);
+        lookRect.offsetMin = Vector2.zero;
+        lookRect.offsetMax = Vector2.zero;
+        Image lookImage = lookObject.GetComponent<Image>();
+        lookImage.color = new Color(1f, 1f, 1f, 0.015f);
+        lookImage.raycastTarget = true;
+        lookObject.AddComponent<TouchLookArea>();
+
+        GameObject attackObject = new GameObject("Attack Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        attackObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform attackRect = attackObject.GetComponent<RectTransform>();
+        attackRect.anchorMin = new Vector2(1f, 0f);
+        attackRect.anchorMax = new Vector2(1f, 0f);
+        attackRect.pivot = new Vector2(0.5f, 0.5f);
+        attackRect.anchoredPosition = new Vector2(-145f, 150f);
+        attackRect.sizeDelta = new Vector2(150f, 150f);
+        Image attackImage = attackObject.GetComponent<Image>();
+        attackImage.color = new Color(0.55f, 0.12f, 0.10f, 0.82f);
+        Button attackButton = attackObject.GetComponent<Button>();
+        attackButton.targetGraphic = attackImage;
+        attackButton.onClick.AddListener(combat.Attack);
+
+        GameObject labelObject = new GameObject("Attack Label", typeof(RectTransform), typeof(Text));
+        labelObject.transform.SetParent(attackObject.transform, false);
+        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = Vector2.zero;
+        labelRect.offsetMax = Vector2.zero;
+        Text label = labelObject.GetComponent<Text>();
+        label.text = "ATTACK";
+        label.alignment = TextAnchor.MiddleCenter;
+        label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        label.fontSize = 28;
+        label.fontStyle = FontStyle.Bold;
+        label.color = Color.white;
+        label.raycastTarget = false;
+    }
+
+    private static void CreateEnemy()
+    {
+        GameObject enemy = new GameObject("Prototype Enemy");
+        enemy.transform.position = new Vector3(3f, 1.05f, 3f);
+        CharacterController controller = enemy.AddComponent<CharacterController>();
+        controller.height = 1.8f;
+        controller.radius = 0.4f;
+        controller.center = new Vector3(0f, 0.9f, 0f);
+        controller.stepOffset = 0.25f;
+
+        GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        visual.name = "Enemy Placeholder Visual";
+        visual.transform.SetParent(enemy.transform, false);
+        visual.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+        visual.transform.localScale = new Vector3(0.78f, 0.9f, 0.78f);
+        Collider visualCollider = visual.GetComponent<Collider>();
+        if (visualCollider != null) Destroy(visualCollider);
+        Renderer renderer = visual.GetComponent<Renderer>();
+        renderer.material = new Material(Shader.Find("Standard"));
+        renderer.material.color = new Color(0.55f, 0.16f, 0.12f);
+
+        enemy.AddComponent<Health>();
+        enemy.AddComponent<SimpleEnemyAI>();
     }
 
     private static void CreatePlayer()
@@ -107,6 +175,8 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         bodyRenderer.material.color = new Color(0.22f, 0.32f, 0.52f);
 
         ThirdPersonMotor motor = player.AddComponent<ThirdPersonMotor>();
+        player.AddComponent<Health>();
+        PlayerCombat combat = player.AddComponent<PlayerCombat>();
 
         GameObject cameraObject = new GameObject("Main Camera");
         cameraObject.tag = "MainCamera";
