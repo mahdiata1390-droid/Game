@@ -35,3 +35,9 @@ Checked roadmap items indicate authored source only, not verified runtime behavi
 - Added a rest action that restores up to 50 health only when the player is within 3 metres of the campfire.
 - These changes are source-authored only; they have not been compiled or exercised in Unity. Verify touch-button hit testing, interaction range/aiming, depleted-node behavior, and healing in Play Mode.
 \n\n## Interaction feedback polish\n- Added a transient on-screen status message for successful collection, missing resources, herb use, campfire construction, and rest restrictions.\n- Added a subtle campfire flame pulse and light flicker.\n- Source-only changes; Unity compilation and Play Mode verification remain outstanding.\n
+
+## Follow-up source correction
+- Rewrote the player interaction and campfire scripts with normal line breaks after a source-formatting issue was found during review.
+- Completed status feedback for herb use, full health, missing herbs, campfire construction requirements, and resting range.
+- Adjusted the campfire flame pulse so its height remains visible while animating.
+- Still requires Unity import/compile and Play Mode testing; no runtime result is claimed.
