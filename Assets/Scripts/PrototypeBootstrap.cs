@@ -74,6 +74,6 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         CameraFollowRig follow = cameraObject.AddComponent<CameraFollowRig>();
         follow.SetTarget(player.transform);
         cameraObject.transform.position = player.transform.TransformPoint(new Vector3(0f, 3f, -5f));
-        motor.SendMessage("SetCameraTransform", cameraObject.transform, SendMessageOptions.DontRequireReceiver);
+        motor.SetCameraTransform(cameraObject.transform);
     }
 }
