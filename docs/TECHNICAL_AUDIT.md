@@ -29,4 +29,7 @@ Checked roadmap items indicate authored source only, not verified runtime behavi
 - Added player inventory counters and a compact HUD.
 - Added a collect action that selects the nearest resource node in front of the player within interaction range.
 - Added herb consumption: one herb restores up to 25 health, capped at maximum health.
+- Inventory counts now persist locally between sessions.
+- Harvested node depletion persists locally between sessions.
+- Added one-time campfire crafting for 3 wood + 2 stone; the built campfire and its location persist locally.
 - These changes are source-authored only; they have not been compiled or exercised in Unity. Verify touch-button hit testing, interaction range/aiming, depleted-node behavior, and healing in Play Mode.
