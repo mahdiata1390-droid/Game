@@ -1,26 +1,29 @@
 # Prototype scripts
 
-These scripts are early Unity prototype components, not a complete game.
+The Prototype scene runs `PrototypeBootstrap` at startup. It creates temporary greybox objects and mobile UI in code so the scene can remain small.
 
-## Player movement
+## Included prototype systems
+- `Player/ThirdPersonMotor.cs`: camera-relative movement using the virtual joystick, with optional legacy keyboard fallback.
+- `Input/VirtualJoystick.cs` + `MobileInputState.cs`: on-screen movement input.
+- `Input/TouchLookArea.cs` + `MobileLookInput.cs`: right-side drag input for camera orbit.
+- `Camera/CameraFollowRig.cs`: smoothed third-person camera with yaw/pitch limits.
+- `Combat/Health.cs`: basic health and damage.
+- `Combat/PlayerCombat.cs`: short-range melee attack.
+- `Combat/SimpleEnemyAI.cs`: one prototype enemy that approaches and attacks the player.
+- `UI/PlayerHealthDisplay.cs`: health bar and numeric HP label.
+- `Save/PrototypeSaveSystem.cs`: local PlayerPrefs checkpoint for player position and health, saved on pause/quit.
 
-- `Player/ThirdPersonMotor.cs` currently reads the legacy Horizontal/Vertical axes.
-- `Input/MobileInputState.cs` stores the normalized movement vector written by the touch joystick.
-- `Input/VirtualJoystick.cs` implements Unity UI pointer handling for a virtual joystick.
-- Important: the joystick is not yet connected to `ThirdPersonMotor`; that integration remains a separate task.
+## Controls
+- Left side: movement joystick.
+- Right side: drag to rotate the camera.
+- Bottom-right: ATTACK button.
 
-## Camera
+## Current limitations
+- Primitive capsules and a plane are placeholders, not final art.
+- One enemy only; no animation controller, weapon model, hit reactions, sound, loot, quests, NPC schedules, economy, or world simulation yet.
+- Combat is a simple overlap-based melee prototype, not a finished combat system.
+- Camera collision, first-person mode integration, settings, remappable controls, and robust save slots are not implemented.
+- No Unity Editor compilation, Play Mode test, Android build, or device test has been completed yet.
 
-- `Camera/CameraModeSwitcher.cs` switches between assigned first-person and third-person anchors.
-- `Camera/CameraFollowRig.cs` provides a basic smooth follow camera. Assign the player Transform to Target.
-- Smooth blending, camera collision, touch-look, and cinematic sequences are not implemented yet.
-
-## Virtual joystick setup
-
-1. Create a Canvas and set its render mode to Screen Space - Overlay.
-2. Add an EventSystem to the scene (Unity usually creates one with UI objects).
-3. Create a UI Image as the joystick background and a smaller child Image as its handle.
-4. Add `VirtualJoystick` to the background and assign both RectTransforms.
-5. Set Handle Range to roughly half the background width in UI units.
-
-The joystick currently only publishes `MobileInputState.Move`. No Unity editor compilation, Android build, or device test has been performed.
+## Open in Unity
+Use Unity 2022.3 LTS, open the repository as a Unity project, let packages import, then open `Assets/Scenes/Prototype.unity`. The scene is registered in Build Settings.
