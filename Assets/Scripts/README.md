@@ -16,7 +16,7 @@ The Prototype scene runs `PrototypeBootstrap` at startup. It creates temporary g
 - `Player/PlayerInventory.cs`: resource counts, local persistence, and consume/add operations.
 - `Player/PlayerInteraction.cs`: collect nearby resources and consume herbs to heal.
 - `UI/InventoryDisplay.cs`: compact resource-count HUD.
-- `World/CampfireBuilder.cs`: craft and persist one campfire using 3 wood + 2 stone.
+- `World/CampfireBuilder.cs`: craft and persist one campfire using 3 wood + 2 stone; resting nearby restores up to 50 health.
 
 ## Controls
 - Left side: movement joystick.
