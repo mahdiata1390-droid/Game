@@ -41,6 +41,7 @@ public sealed class Health : MonoBehaviour
     {
         if (IsDead || amount <= 0) return;
         Current = Mathf.Max(0, Current - amount);
+        SendMessage("OnDamaged", SendMessageOptions.DontRequireReceiver);
         if (IsDead)
         {
             if (autoRespawn) respawnAt = Time.time + respawnDelay;
