@@ -17,4 +17,5 @@ public sealed class Health : MonoBehaviour
     }
 
     public void RestoreFull() { Current = maxHealth; }
+    public void SetCurrent(int value) { Current = Mathf.Clamp(value, 0, maxHealth); }
 }
