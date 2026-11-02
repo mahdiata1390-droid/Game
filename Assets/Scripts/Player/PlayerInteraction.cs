@@ -4,7 +4,8 @@ public sealed class PlayerInteraction : MonoBehaviour
 {
     [SerializeField, Min(1f)] private float searchDistance = 3.2f;
     private PlayerInventory inventory;
-    private void Awake() { inventory = GetComponent<PlayerInventory>(); }
+    private Health health;
+    private void Awake() { inventory = GetComponent<PlayerInventory>(); health = GetComponent<Health>(); }
 
     public void Interact()
     {
@@ -23,5 +24,11 @@ public sealed class PlayerInteraction : MonoBehaviour
             if (distance < nearestDistance) { nearest = node; nearestDistance = distance; }
         }
         if (nearest != null && nearest.TryHarvest(out ResourceType type)) inventory.Add(type);
+    }
+
+    public void UseHerb()
+    {
+        if (inventory == null || health == null || health.IsDead || health.Current >= health.Max) return;
+        if (inventory.TryConsume(ResourceType.Herb, 1)) health.Restore(25);
     }
 }
