@@ -9,7 +9,7 @@ public sealed class CampfireBuilder : MonoBehaviour
     private PlayerInventory inventory;
     private Transform player;
     private Health playerHealth;
-    private GameObject campfire;
+    private GameObject campfire;\n    private Light fireLight;\n    private float flickerSeed;
 
     public void Configure(PlayerInventory sourceInventory, Transform playerTransform)
     {
@@ -42,14 +42,14 @@ public sealed class CampfireBuilder : MonoBehaviour
 
     public void RestAtCampfire()
     {
-        if (campfire == null || player == null || playerHealth == null || playerHealth.IsDead) return;
+        if (campfire == null || player == null || playerHealth == null || playerHealth.IsDead) { PrototypeStatusDisplay.Show("Build a campfire first"); return; }
         Vector3 flatPlayer = new Vector3(player.position.x, 0f, player.position.z);
         Vector3 flatFire = new Vector3(campfire.transform.position.x, 0f, campfire.transform.position.z);
         if (Vector3.Distance(flatPlayer, flatFire) > 3f) return;
         playerHealth.Restore(50);
     }
 
-    private void LoadCampfire()
+    private void Update()\n    {\n        if (fireLight == null) return;\n        float wave = Mathf.PerlinNoise(Time.time * 3.7f, 0.41f);\n        fireLight.intensity = 1.15f + wave * 0.65f;\n        if (campfire != null)\n        {\n            Transform flame = campfire.transform.Find("Campfire Flame");\n            if (flame != null)\n            {\n                float pulse = 0.94f + Mathf.Sin(Time.time * 5.2f) * 0.07f;\n                flame.localScale = new Vector3(0.32f * pulse, 0.58f * (1.04f - pulse), 0.32f * pulse);\n            }\n        }\n    }\n\n    private void LoadCampfire()
     {
         if (PlayerPrefs.GetInt(BuiltKey, 0) != 1) return;
         Vector3 position = new Vector3(PlayerPrefs.GetFloat(XKey, 0f),
@@ -88,7 +88,7 @@ public sealed class CampfireBuilder : MonoBehaviour
         GameObject flame = CreatePart("Campfire Flame", PrimitiveType.Sphere,
             position + new Vector3(0f, 0.52f, 0f), new Vector3(0.32f, 0.58f, 0.32f),
             new Color(1f, 0.34f, 0.04f), Quaternion.identity);
-        Light fireLight = flame.AddComponent<Light>();
+        fireLight = flame.AddComponent<Light>();
         fireLight.type = LightType.Point;
         fireLight.range = 7f;
         fireLight.intensity = 1.4f;
