@@ -19,9 +19,9 @@ public sealed class PrototypeSaveSystem : MonoBehaviour
             PlayerPrefs.GetFloat(Key("z"), transform.position.z));
 
         if (!IsFinite(savedPosition.x) || !IsFinite(savedPosition.y) ||
-            !IsFinite(savedPosition.z) || savedPosition.y < -20f ||
+            !IsFinite(savedPosition.z) || savedPosition.y < -20f || savedPosition.y > 0.5f ||
             savedPosition.sqrMagnitude > 100000000f)
-            savedPosition = new Vector3(0f, 1.05f, 0f);
+            savedPosition = new Vector3(0f, 0.05f, 0f);
 
         transform.position = savedPosition;
         float savedYaw = PlayerPrefs.GetFloat(Key("yaw"), transform.eulerAngles.y);
