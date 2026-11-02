@@ -12,6 +12,11 @@ The Prototype scene runs `PrototypeBootstrap` at startup. It creates temporary g
 - `Combat/SimpleEnemyAI.cs`: one prototype enemy that approaches and attacks the player.
 - `UI/PlayerHealthDisplay.cs`: health bar and numeric HP label.
 - `Save/PrototypeSaveSystem.cs`: local PlayerPrefs checkpoint for player position and health, saved on pause/quit.
+- `World/ResourceNode.cs`: finite wood, stone, and herb nodes with saved depletion state.
+- `Player/PlayerInventory.cs`: resource counts, local persistence, and consume/add operations.
+- `Player/PlayerInteraction.cs`: collect nearby resources and consume herbs to heal.
+- `UI/InventoryDisplay.cs`: compact resource-count HUD.
+- `World/CampfireBuilder.cs`: craft and persist one campfire using 3 wood + 2 stone.
 
 ## Controls
 - Left side: movement joystick.
