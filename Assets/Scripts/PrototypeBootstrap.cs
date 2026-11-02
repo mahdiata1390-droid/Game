@@ -218,6 +218,8 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         ThirdPersonMotor motor = player.AddComponent<ThirdPersonMotor>();
         playerHealth = player.AddComponent<Health>();
         player.AddComponent<PrototypeSaveSystem>();
+        playerHealth.EnableAutoRespawn(controller, player.transform.position,
+            player.transform.rotation, 2f);
         playerCombat = player.AddComponent<PlayerCombat>();
 
         GameObject cameraObject = new GameObject("Main Camera");
