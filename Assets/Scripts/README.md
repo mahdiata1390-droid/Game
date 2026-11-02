@@ -1,16 +1,26 @@
 # Prototype scripts
 
-These scripts are an initial code foundation, not a complete Unity project or playable build.
+These scripts are early Unity prototype components, not a complete game.
 
-## Third-person motor
-1. Create a Player GameObject.
-2. Add a CharacterController.
-3. Add `ThirdPersonMotor`.
-4. Assign the active camera transform.
+## Player movement
 
-The current motor uses Unity's legacy input axes for quick editor prototyping. Before Android testing, replace this input source with a virtual joystick / Unity Input System action.
+- `Player/ThirdPersonMotor.cs` currently reads the legacy Horizontal/Vertical axes.
+- `Input/MobileInputState.cs` stores the normalized movement vector written by the touch joystick.
+- `Input/VirtualJoystick.cs` implements Unity UI pointer handling for a virtual joystick.
+- Important: the joystick is not yet connected to `ThirdPersonMotor`; that integration remains a separate task.
 
-## Camera mode switcher
-Create two child transforms on the player (or camera rig): one for the third-person camera position and one for first-person eye position. Assign both anchors and the active Camera.
+## Camera
 
-The current switch is an immediate transform change. Smooth camera blending, collision handling, touch-look, and cinematic sequences are later tasks.
+- `Camera/CameraModeSwitcher.cs` switches between assigned first-person and third-person anchors.
+- `Camera/CameraFollowRig.cs` provides a basic smooth follow camera. Assign the player Transform to Target.
+- Smooth blending, camera collision, touch-look, and cinematic sequences are not implemented yet.
+
+## Virtual joystick setup
+
+1. Create a Canvas and set its render mode to Screen Space - Overlay.
+2. Add an EventSystem to the scene (Unity usually creates one with UI objects).
+3. Create a UI Image as the joystick background and a smaller child Image as its handle.
+4. Add `VirtualJoystick` to the background and assign both RectTransforms.
+5. Set Handle Range to roughly half the background width in UI units.
+
+The joystick currently only publishes `MobileInputState.Move`. No Unity editor compilation, Android build, or device test has been performed.
