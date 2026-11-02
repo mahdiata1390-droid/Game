@@ -169,7 +169,7 @@ public sealed class PrototypeBootstrap : MonoBehaviour
     private static void CreateEnemy()
     {
         GameObject enemy = new GameObject("Prototype Enemy");
-        enemy.transform.position = new Vector3(3f, 1.05f, 3f);
+        enemy.transform.position = new Vector3(3f, 0.05f, 3f);
         CharacterController controller = enemy.AddComponent<CharacterController>();
         controller.height = 1.8f;
         controller.radius = 0.4f;
@@ -194,7 +194,7 @@ public sealed class PrototypeBootstrap : MonoBehaviour
     private static void CreatePlayer()
     {
         GameObject player = new GameObject("Prototype Player");
-        player.transform.position = new Vector3(0f, 1.05f, 0f);
+        player.transform.position = new Vector3(0f, 0.05f, 0f);
 
         CharacterController controller = player.AddComponent<CharacterController>();
         controller.height = 1.8f;
