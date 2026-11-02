@@ -16,7 +16,7 @@
 - [x] Local checkpoint persistence source with invalid/zero-health recovery
 - [x] Optional automatic respawn support, configured for the prototype player
 - [x] Basic resource interaction button and inventory HUD source
-- [ ] Animation, hit feedback, sound, and interaction polish
+- [x] Basic interaction feedback messages and campfire flame/light flicker\n- [ ] Animation, hit feedback, sound, and further interaction polish
 - [ ] Compile and test in Unity Play Mode
 - [ ] Produce and verify an Android build on a real device
 
