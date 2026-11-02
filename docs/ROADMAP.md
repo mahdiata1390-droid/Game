@@ -15,6 +15,7 @@
 - [x] Player health display source
 - [x] Local checkpoint persistence source with invalid/zero-health recovery
 - [x] Optional automatic respawn support, configured for the prototype player
+- [x] Basic resource interaction button and inventory HUD source
 - [ ] Animation, hit feedback, sound, and interaction polish
 - [ ] Compile and test in Unity Play Mode
 - [ ] Produce and verify an Android build on a real device
@@ -22,7 +23,8 @@
 ## Phase 2 — Vertical slice
 - [ ] One compact village and surrounding terrain
 - [ ] Basic NPC routines and interaction
-- [ ] Small resource/trade loop
+- [x] Starter resource gathering and inventory loop (wood, stone, herbs; herb consumption heals the player)
+- [ ] Trading, crafting, and expanded resource economy
 - [ ] Robust save/load slots and offline persistence tests
 - [ ] Performance profiling on representative Android devices
 
