@@ -11,6 +11,13 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
     [SerializeField] private RectTransform handle;
     [SerializeField, Min(1f)] private float handleRange = 60f;
 
+    public void Configure(RectTransform backgroundRect, RectTransform handleRect, float range)
+    {
+        background = backgroundRect;
+        handle = handleRect;
+        handleRange = Mathf.Max(1f, range);
+    }
+
     private void Awake()
     {
         if (background == null)
