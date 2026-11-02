@@ -8,6 +8,7 @@ using UnityEngine.UI;
 /// </summary>
 public sealed class PrototypeBootstrap : MonoBehaviour
 {
+    private static PlayerCombat playerCombat;
     private void Start()
     {
         CreateLighting();
@@ -106,7 +107,7 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         attackImage.color = new Color(0.55f, 0.12f, 0.10f, 0.82f);
         Button attackButton = attackObject.GetComponent<Button>();
         attackButton.targetGraphic = attackImage;
-        attackButton.onClick.AddListener(combat.Attack);
+        attackButton.onClick.AddListener(playerCombat.Attack);
 
         GameObject labelObject = new GameObject("Attack Label", typeof(RectTransform), typeof(Text));
         labelObject.transform.SetParent(attackObject.transform, false);
@@ -176,7 +177,7 @@ public sealed class PrototypeBootstrap : MonoBehaviour
 
         ThirdPersonMotor motor = player.AddComponent<ThirdPersonMotor>();
         player.AddComponent<Health>();
-        PlayerCombat combat = player.AddComponent<PlayerCombat>();
+        playerCombat = player.AddComponent<PlayerCombat>();
 
         GameObject cameraObject = new GameObject("Main Camera");
         cameraObject.tag = "MainCamera";
