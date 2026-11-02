@@ -98,8 +98,9 @@ public sealed class CampfireBuilder : MonoBehaviour
 
         if (flameTransform != null)
         {
-            float pulse = 0.94f + Mathf.Sin(Time.time * 5.2f) * 0.07f;
-            flameTransform.localScale = new Vector3(0.32f * pulse, 0.58f * (1.04f - pulse), 0.32f * pulse);
+            float pulse = 1f + Mathf.Sin(Time.time * 5.2f) * 0.08f;
+            float heightPulse = 1f + Mathf.Sin(Time.time * 4.1f + 0.8f) * 0.10f;
+            flameTransform.localScale = new Vector3(0.32f * pulse, 0.58f * heightPulse, 0.32f * pulse);
         }
     }
 
