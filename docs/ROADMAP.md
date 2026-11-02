@@ -8,13 +8,13 @@
 - [ ] Define device performance budgets
 
 ## Phase 1 — Playable prototype
-- [x] Small greybox test scene with runtime-created ground, light, and player
-- [x] Third-person camera follow and touch drag-look
-- [x] Camera-relative player movement and virtual joystick
-- [x] Basic melee attack and one simple enemy behavior
-- [x] Player health display
-- [x] Local checkpoint persistence for player position and health
-- [ ] Add animation, hit feedback, sound, and interaction polish
+- [x] Greybox scene setup for runtime-created ground, light, player, and enemy
+- [x] Third-person camera follow and touch drag-look source
+- [x] Camera-relative player movement and virtual joystick source
+- [x] Basic melee interaction source and one simple enemy behavior
+- [x] Player health display source
+- [x] Local checkpoint persistence source with invalid/zero-health recovery
+- [ ] Animation, hit feedback, sound, and interaction polish
 - [ ] Compile and test in Unity Play Mode
 - [ ] Produce and verify an Android build on a real device
 
@@ -42,4 +42,4 @@
 - [ ] Closed testing, feedback, and optimization
 
 ## Scope rule
-Do not build all long-term systems at once. Each phase must produce a working, testable result before expanding scope. Checked items above mean source files have been added; they do not imply Unity compilation or device verification.
+Do not build all long-term systems at once. Each phase must produce a working, testable result before expanding scope. Checked source items mean files/features have been authored; they do not imply Unity compilation or device verification.
