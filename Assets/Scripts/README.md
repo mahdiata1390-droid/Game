@@ -21,11 +21,15 @@ The Prototype scene runs `PrototypeBootstrap` at startup. It creates temporary g
 ## Controls
 - Left side: movement joystick.
 - Right side: drag to rotate the camera.
-- Bottom-right: ATTACK button.
+- Bottom-right: ATTACK, COLLECT, USE HERB, BUILD FIRE, and REST buttons.
+- COLLECT: gather the nearest resource in front of the player.
+- USE HERB: spend one herb to restore up to 25 health.
+- BUILD FIRE: spend 3 wood and 2 stone to place one persistent campfire.
+- REST: while within 3 metres of the campfire, restore up to 50 health.
 
 ## Current limitations
 - Primitive capsules and a plane are placeholders, not final art.
-- One enemy only; no animation controller, weapon model, hit reactions, sound, loot, quests, NPC schedules, economy, or world simulation yet.
+- One enemy only; no animation controller, weapon model, hit reactions, sound, loot, quests, NPC schedules, trading economy, or world simulation yet.
 - Combat is a simple overlap-based melee prototype, not a finished combat system.
 - Camera collision, first-person mode integration, settings, remappable controls, and robust save slots are not implemented.
 - No Unity Editor compilation, Play Mode test, Android build, or device test has been completed yet.
