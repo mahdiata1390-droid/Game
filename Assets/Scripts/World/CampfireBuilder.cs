@@ -8,12 +8,14 @@ public sealed class CampfireBuilder : MonoBehaviour
     private const string ZKey = "prototype_campfire_z";
     private PlayerInventory inventory;
     private Transform player;
+    private Health playerHealth;
     private GameObject campfire;
 
     public void Configure(PlayerInventory sourceInventory, Transform playerTransform)
     {
         inventory = sourceInventory;
         player = playerTransform;
+        playerHealth = playerTransform.GetComponent<Health>();
         LoadCampfire();
     }
 
@@ -36,6 +38,15 @@ public sealed class CampfireBuilder : MonoBehaviour
         PlayerPrefs.SetFloat(YKey, position.y);
         PlayerPrefs.SetFloat(ZKey, position.z);
         PlayerPrefs.Save();
+    }
+
+    public void RestAtCampfire()
+    {
+        if (campfire == null || player == null || playerHealth == null || playerHealth.IsDead) return;
+        Vector3 flatPlayer = new Vector3(player.position.x, 0f, player.position.z);
+        Vector3 flatFire = new Vector3(campfire.transform.position.x, 0f, campfire.transform.position.z);
+        if (Vector3.Distance(flatPlayer, flatFire) > 3f) return;
+        playerHealth.Restore(50);
     }
 
     private void LoadCampfire()
