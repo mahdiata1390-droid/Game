@@ -23,3 +23,10 @@ This is a source review only. Unity Editor compilation, Play Mode, Android packa
 3. Configure licensed CI, build a development APK, install it on Android, and profile performance.
 
 Checked roadmap items indicate authored source only, not verified runtime behavior.
+
+## Resource gathering pass
+- Added finite wood, stone, and herb nodes with depletion behavior.
+- Added player inventory counters and a compact HUD.
+- Added a collect action that selects the nearest resource node in front of the player within interaction range.
+- Added herb consumption: one herb restores up to 25 health, capped at maximum health.
+- These changes are source-authored only; they have not been compiled or exercised in Unity. Verify touch-button hit testing, interaction range/aiming, depleted-node behavior, and healing in Play Mode.
