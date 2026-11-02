@@ -17,8 +17,18 @@ public sealed class PrototypeSaveSystem : MonoBehaviour
             PlayerPrefs.GetFloat(Key("x"), transform.position.x),
             PlayerPrefs.GetFloat(Key("y"), transform.position.y),
             PlayerPrefs.GetFloat(Key("z"), transform.position.z));
+
+        if (float.IsNaN(savedPosition.x) || float.IsNaN(savedPosition.y) ||
+            float.IsNaN(savedPosition.z) || savedPosition.y < -20f ||
+            savedPosition.sqrMagnitude > 100000000f)
+            savedPosition = new Vector3(0f, 1.05f, 0f);
+
         transform.position = savedPosition;
-        if (health != null) health.SetCurrent(PlayerPrefs.GetInt(Key("health"), health.Max));
+        if (health != null)
+        {
+            int savedHealth = PlayerPrefs.GetInt(Key("health"), health.Max);
+            health.SetCurrent(savedHealth <= 0 ? health.Max : savedHealth);
+        }
     }
 
     private void OnApplicationPause(bool paused) { if (paused) Save(); }
