@@ -9,6 +9,7 @@ using UnityEngine.UI;
 public sealed class PrototypeBootstrap : MonoBehaviour
 {
     private static PlayerCombat playerCombat;
+    private static Health playerHealth;
     private void Start()
     {
         CreateLighting();
@@ -124,6 +125,45 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         label.fontStyle = FontStyle.Bold;
         label.color = Color.white;
         label.raycastTarget = false;
+
+        GameObject healthBackObject = new GameObject("Health Bar Background", typeof(RectTransform), typeof(Image));
+        healthBackObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform healthBackRect = healthBackObject.GetComponent<RectTransform>();
+        healthBackRect.anchorMin = new Vector2(0f, 1f);
+        healthBackRect.anchorMax = new Vector2(0f, 1f);
+        healthBackRect.pivot = new Vector2(0f, 1f);
+        healthBackRect.anchoredPosition = new Vector2(40f, -38f);
+        healthBackRect.sizeDelta = new Vector2(360f, 42f);
+        healthBackObject.GetComponent<Image>().color = new Color(0.04f, 0.04f, 0.05f, 0.8f);
+
+        GameObject fillObject = new GameObject("Health Bar Fill", typeof(RectTransform), typeof(Image));
+        fillObject.transform.SetParent(healthBackObject.transform, false);
+        RectTransform fillRect = fillObject.GetComponent<RectTransform>();
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = Vector2.one;
+        fillRect.offsetMin = new Vector2(4f, 4f);
+        fillRect.offsetMax = new Vector2(-4f, -4f);
+        Image fillImage = fillObject.GetComponent<Image>();
+        fillImage.color = new Color(0.18f, 0.72f, 0.32f, 1f);
+        fillImage.type = Image.Type.Filled;
+        fillImage.fillMethod = Image.FillMethod.Horizontal;
+
+        GameObject hpTextObject = new GameObject("Health Text", typeof(RectTransform), typeof(Text));
+        hpTextObject.transform.SetParent(healthBackObject.transform, false);
+        RectTransform hpTextRect = hpTextObject.GetComponent<RectTransform>();
+        hpTextRect.anchorMin = Vector2.zero;
+        hpTextRect.anchorMax = Vector2.one;
+        hpTextRect.offsetMin = Vector2.zero;
+        hpTextRect.offsetMax = Vector2.zero;
+        Text hpText = hpTextObject.GetComponent<Text>();
+        hpText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        hpText.fontSize = 22;
+        hpText.alignment = TextAnchor.MiddleCenter;
+        hpText.color = Color.white;
+        hpText.raycastTarget = false;
+
+        PlayerHealthDisplay display = healthBackObject.AddComponent<PlayerHealthDisplay>();
+        display.Configure(playerHealth, fillImage, hpText);
     }
 
     private static void CreateEnemy()
@@ -176,7 +216,8 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         bodyRenderer.material.color = new Color(0.22f, 0.32f, 0.52f);
 
         ThirdPersonMotor motor = player.AddComponent<ThirdPersonMotor>();
-        player.AddComponent<Health>();
+        playerHealth = player.AddComponent<Health>();
+        player.AddComponent<PrototypeSaveSystem>();
         playerCombat = player.AddComponent<PlayerCombat>();
 
         GameObject cameraObject = new GameObject("Main Camera");
