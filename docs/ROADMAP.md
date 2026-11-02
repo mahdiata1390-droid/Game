@@ -25,6 +25,7 @@
 - [ ] Basic NPC routines and interaction
 - [x] Starter resource gathering and inventory loop (wood, stone, herbs; herb consumption heals the player)
 - [x] Basic campfire crafting from 3 wood + 2 stone, with local persistence
+- [x] Rest at a nearby campfire to restore up to 50 health
 - [ ] Trading, broader crafting, and expanded resource economy
 - [ ] Robust save/load slots and offline persistence tests
 - [ ] Performance profiling on representative Android devices
