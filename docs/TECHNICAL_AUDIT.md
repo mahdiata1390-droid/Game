@@ -6,6 +6,8 @@ This is a source review only. Unity Editor compilation, Play Mode, Android packa
 - Enemy CharacterController movement now applies gravity even when the player is outside detection range.
 - Valid damage broadcasts an OnDamaged message.
 - The prototype enemy briefly flashes its material when hit.
+- Player and enemy CharacterController spawn heights were corrected to sit on the flat ground plane; legacy saved heights are recovered to the corrected spawn height.
+- Checkpoints now persist player facing direction as well as position and health, and save immediately after automatic respawn.
 
 ## Outstanding verification
 - ProjectSettings/ProjectSettings.asset is absent; confirm Unity project import and input handling in Unity 2022.3.
