@@ -25,6 +25,7 @@ public sealed class Health : MonoBehaviour
         if (characterController != null) characterController.enabled = true;
         RestoreFull();
         respawnAt = 0f;
+        SendMessage("OnRespawn", SendMessageOptions.DontRequireReceiver);
     }
 
     public void EnableAutoRespawn(CharacterController controller, Vector3 position,
