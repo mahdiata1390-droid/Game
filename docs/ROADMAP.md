@@ -14,6 +14,7 @@
 - [x] Basic melee interaction source and one simple enemy behavior
 - [x] Player health display source
 - [x] Local checkpoint persistence source with invalid/zero-health recovery
+- [x] Optional automatic respawn support, configured for the prototype player
 - [ ] Animation, hit feedback, sound, and interaction polish
 - [ ] Compile and test in Unity Play Mode
 - [ ] Produce and verify an Android build on a real device
