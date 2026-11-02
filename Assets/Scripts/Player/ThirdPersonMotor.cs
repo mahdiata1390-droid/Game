@@ -1,9 +1,10 @@
 using UnityEngine;
 
 /// <summary>
-/// Minimal, device-friendly prototype motor. Add a CharacterController to the
-/// player GameObject and assign the camera transform in the Inspector.
-/// Input is deliberately kept simple until the mobile input UI is added.
+/// Device-friendly third-person prototype motor.
+/// Add a CharacterController and assign the camera transform.
+/// Touch input comes from MobileInputState; keyboard axes remain available
+/// as an optional editor fallback.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 public sealed class ThirdPersonMotor : MonoBehaviour
@@ -12,6 +13,7 @@ public sealed class ThirdPersonMotor : MonoBehaviour
     [SerializeField, Min(0f)] private float moveSpeed = 4.5f;
     [SerializeField, Min(0f)] private float rotationSpeed = 12f;
     [SerializeField, Min(0f)] private float gravity = 20f;
+    [SerializeField] private bool allowKeyboardFallback = true;
 
     private CharacterController controller;
     private float verticalVelocity;
@@ -25,18 +27,25 @@ public sealed class ThirdPersonMotor : MonoBehaviour
 
     private void Update()
     {
-        // Temporary keyboard/gamepad prototype input.
-        // Replace with an on-screen virtual joystick before the mobile milestone.
-        float x = Input.GetAxisRaw("Horizontal");
-        float z = Input.GetAxisRaw("Vertical");
-        Vector2 input = Vector2.ClampMagnitude(new Vector2(x, z), 1f);
+        Vector2 input = MobileInputState.Move;
 
-        Vector3 move = Vector3.zero;
+#if ENABLE_LEGACY_INPUT_MANAGER
+        if (allowKeyboardFallback && input.sqrMagnitude < 0.0001f)
+        {
+            input = new Vector2(
+                Input.GetAxisRaw("Horizontal"),
+                Input.GetAxisRaw("Vertical"));
+        }
+#endif
+
+        input = Vector2.ClampMagnitude(input, 1f);
+
+        Vector3 move;
         if (cameraTransform != null)
         {
             Vector3 forward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
             Vector3 right = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
-            move = (forward * input.y + right * input.x);
+            move = forward * input.y + right * input.x;
         }
         else
         {
