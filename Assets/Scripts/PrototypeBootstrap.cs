@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /// <summary>
 /// Creates a small playable greybox when the Prototype scene starts.
@@ -11,6 +13,7 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         CreateLighting();
         CreateGround();
         CreatePlayer();
+        CreateTouchControls();
     }
 
     private static void CreateLighting()
@@ -34,7 +37,49 @@ public sealed class PrototypeBootstrap : MonoBehaviour
 
         Renderer renderer = ground.GetComponent<Renderer>();
         renderer.material = new Material(Shader.Find("Standard"));
-        renderer.material.color = new Color(0.30f, 0. thirtyf, 0.20f);
+        renderer.material.color = new Color(0.30f, 0.30f, 0.20f);
+    }
+
+    private static void CreateTouchControls()
+    {
+        GameObject eventSystemObject = new GameObject("EventSystem");
+        eventSystemObject.AddComponent<EventSystem>();
+        eventSystemObject.AddComponent<StandaloneInputModule>();
+
+        GameObject canvasObject = new GameObject("Mobile Controls");
+        Canvas canvas = canvasObject.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        canvasObject.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1920f, 1080f);
+        canvasObject.GetComponent<CanvasScaler>().matchWidthOrHeight = 0.5f;
+        canvasObject.AddComponent<GraphicRaycaster>();
+
+        GameObject baseObject = new GameObject("Joystick Background", typeof(RectTransform), typeof(Image));
+        baseObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform baseRect = baseObject.GetComponent<RectTransform>();
+        baseRect.anchorMin = new Vector2(0f, 0f);
+        baseRect.anchorMax = new Vector2(0f, 0f);
+        baseRect.pivot = new Vector2(0.5f, 0.5f);
+        baseRect.anchoredPosition = new Vector2(150f, 145f);
+        baseRect.sizeDelta = new Vector2(190f, 190f);
+        Image baseImage = baseObject.GetComponent<Image>();
+        baseImage.color = new Color(0.06f, 0.08f, 0.12f, 0.48f);
+        baseImage.raycastTarget = true;
+
+        GameObject handleObject = new GameObject("Joystick Handle", typeof(RectTransform), typeof(Image));
+        handleObject.transform.SetParent(baseObject.transform, false);
+        RectTransform handleRect = handleObject.GetComponent<RectTransform>();
+        handleRect.anchorMin = new Vector2(0.5f, 0.5f);
+        handleRect.anchorMax = new Vector2(0.5f, 0.5f);
+        handleRect.pivot = new Vector2(0.5f, 0.5f);
+        handleRect.anchoredPosition = Vector2.zero;
+        handleRect.sizeDelta = new Vector2(76f, 76f);
+        Image handleImage = handleObject.GetComponent<Image>();
+        handleImage.color = new Color(0.78f, 0.82f, 0.9f, 0.88f);
+        handleImage.raycastTarget = false;
+
+        VirtualJoystick joystick = baseObject.AddComponent<VirtualJoystick>();
+        joystick.Configure(baseRect, handleRect, 58f);
     }
 
     private static void CreatePlayer()
