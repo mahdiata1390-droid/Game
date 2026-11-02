@@ -61,6 +61,23 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         canvasObject.GetComponent<CanvasScaler>().matchWidthOrHeight = 0.5f;
         canvasObject.AddComponent<GraphicRaycaster>();
 
+        GameObject statusObject = new GameObject("Status Message", typeof(RectTransform), typeof(Text));
+        statusObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform statusRect = statusObject.GetComponent<RectTransform>();
+        statusRect.anchorMin = new Vector2(0.5f, 1f);
+        statusRect.anchorMax = new Vector2(0.5f, 1f);
+        statusRect.pivot = new Vector2(0.5f, 1f);
+        statusRect.anchoredPosition = new Vector2(0f, -105f);
+        statusRect.sizeDelta = new Vector2(760f, 58f);
+        Text statusText = statusObject.GetComponent<Text>();
+        statusText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        statusText.fontSize = 25;
+        statusText.alignment = TextAnchor.MiddleCenter;
+        statusText.fontStyle = FontStyle.Bold;
+        statusText.color = Color.white;
+        statusText.raycastTarget = false;
+        statusObject.AddComponent<PrototypeStatusDisplay>().Configure(statusText);
+
         GameObject baseObject = new GameObject("Joystick Background", typeof(RectTransform), typeof(Image));
         baseObject.transform.SetParent(canvasObject.transform, false);
         RectTransform baseRect = baseObject.GetComponent<RectTransform>();
