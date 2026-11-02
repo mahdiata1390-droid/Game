@@ -156,6 +156,36 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         buildButton.targetGraphic = buildButtonImage;
         buildButton.onClick.AddListener(campfireBuilder.BuildCampfire);
 
+        GameObject restButtonObject = new GameObject("Rest Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        restButtonObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform restButtonRect = restButtonObject.GetComponent<RectTransform>();
+        restButtonRect.anchorMin = new Vector2(1f, 0f);
+        restButtonRect.anchorMax = new Vector2(1f, 0f);
+        restButtonRect.pivot = new Vector2(0.5f, 0.5f);
+        restButtonRect.anchoredPosition = new Vector2(-145f, 390f);
+        restButtonRect.sizeDelta = new Vector2(150f, 90f);
+        Image restButtonImage = restButtonObject.GetComponent<Image>();
+        restButtonImage.color = new Color(0.12f, 0.30f, 0.48f, 0.92f);
+        Button restButton = restButtonObject.GetComponent<Button>();
+        restButton.targetGraphic = restButtonImage;
+        restButton.onClick.AddListener(campfireBuilder.RestAtCampfire);
+
+        GameObject restLabelObject = new GameObject("Rest Label", typeof(RectTransform), typeof(Text));
+        restLabelObject.transform.SetParent(restButtonObject.transform, false);
+        RectTransform restLabelRect = restLabelObject.GetComponent<RectTransform>();
+        restLabelRect.anchorMin = Vector2.zero;
+        restLabelRect.anchorMax = Vector2.one;
+        restLabelRect.offsetMin = Vector2.zero;
+        restLabelRect.offsetMax = Vector2.zero;
+        Text restLabel = restLabelObject.GetComponent<Text>();
+        restLabel.text = "REST";
+        restLabel.alignment = TextAnchor.MiddleCenter;
+        restLabel.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        restLabel.fontSize = 20;
+        restLabel.fontStyle = FontStyle.Bold;
+        restLabel.color = Color.white;
+        restLabel.raycastTarget = false;
+
         GameObject buildLabelObject = new GameObject("Build Campfire Label", typeof(RectTransform), typeof(Text));
         buildLabelObject.transform.SetParent(buildButtonObject.transform, false);
         RectTransform buildLabelRect = buildLabelObject.GetComponent<RectTransform>();
