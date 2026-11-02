@@ -50,6 +50,11 @@ public sealed class Health : MonoBehaviour
         }
     }
 
+    public void Restore(int amount)
+    {
+        if (amount > 0 && !IsDead) Current = Mathf.Min(maxHealth, Current + amount);
+    }
+
     public void RestoreFull()
     {
         Current = maxHealth;
