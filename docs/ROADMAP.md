@@ -24,7 +24,8 @@
 - [ ] One compact village and surrounding terrain
 - [ ] Basic NPC routines and interaction
 - [x] Starter resource gathering and inventory loop (wood, stone, herbs; herb consumption heals the player)
-- [ ] Trading, crafting, and expanded resource economy
+- [x] Basic campfire crafting from 3 wood + 2 stone, with local persistence
+- [ ] Trading, broader crafting, and expanded resource economy
 - [ ] Robust save/load slots and offline persistence tests
 - [ ] Performance profiling on representative Android devices
 
