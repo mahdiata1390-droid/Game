@@ -32,4 +32,5 @@ Checked roadmap items indicate authored source only, not verified runtime behavi
 - Inventory counts now persist locally between sessions.
 - Harvested node depletion persists locally between sessions.
 - Added one-time campfire crafting for 3 wood + 2 stone; the built campfire and its location persist locally.
+- Added a rest action that restores up to 50 health only when the player is within 3 metres of the campfire.
 - These changes are source-authored only; they have not been compiled or exercised in Unity. Verify touch-button hit testing, interaction range/aiming, depleted-node behavior, and healing in Play Mode.
