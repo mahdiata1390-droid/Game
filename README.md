@@ -1,16 +1,18 @@
 # Game
 
-Offline-first medieval fantasy sandbox for Android.
+Offline-first medieval fantasy sandbox for Android, planned in Unity.
 
-## Project status
-This repository currently contains the initial design and development roadmap. The game itself has not been implemented and there is no APK yet.
+## Current prototype foundation
+The repository now includes a Unity 2022.3 project marker, a greybox Prototype scene, runtime-created ground/player/enemy, third-person follow camera with touch drag-look, virtual movement joystick, attack button, basic melee damage, simple enemy chase/attack behavior, player health HUD, and local player checkpoint saving.
 
-## Documents
+All visuals are temporary primitive placeholders. This is an early vertical-slice foundation, not the full sandbox game.
+
+## Design and planning
 - [Game Design Document](docs/GDD.md)
 - [Development Roadmap](docs/ROADMAP.md)
+- [Prototype scripts guide](Assets/Scripts/README.md)
 
-## First milestone
-Build a small, playable Android prototype before expanding into the full five-continent world.
+## Honest build status
+The Unity project files and scripts have been committed, but Unity Editor compilation, Play Mode testing, Android packaging, and real-device testing have **not** been performed. There is no verified APK yet.
 
-## Build requirements
-The planned engine is Unity. Unity Editor is not available natively on iPhone, so an actual Android build requires a supported cloud build environment or a computer with Unity and Android build support.
+An Android build requires Unity 2022.3 with Android Build Support (SDK/NDK + OpenJDK). Unity Editor does not run natively on iPhone; a compatible computer or configured cloud build runner is required.
