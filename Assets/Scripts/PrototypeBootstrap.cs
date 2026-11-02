@@ -12,6 +12,7 @@ public sealed class PrototypeBootstrap : MonoBehaviour
     private static Health playerHealth;
     private static PlayerInteraction playerInteraction;
     private static PlayerInventory playerInventory;
+    private static CampfireBuilder campfireBuilder;
     private void Start()
     {
         CreateLighting();
@@ -140,6 +141,36 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         Button herbButton = herbButtonObject.GetComponent<Button>();
         herbButton.targetGraphic = herbButtonImage;
         herbButton.onClick.AddListener(playerInteraction.UseHerb);
+
+        GameObject buildButtonObject = new GameObject("Build Campfire Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        buildButtonObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform buildButtonRect = buildButtonObject.GetComponent<RectTransform>();
+        buildButtonRect.anchorMin = new Vector2(1f, 0f);
+        buildButtonRect.anchorMax = new Vector2(1f, 0f);
+        buildButtonRect.pivot = new Vector2(0.5f, 0.5f);
+        buildButtonRect.anchoredPosition = new Vector2(-315f, 390f);
+        buildButtonRect.sizeDelta = new Vector2(150f, 90f);
+        Image buildButtonImage = buildButtonObject.GetComponent<Image>();
+        buildButtonImage.color = new Color(0.48f, 0.31f, 0.12f, 0.92f);
+        Button buildButton = buildButtonObject.GetComponent<Button>();
+        buildButton.targetGraphic = buildButtonImage;
+        buildButton.onClick.AddListener(campfireBuilder.BuildCampfire);
+
+        GameObject buildLabelObject = new GameObject("Build Campfire Label", typeof(RectTransform), typeof(Text));
+        buildLabelObject.transform.SetParent(buildButtonObject.transform, false);
+        RectTransform buildLabelRect = buildLabelObject.GetComponent<RectTransform>();
+        buildLabelRect.anchorMin = Vector2.zero;
+        buildLabelRect.anchorMax = Vector2.one;
+        buildLabelRect.offsetMin = Vector2.zero;
+        buildLabelRect.offsetMax = Vector2.zero;
+        Text buildLabel = buildLabelObject.GetComponent<Text>();
+        buildLabel.text = "BUILD FIRE";
+        buildLabel.alignment = TextAnchor.MiddleCenter;
+        buildLabel.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        buildLabel.fontSize = 18;
+        buildLabel.fontStyle = FontStyle.Bold;
+        buildLabel.color = Color.white;
+        buildLabel.raycastTarget = false;
 
         GameObject herbLabelObject = new GameObject("Use Herb Label", typeof(RectTransform), typeof(Text));
         herbLabelObject.transform.SetParent(herbButtonObject.transform, false);
@@ -331,6 +362,8 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         playerCombat = player.AddComponent<PlayerCombat>();
         playerInventory = player.AddComponent<PlayerInventory>();
         playerInteraction = player.AddComponent<PlayerInteraction>();
+        campfireBuilder = player.AddComponent<CampfireBuilder>();
+        campfireBuilder.Configure(playerInventory, player.transform);
 
         GameObject cameraObject = new GameObject("Main Camera");
         cameraObject.tag = "MainCamera";
