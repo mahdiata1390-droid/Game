@@ -3,9 +3,12 @@
 Offline-first medieval fantasy sandbox for Android, planned in Unity.
 
 ## Current prototype foundation
-The repository now includes a Unity 2022.3 project marker, a greybox Prototype scene, runtime-created ground/player/enemy, third-person follow camera with touch drag-look, virtual movement joystick, attack button, basic melee damage, simple enemy chase/attack behavior, player health HUD, and local player checkpoint saving.
 
-All visuals are temporary primitive placeholders. This is an early vertical-slice foundation, not the full sandbox game.
+The repository contains a Unity 2022.3 project marker and a greybox Prototype scene. At scene start, runtime setup creates a ground plane, placeholder player and enemy, third-person follow camera, touch drag-look area, virtual movement joystick, attack button, and player health HUD.
+
+Gameplay source includes camera-relative movement, basic melee combat, a simple enemy behavior, and local checkpoint persistence. Checkpoint loading now rejects obviously invalid coordinates and restores full health if a saved checkpoint contains zero health, preventing a permanently defeated save state.
+
+All visuals remain temporary primitive placeholders. This is a small systems prototype foundation, not the planned full open-world sandbox.
 
 ## Design and planning
 - [Game Design Document](docs/GDD.md)
@@ -13,6 +16,7 @@ All visuals are temporary primitive placeholders. This is an early vertical-slic
 - [Prototype scripts guide](Assets/Scripts/README.md)
 
 ## Honest build status
+
 The Unity project files and scripts have been committed, but Unity Editor compilation, Play Mode testing, Android packaging, and real-device testing have **not** been performed. There is no verified APK yet.
 
-An Android build requires Unity 2022.3 with Android Build Support (SDK/NDK + OpenJDK). Unity Editor does not run natively on iPhone; a compatible computer or configured cloud build runner is required.
+An Android build requires Unity 2022.3 with Android Build Support (SDK/NDK + OpenJDK). Unity Editor does not run natively on iPhone; a compatible computer or configured cloud build runner is required. A cloud build also needs valid Unity licensing/CI credentials.
