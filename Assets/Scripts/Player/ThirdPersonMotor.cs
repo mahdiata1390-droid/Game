@@ -25,6 +25,11 @@ public sealed class ThirdPersonMotor : MonoBehaviour
             cameraTransform = Camera.main.transform;
     }
 
+    public void SetCameraTransform(Transform value)
+    {
+        cameraTransform = value;
+    }
+
     private void Update()
     {
         Vector2 input = MobileInputState.Move;
