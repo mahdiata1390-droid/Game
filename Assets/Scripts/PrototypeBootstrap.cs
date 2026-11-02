@@ -10,6 +10,8 @@ public sealed class PrototypeBootstrap : MonoBehaviour
 {
     private static PlayerCombat playerCombat;
     private static Health playerHealth;
+    private static PlayerInteraction playerInteraction;
+    private static PlayerInventory playerInventory;
     private void Start()
     {
         CreateLighting();
@@ -17,6 +19,7 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         CreatePlayer();
         CreateTouchControls();
         CreateEnemy();
+        CreateResourceNodes();
     }
 
     private static void CreateLighting()
@@ -110,6 +113,54 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         attackButton.targetGraphic = attackImage;
         attackButton.onClick.AddListener(playerCombat.Attack);
 
+        GameObject collectObject = new GameObject("Collect Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        collectObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform collectRect = collectObject.GetComponent<RectTransform>();
+        collectRect.anchorMin = new Vector2(1f, 0f);
+        collectRect.anchorMax = new Vector2(1f, 0f);
+        collectRect.pivot = new Vector2(0.5f, 0.5f);
+        collectRect.anchoredPosition = new Vector2(-315f, 150f);
+        collectRect.sizeDelta = new Vector2(150f, 110f);
+        Image collectImage = collectObject.GetComponent<Image>();
+        collectImage.color = new Color(0.12f, 0.38f, 0.24f, 0.88f);
+        Button collectButton = collectObject.GetComponent<Button>();
+        collectButton.targetGraphic = collectImage;
+        collectButton.onClick.AddListener(playerInteraction.Interact);
+
+        GameObject collectLabelObject = new GameObject("Collect Label", typeof(RectTransform), typeof(Text));
+        collectLabelObject.transform.SetParent(collectObject.transform, false);
+        RectTransform collectLabelRect = collectLabelObject.GetComponent<RectTransform>();
+        collectLabelRect.anchorMin = Vector2.zero;
+        collectLabelRect.anchorMax = Vector2.one;
+        collectLabelRect.offsetMin = Vector2.zero;
+        collectLabelRect.offsetMax = Vector2.zero;
+        Text collectLabel = collectLabelObject.GetComponent<Text>();
+        collectLabel.text = "COLLECT";
+        collectLabel.alignment = TextAnchor.MiddleCenter;
+        collectLabel.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        collectLabel.fontSize = 22;
+        collectLabel.fontStyle = FontStyle.Bold;
+        collectLabel.color = Color.white;
+        collectLabel.raycastTarget = false;
+
+        GameObject inventoryObject = new GameObject("Inventory HUD", typeof(RectTransform), typeof(Text));
+        inventoryObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform inventoryRect = inventoryObject.GetComponent<RectTransform>();
+        inventoryRect.anchorMin = new Vector2(0.5f, 1f);
+        inventoryRect.anchorMax = new Vector2(0.5f, 1f);
+        inventoryRect.pivot = new Vector2(0.5f, 1f);
+        inventoryRect.anchoredPosition = new Vector2(0f, -38f);
+        inventoryRect.sizeDelta = new Vector2(650f, 48f);
+        Text inventoryLabel = inventoryObject.GetComponent<Text>();
+        inventoryLabel.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        inventoryLabel.fontSize = 22;
+        inventoryLabel.alignment = TextAnchor.MiddleCenter;
+        inventoryLabel.color = Color.white;
+        inventoryLabel.fontStyle = FontStyle.Bold;
+        inventoryLabel.raycastTarget = false;
+        InventoryDisplay inventoryDisplay = inventoryObject.AddComponent<InventoryDisplay>();
+        inventoryDisplay.Configure(playerInventory, inventoryLabel);
+
         GameObject labelObject = new GameObject("Attack Label", typeof(RectTransform), typeof(Text));
         labelObject.transform.SetParent(attackObject.transform, false);
         RectTransform labelRect = labelObject.GetComponent<RectTransform>();
@@ -191,6 +242,33 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         enemy.AddComponent<SimpleEnemyAI>();
     }
 
+    private static void CreateResourceNodes()
+    {
+        CreateResourceNode("Wood Pile", ResourceType.Wood, new Vector3(2.2f, 0.45f, 0.2f),
+            PrimitiveType.Cylinder, new Color(0.42f, 0.22f, 0.09f), 4);
+        CreateResourceNode("Stone Deposit", ResourceType.Stone, new Vector3(-2.4f, 0.35f, 0.8f),
+            PrimitiveType.Sphere, new Color(0.48f, 0.50f, 0.54f), 4);
+        CreateResourceNode("Herb Patch", ResourceType.Herb, new Vector3(0.4f, 0.25f, 2.7f),
+            PrimitiveType.Cube, new Color(0.18f, 0.62f, 0.24f), 3);
+    }
+
+    private static void CreateResourceNode(string objectName, ResourceType type, Vector3 position,
+        PrimitiveType shape, Color color, int amount)
+    {
+        GameObject node = GameObject.CreatePrimitive(shape);
+        node.name = objectName;
+        node.transform.position = position;
+        node.transform.localScale = type == ResourceType.Wood
+            ? new Vector3(0.65f, 0.9f, 0.65f)
+            : type == ResourceType.Stone
+                ? new Vector3(0.85f, 0.65f, 0.75f)
+                : new Vector3(0.55f, 0.45f, 0.55f);
+        Renderer renderer = node.GetComponent<Renderer>();
+        renderer.material = new Material(Shader.Find("Standard"));
+        renderer.material.color = color;
+        node.AddComponent<ResourceNode>().Configure(type, amount);
+    }
+
     private static void CreatePlayer()
     {
         GameObject player = new GameObject("Prototype Player");
@@ -221,6 +299,8 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         playerHealth.EnableAutoRespawn(controller, player.transform.position,
             player.transform.rotation, 2f);
         playerCombat = player.AddComponent<PlayerCombat>();
+        playerInventory = player.AddComponent<PlayerInventory>();
+        playerInteraction = player.AddComponent<PlayerInteraction>();
 
         GameObject cameraObject = new GameObject("Main Camera");
         cameraObject.tag = "MainCamera";
