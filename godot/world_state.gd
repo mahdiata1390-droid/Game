@@ -179,7 +179,6 @@ func _battle_quality(troops:Dictionary)->float:
 func capture_settlement(settlement_id:int)->bool:
 	if settlement_id<0 or settlement_id>=settlements.size(): return false
 	var s:Dictionary=settlements[settlement_id]; var region_id:=int(s["region"]); var old_owner:=String(s["owner"])
-	if player_faction=="Free Company": player_faction="north_kingdom"
 	if old_owner==player_faction: return false
 	s["owner"]=player_faction; s["garrison"]=max(20,int(s["garrison"])/3)
 	return transfer_region(region_id,player_faction)
