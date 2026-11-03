@@ -176,9 +176,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif not event.pressed:
 			touch_look_active = false
 	elif event is InputEventScreenDrag and touch_look_active:
-		var delta := event.relative
-		yaw -= delta.x * 0.15
-		pitch = clamp(pitch - delta.y * 0.10, -35.0, 15.0)
+		var drag_delta: Vector2 = event.relative
+		yaw -= drag_delta.x * 0.15
+		pitch = clamp(pitch - drag_delta.y * 0.10, -35.0, 15.0)
 
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(player):
@@ -189,7 +189,7 @@ func _physics_process(delta: float) -> void:
 	if status_label.text == "":
 		status_label.text = "WASD / Touch • ATTACK for the prototype"
 
-func _update_player(delta: float) -> void:
+func _update_player(_delta: float) -> void:
 	var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := Vector3(input_vec.x, 0, input_vec.y)
 	if direction.length() > 1.0:
@@ -247,7 +247,7 @@ func _damage_troop(target: Node3D) -> void:
 			if int(troops[i].hp) <= 0:
 				target.queue_free()
 				troops.remove_at(i)
-			return
+				return
 
 func _player_attack() -> void:
 	var closest: Node3D
