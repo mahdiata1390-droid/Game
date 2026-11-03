@@ -22,6 +22,8 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         CreateEnemy();
         CreateResourceNodes();
         gameObject.AddComponent<WorldSimulation>();
+        WarbandBattleBootstrap battle = gameObject.AddComponent<WarbandBattleBootstrap>();
+        battle.Configure(GameObject.Find("Prototype Player").transform);
     }
 
     private static void CreateLighting()
