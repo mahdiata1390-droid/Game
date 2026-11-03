@@ -191,36 +191,71 @@ func _build_player() -> void:
 
 func _build_warband() -> void:
 	for i in range(6):
-		_spawn_troop("ALLY", Vector3(-5 + i * 2.0, 1, 3 + (i % 2) * 1.8), Color(0.15, 0.65, 0.95))
+		_spawn_troop("ALLY", "north_kingdom", Vector3(-5 + i * 2.0, 1, 3 + (i % 2) * 1.8))
 	for i in range(8):
-		_spawn_troop("ENEMY", Vector3(-7 + i * 2.0, 1, -10 - (i % 2) * 1.8), Color(0.80, 0.22, 0.22))
+		_spawn_troop("ENEMY", "river_kingdom", Vector3(-7 + i * 2.0, 1, -10 - (i % 2) * 1.8))
 
-func _spawn_troop(team: String, pos: Vector3, color: Color) -> void:
+func _faction_troop_palette(faction_id: String) -> Dictionary:
+	match faction_id:
+		"north_kingdom":
+			return {"armor": Color(0.16,0.20,0.25), "cloth": Color(0.055,0.11,0.25), "metal": Color(0.78,0.82,0.86), "leather": Color(0.20,0.14,0.09), "shield": Color(0.055,0.11,0.25), "style": "north"}
+		"river_kingdom":
+			return {"armor": Color(0.28,0.25,0.21), "cloth": Color(0.13,0.09,0.06), "metal": Color(0.76,0.68,0.48), "leather": Color(0.24,0.13,0.06), "shield": Color(0.13,0.09,0.06), "style": "royal"}
+		"eastern_tribes":
+			return {"armor": Color(0.31,0.20,0.14), "cloth": Color(0.34,0.055,0.035), "metal": Color(0.70,0.58,0.38), "leather": Color(0.28,0.16,0.08), "shield": Color(0.34,0.055,0.035), "style": "steppe"}
+		"southern_sultanate":
+			return {"armor": Color(0.50,0.40,0.25), "cloth": Color(0.16,0.10,0.045), "metal": Color(0.86,0.70,0.30), "leather": Color(0.24,0.12,0.05), "shield": Color(0.16,0.10,0.045), "style": "sahr"}
+		_:
+			return {"armor": Color(0.24,0.20,0.28), "cloth": Color(0.10,0.075,0.13), "metal": Color(0.68,0.72,0.70), "leather": Color(0.20,0.12,0.08), "shield": Color(0.10,0.075,0.13), "style": "clan"}
+
+func _spawn_troop(team: String, faction_id: String, pos: Vector3) -> void:
 	var troop := CharacterBody3D.new()
 	troop.position = pos
-	troop.name = team + "_Soldier"
+	troop.name = faction_id + "_Soldier"
 	add_child(troop)
-	_create_soldier_visual(troop, color, team == "ALLY")
+	_create_soldier_visual(troop, faction_id)
 	var collision := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
 	shape.height = 1.7
 	shape.radius = 0.38
 	collision.shape = shape
 	troop.add_child(collision)
-	troops.append({"node": troop, "team": team, "hp": 60, "cooldown": 0.0})
+	troops.append({"node": troop, "team": team, "faction": faction_id, "hp": 60, "cooldown": 0.0})
 
-func _create_soldier_visual(parent: Node3D, color: Color, ally: bool) -> void:
-	_mesh_box(Vector3(0.72, 0.85, 0.42), Vector3(0, 1.05, 0), color, parent).name = "Body"
-	_mesh_box(Vector3(0.22, 0.72, 0.22), Vector3(-0.23, 0.35, 0), Color(0.12, 0.12, 0.13), parent)
-	_mesh_box(Vector3(0.22, 0.72, 0.22), Vector3(0.23, 0.35, 0), Color(0.12, 0.12, 0.13), parent)
+func _create_soldier_visual(parent: Node3D, faction_id: String) -> void:
+	var p := _faction_troop_palette(faction_id)
+	var armor: Color = p["armor"]
+	var cloth: Color = p["cloth"]
+	var metal: Color = p["metal"]
+	var leather: Color = p["leather"]
+	var shield: Color = p["shield"]
+	var style: String = p["style"]
+	_mesh_box(Vector3(0.72, 0.85, 0.42), Vector3(0, 1.05, 0), armor, parent).name = "Body"
+	_mesh_box(Vector3(0.22, 0.72, 0.22), Vector3(-0.23, 0.35, 0), leather, parent)
+	_mesh_box(Vector3(0.22, 0.72, 0.22), Vector3(0.23, 0.35, 0), leather, parent)
 	_mesh_sphere(0.30, Vector3(0, 1.78, 0), Color(0.72, 0.53, 0.38), parent)
-	_mesh_cylinder(0.34, 0.18, Vector3(0, 1.99, 0), Color(0.12, 0.13, 0.14), parent)
-	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(-0.48, 0.98, 0), Color(0.12, 0.12, 0.13), parent, Vector3(0, 0, -18))
-	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(0.48, 0.98, 0), Color(0.12, 0.12, 0.13), parent, Vector3(0, 0, 18))
-	var sword := _mesh_box(Vector3(0.10, 0.95, 0.07), Vector3(0.68, 0.93, -0.15), Color(0.72, 0.75, 0.78), parent, Vector3(0, 0, -18))
+	_mesh_cylinder(0.34, 0.18, Vector3(0, 1.99, 0), metal, parent)
+	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(-0.48, 0.98, 0), armor, parent, Vector3(0, 0, -18))
+	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(0.48, 0.98, 0), armor, parent, Vector3(0, 0, 18))
+	var sword := _mesh_box(Vector3(0.10, 0.95, 0.07), Vector3(0.68, 0.93, -0.15), metal, parent, Vector3(0, 0, -18))
 	sword.name = "Sword"
-	_mesh_box(Vector3(0.30, 0.07, 0.12), Vector3(0.68, 0.58, -0.15), Color(0.35, 0.20, 0.08), parent)
-	_mesh_cylinder(0.42, 0.10, Vector3(-0.48, 1.0, 0.30), Color(0.55, 0.10, 0.08) if not ally else Color(0.10, 0.22, 0.45), parent)
+	_mesh_box(Vector3(0.30, 0.07, 0.12), Vector3(0.68, 0.58, -0.15), leather, parent)
+	_mesh_cylinder(0.42, 0.10, Vector3(-0.48, 1.0, 0.30), shield, parent)
+	if style == "north":
+		_mesh_box(Vector3(0.58, 0.72, 0.10), Vector3(0, 0.98, 0.25), cloth.darkened(0.12), parent)
+		_mesh_box(Vector3(0.08, 0.38, 0.08), Vector3(0, 2.15, 0), metal, parent)
+	elif style == "royal":
+		_mesh_box(Vector3(0.62, 0.10, 0.48), Vector3(0, 1.43, 0), cloth, parent)
+		_mesh_box(Vector3(0.16, 0.12, 0.06), Vector3(0, 2.12, -0.20), metal, parent)
+	elif style == "steppe":
+		_mesh_box(Vector3(0.76, 0.16, 0.50), Vector3(0, 1.45, 0), cloth, parent)
+		_mesh_box(Vector3(0.08, 0.50, 0.08), Vector3(0, 2.18, 0), cloth, parent)
+	elif style == "sahr":
+		_mesh_box(Vector3(0.78, 0.18, 0.12), Vector3(0, 1.48, -0.22), cloth, parent)
+		_mesh_box(Vector3(0.12, 0.42, 0.08), Vector3(0, 2.14, 0), metal, parent)
+	else:
+		_mesh_box(Vector3(0.78, 0.22, 0.44), Vector3(0, 1.44, 0), cloth, parent)
+		_mesh_box(Vector3(0.10, 0.34, 0.08), Vector3(0, 2.13, 0), metal, parent)
 
 func _build_ui() -> void:
 	var layer := CanvasLayer.new()
