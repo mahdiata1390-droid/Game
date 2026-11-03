@@ -10,6 +10,10 @@ var regions: Array[Dictionary] = []
 var factions: Array[Dictionary] = []
 var settlements: Array[Dictionary] = []
 var armies: Array[Dictionary] = []
+var player_mode:String = "ordinary"
+var player_level:int = 1
+var player_xp:int = 0
+var player_inventory:Dictionary = {"food":30,"wood":10,"iron":5}
 var diplomacy: Dictionary = {}\nvar battle_events: Array[Dictionary] = []
 var world_events: Array[String] = []
 var battle_cooldowns: Dictionary = {}
@@ -76,6 +80,8 @@ func travel_to_settlement(settlement_id:int)->Dictionary:
 
 func advance_day()->void:
 	day+=1
+	player_inventory["food"]=max(0,int(player_inventory.get("food",0))-1)
+	if int(player_inventory["food"])==0: gold=max(0,gold-2)
 	for settlement_id in battle_cooldowns.keys():
 		battle_cooldowns[settlement_id] = max(0, int(battle_cooldowns[settlement_id]) - 1)
 	for region in regions:
@@ -102,6 +108,22 @@ func transfer_region(region_id:int,new_owner:String)->bool:
 	for settlement in settlements:
 		if int(settlement["region"])==region_id: settlement["owner"]=new_owner
 	return true
+
+func set_player_mode(mode:String)->Dictionary:
+	if mode not in ["ordinary","king","tribal_leader"]: return {"ok":false,"reason":"invalid_mode"}
+	player_mode=mode
+	if mode=="king": gold=1000
+	elif mode=="tribal_leader": gold=500
+	return {"ok":true,"mode":player_mode}
+
+func add_player_xp(amount:int)->void:
+	player_xp=max(0,player_xp+amount)
+	while player_xp>=player_level*100:
+		player_xp-=player_level*100
+		player_level+=1
+
+func get_player_summary()->Dictionary:
+	return {"mode":player_mode,"level":player_level,"xp":player_xp,"gold":gold,"food":player_inventory.get("food",0)}
 
 # ---------------- ARMY MOVEMENT + AI ----------------
 func issue_army_move(army_id:int,target_region:int)->Dictionary:
