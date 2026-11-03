@@ -281,14 +281,25 @@ func _update_troops(delta: float) -> void:
 		var target := _nearest_enemy(node, String(data.team))
 		if target:
 			var distance := node.global_position.distance_to(target.global_position)
+			var moving := false
+			var attacking := false
 			if distance > ATTACK_RANGE:
 				var dir := (target.global_position - node.global_position)
 				dir.y = 0
 				node.velocity = dir.normalized() * TROOP_SPEED
 				node.move_and_slide()
+				moving = true
 			elif data.cooldown <= 0.0:
 				_damage_troop(target)
 				data.cooldown = 0.9
+				attacking = true
+			else:
+				attacking = float(data.cooldown) > 0.55
+			var look_target := target.global_position
+			look_target.y = node.global_position.y
+			if node.global_position.distance_to(look_target) > 0.05:
+				node.look_at(look_target, Vector3.UP)
+			_animate_troop_visual(node, moving, attacking, battle_time + float(i))
 		troops[i] = data
 
 func _nearest_enemy(from: Node3D, team: String) -> Node3D:
