@@ -697,6 +697,7 @@ func _travel_to_settlement(settlement_id: int) -> void:
 	player.position = Vector3(p.x, 1.0, p.y + 4.0)
 	player.velocity = Vector3.ZERO
 	status_label.text = "Travelled to %s • %d day(s)" % [result["settlement"], result["days"]]
+	_open_recruitment(settlement_id)
 	_refresh_world_map()
 
 func _advance_world_day() -> void:
