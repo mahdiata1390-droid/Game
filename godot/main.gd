@@ -18,6 +18,7 @@ var troops: Array[Dictionary] = []
 var status_label: Label
 var hp_label: Label
 var attack_cooldown := 0.0
+var battle_time := 0.0
 
 func _ready() -> void:
 	_build_world()
@@ -185,7 +186,7 @@ func _spawn_troop(team: String, pos: Vector3, color: Color) -> void:
 	troops.append({"node": troop, "team": team, "hp": 60, "cooldown": 0.0})
 
 func _create_soldier_visual(parent: Node3D, color: Color, ally: bool) -> void:
-	_mesh_box(Vector3(0.72, 0.85, 0.42), Vector3(0, 1.05, 0), color, parent)
+	_mesh_box(Vector3(0.72, 0.85, 0.42), Vector3(0, 1.05, 0), color, parent).name = "Body"
 	_mesh_box(Vector3(0.22, 0.72, 0.22), Vector3(-0.23, 0.35, 0), Color(0.12, 0.12, 0.13), parent)
 	_mesh_box(Vector3(0.22, 0.72, 0.22), Vector3(0.23, 0.35, 0), Color(0.12, 0.12, 0.13), parent)
 	_mesh_sphere(0.30, Vector3(0, 1.78, 0), Color(0.72, 0.53, 0.38), parent)
@@ -233,6 +234,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(player):
 		return
+	battle_time += delta
 	attack_cooldown = max(0.0, attack_cooldown - delta)
 	_update_player(delta)
 	_update_troops(delta)
@@ -254,6 +256,19 @@ func _update_player(_delta: float) -> void:
 	player.rotation.y = deg_to_rad(yaw)
 	camera.position = Vector3(0, 4.2, 7.5)
 	camera.rotation_degrees = Vector3(pitch, 180, 0)
+
+func _animate_troop_visual(troop: Node3D, moving: bool, attacking: bool, phase: float) -> void:
+	if not is_instance_valid(troop):
+		return
+	var body := troop.get_node_or_null("Body") as Node3D
+	var sword := troop.get_node_or_null("Sword") as Node3D
+	if body:
+		body.position.y = 1.05 + (sin(phase * 10.0) * 0.035 if moving else 0.0)
+	if sword:
+		if attacking:
+			sword.rotation_degrees.z = -65.0 + sin(phase * 24.0) * 10.0
+		else:
+			sword.rotation_degrees.z = -18.0
 
 func _update_troops(delta: float) -> void:
 	for i in range(troops.size() - 1, -1, -1):
