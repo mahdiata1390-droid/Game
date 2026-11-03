@@ -19,13 +19,19 @@ var status_label: Label
 var hp_label: Label
 var attack_cooldown := 0.0
 var battle_time := 0.0
+var world_state: WorldState
 
 func _ready() -> void:
+	world_state = WorldState.new()
+	world_state.name = "WorldState"
+	add_child(world_state)
+	world_state.initialize_continent()
 	_build_world()
 	_build_player()
 	_build_warband()
 	_build_ui()
 	_spawn_extra_banners()
+	_spawn_continent_world()
 
 func _spawn_extra_banners_once() -> void:
 	_spawn_extra_banners()
@@ -244,7 +250,7 @@ func _physics_process(delta: float) -> void:
 	_update_troops(delta)
 	hp_label.text = "HP: %d / %d" % [player_hp, MAX_HP]
 	if status_label.text == "":
-		status_label.text = "Medieval Sandbox • prototype battlefield"
+		status_label.text = "ONE CONTINENT • Day %d • %d settlements • %d armies"
 
 func _update_player(_delta: float) -> void:
 	var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
@@ -339,7 +345,7 @@ func _create_war_banner(position: Vector3, team_color: Color) -> void:
 	var root := Node3D.new()
 	root.name = "WarBanner"
 	root.position = position
-	world.add_child(root)
+	add_child(root)
 	_create_banner(root, Vector3.ZERO, team_color)
 
 func _spawn_extra_banners() -> void:
@@ -367,3 +373,33 @@ func _player_attack() -> void:
 		status_label.text = "Hit!"
 	else:
 		status_label.text = "No enemy in range."
+
+
+func _spawn_continent_world() -> void:
+	for settlement in world_state.settlements:
+		var p: Vector2 = settlement["position"]
+		var owner: String = settlement["owner"]
+		var marker := Node3D.new()
+		marker.name = "Settlement_%s" % settlement["name"]
+		marker.position = Vector3(p.x, 0, p.y)
+		add_child(marker)
+		var color := world_state.get_faction_color(owner)
+		var kind: String = settlement["type"]
+		var height := 0.9
+		if kind == "city":
+			height = 1.5
+		elif kind == "castle":
+			height = 1.3
+		_mesh_box(Vector3(1.5, height, 1.5), Vector3(0, height * 0.5, 0), color, marker)
+		_mesh_cylinder(0.08, 2.2, Vector3(0, height + 1.1, 0), Color(0.16,0.12,0.08), marker)
+		_mesh_box(Vector3(0.65,0.35,0.04), Vector3(0.33, height + 1.8, 0), color, marker)
+		var label := Label3D.new()
+		label.text = String(settlement["name"])
+		label.font_size = 24
+		label.outline_size = 6
+		label.position = Vector3(0, height + 2.35, 0)
+		marker.add_child(label)
+
+func _process(_delta: float) -> void:
+	if world_state and status_label:
+		status_label.text = "ONE CONTINENT  •  Day %d  •  %d regions  •  %d settlements  •  %d armies" % [world_state.day, world_state.regions.size(), world_state.settlements.size(), world_state.armies.size()]
