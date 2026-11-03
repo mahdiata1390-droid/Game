@@ -109,7 +109,35 @@ func transfer_region(region_id:int,new_owner:String)->bool:
 		if int(settlement["region"])==region_id: settlement["owner"]=new_owner
 	return true
 
+func get_market_prices(settlement_id:int)->Dictionary:
+	if settlement_id<0 or settlement_id>=settlements.size(): return {}
+	var s:Dictionary=settlements[settlement_id]
+	var prosperity:=int(s.get("prosperity",50))
+	var resource:=String(regions[int(s["region"])].get("resource","grain"))
+	var prices:Dictionary={"food":max(2,10-int(prosperity/20)),"wood":max(3,12-int(prosperity/25)),"iron":max(5,18-int(prosperity/30))}
+	if resource=="grain": prices["food"]=max(2,int(prices["food"]*0.75))
+	elif resource=="timber": prices["wood"]=max(2,int(prices["wood"]*0.7))
+	elif resource=="iron": prices["iron"]=max(3,int(prices["iron"]*0.7))
+	return prices
+
+func trade_resource(settlement_id:int,resource:String,amount:int,buy:bool)->Dictionary:
+	if amount<=0 or not ["food","wood","iron"].has(resource): return {"ok":false,"reason":"invalid_trade"}
+	var prices:=get_market_prices(settlement_id)
+	if prices.is_empty(): return {"ok":false,"reason":"invalid_settlement"}
+	var total:=int(prices[resource])*amount
+	if buy:
+		if gold<total: return {"ok":false,"reason":"not_enough_gold"}
+		gold-=total
+		player_inventory[resource]=int(player_inventory.get(resource,0))+amount
+	else:
+		var owned:=int(player_inventory.get(resource,0))
+		if owned<amount: return {"ok":false,"reason":"not_enough_resource"}
+		player_inventory[resource]=owned-amount
+		gold+=total
+	return {"ok":true,"resource":resource,"amount":amount,"total":total,"gold":gold}
+
 func set_player_mode(mode:String)->Dictionary:
+
 	if mode not in ["ordinary","king","tribal_leader"]: return {"ok":false,"reason":"invalid_mode"}
 	player_mode=mode
 	if mode=="king": gold=1000
