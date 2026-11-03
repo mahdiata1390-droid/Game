@@ -62,6 +62,9 @@ jobs:
           name="Android"
           platform="Android"
           runnable=true
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
           export_path="build/MedievalSandbox.apk"
           [preset.0.options]
           package/unique_name="com.mahdiata1390.medievalsandbox"
