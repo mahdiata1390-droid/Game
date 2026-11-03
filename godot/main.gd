@@ -25,6 +25,7 @@ var world_map_label: Label
 var map_open := false
 var travel_buttons: Array[Node] = []
 var map_canvas: ColorRect
+var army_command_panel: Panel
 
 func _ready() -> void:
 	world_state = WorldState.new()
@@ -650,6 +651,20 @@ func _refresh_world_map() -> void:
 		region_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		map_canvas.add_child(region_label)
 
+	# Player army command controls: select an army, then choose an adjacent region.
+	for i in range(world_state.armies.size()):
+		var army: Dictionary = world_state.armies[i]
+		if String(army["owner"]) != String(world_state.player_faction) and String(army["owner"]) != "Free Company":
+			continue
+		var command := Button.new()
+		command.text = "ARMY %d • %s" % [i + 1, String(army["name"])]
+		command.position = Vector2(575, 500 + (i % 2) * 36)
+		command.size = Vector2(360, 32)
+		command.add_theme_font_size_override("font_size", 12)
+		command.pressed.connect(_open_army_command.bind(i))
+		world_map_panel.add_child(command)
+		travel_buttons.append(command)
+
 	# Real clickable settlement markers stay above the territory layer.
 	for i in range(world_state.settlements.size()):
 		var settlement: Dictionary = world_state.settlements[i]
@@ -675,8 +690,9 @@ func _open_recruitment(settlement_id: int) -> void:
 		lines += "%s — %d gold each\n" % [troop_type.capitalize(), costs[troop_type]]
 	var recruit := Button.new()
 	recruit.text = "Recruit 10 mixed troops"
-	recruit.position = Vector2(575, 525)
-	recruit.size = Vector2(220, 44)
+	recruit.position = Vector2(810, 525)
+	recruit.size = Vector2(140, 44)
+	recruit.add_theme_font_size_override("font_size", 11)
 	recruit.pressed.connect(func():
 		var result := world_state.recruit_from_settlement(settlement_id, "levy", 10)
 		if result["ok"]:
@@ -704,3 +720,53 @@ func _advance_world_day() -> void:
 	world_state.advance_day()
 	if map_open:
 		_refresh_world_map()
+
+
+func _open_army_command(army_id: int) -> void:
+	if army_id < 0 or army_id >= world_state.armies.size():
+		return
+	if is_instance_valid(army_command_panel):
+		army_command_panel.queue_free()
+	army_command_panel = null
+	var army: Dictionary = world_state.armies[army_id]
+	army_command_panel = Panel.new()
+	army_command_panel.position = Vector2(565, 300)
+	army_command_panel.size = Vector2(390, 190)
+	world_map_panel.add_child(army_command_panel)
+	var info := Label.new()
+	info.text = "%s\nTroops: %d • Morale: %d • Food: %d\nRegion: %s" % [army["name"], army["soldiers"], army["morale"], army["food"], world_state.regions[int(army["region"])]["name"]]
+	info.position = Vector2(16, 12)
+	info.size = Vector2(350, 65)
+	info.add_theme_font_size_override("font_size", 14)
+	army_command_panel.add_child(info)
+	var close := Button.new()
+	close.text = "CLOSE"
+	close.position = Vector2(280, 145)
+	close.size = Vector2(90, 30)
+	close.pressed.connect(func():
+		if is_instance_valid(army_command_panel):
+			army_command_panel.queue_free()
+		army_command_panel = null
+	)
+	army_command_panel.add_child(close)
+	var neighbors: Array[int] = world_state.get_region_neighbors(int(army["region"]))
+	for j in range(neighbors.size()):
+		var region_id := neighbors[j]
+		var move := Button.new()
+		move.text = "MOVE → %s" % String(world_state.regions[region_id]["name"])
+		move.position = Vector2(16 + (j % 2) * 178, 82 + (j / 2) * 31)
+		move.size = Vector2(168, 27)
+		move.add_theme_font_size_override("font_size", 11)
+		move.pressed.connect(_issue_player_army_move.bind(army_id, region_id))
+		army_command_panel.add_child(move)
+
+func _issue_player_army_move(army_id: int, target_region: int) -> void:
+	var result: Dictionary = world_state.issue_army_move(army_id, target_region)
+	if result.get("ok", false):
+		status_label.text = "%s marching toward %s" % [result["army"], result["target"]]
+	else:
+		status_label.text = "Army move failed: %s" % result.get("reason", "unknown")
+	if is_instance_valid(army_command_panel):
+		army_command_panel.queue_free()
+	army_command_panel = null
+	_refresh_world_map()
