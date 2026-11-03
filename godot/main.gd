@@ -23,6 +23,8 @@ var world_state: WorldState
 var world_map_panel: Control
 var world_map_label: Label
 var map_open := false
+var travel_buttons: Array[Button] = []
+var map_canvas: ColorRect
 
 func _ready() -> void:
 	world_state = WorldState.new()
@@ -472,29 +474,41 @@ func _build_world_map_ui() -> void:
 	layer.add_child(button)
 
 	world_map_panel = ColorRect.new()
-	world_map_panel.position = Vector2(230, 70)
-	world_map_panel.size = Vector2(820, 590)
-	world_map_panel.color = Color(0.035, 0.045, 0.06, 0.96)
+	world_map_panel.position = Vector2(150, 45)
+	world_map_panel.size = Vector2(980, 650)
+	world_map_panel.color = Color(0.035, 0.045, 0.06, 0.97)
 	world_map_panel.visible = false
 	layer.add_child(world_map_panel)
 
+	var title := Label.new()
+	title.text = "CONTINENT MAP  •  TAP A SETTLEMENT TO TRAVEL"
+	title.position = Vector2(24, 16)
+	title.add_theme_font_size_override("font_size", 22)
+	world_map_panel.add_child(title)
+
+	map_canvas = ColorRect.new()
+	map_canvas.position = Vector2(24, 58)
+	map_canvas.size = Vector2(520, 500)
+	map_canvas.color = Color(0.10, 0.15, 0.12, 1.0)
+	world_map_panel.add_child(map_canvas)
+
 	world_map_label = Label.new()
-	world_map_label.position = Vector2(24, 20)
-	world_map_label.size = Vector2(770, 540)
-	world_map_label.add_theme_font_size_override("font_size", 18)
+	world_map_label.position = Vector2(575, 58)
+	world_map_label.size = Vector2(375, 500)
+	world_map_label.add_theme_font_size_override("font_size", 16)
 	world_map_panel.add_child(world_map_label)
 
 	var next_day := Button.new()
 	next_day.text = "NEXT DAY"
-	next_day.position = Vector2(500, 515)
-	next_day.size = Vector2(130, 48)
+	next_day.position = Vector2(575, 575)
+	next_day.size = Vector2(120, 48)
 	next_day.pressed.connect(_advance_world_day)
 	world_map_panel.add_child(next_day)
 
 	var close := Button.new()
 	close.text = "CLOSE"
-	close.position = Vector2(650, 515)
-	close.size = Vector2(130, 48)
+	close.position = Vector2(830, 575)
+	close.size = Vector2(120, 48)
 	close.pressed.connect(_toggle_world_map)
 	world_map_panel.add_child(close)
 
@@ -505,26 +519,62 @@ func _toggle_world_map() -> void:
 		_refresh_world_map()
 
 func _refresh_world_map() -> void:
-	var text := "THE CONTINENT\n\n"
-	text += "DAY %d     GOLD %d\n\n" % [world_state.day, world_state.gold]
-	text += "REGIONS / OWNERS / RESOURCES\n"
-	for region in world_state.regions:
-		text += "• %s — %s — %s — Pop %d\n" % [
-			region["name"],
-			world_state.get_faction_name(region["owner"]),
-			region["resource"],
-			region["population"]
+	for b in travel_buttons:
+		if is_instance_valid(b):
+			b.queue_free()
+	travel_buttons.clear()
+
+	var text := "DAY %d     GOLD %d\n" % [world_state.day, world_state.gold]
+	text += "CURRENT REGION: %s\n\n" % world_state.regions[world_state.player_region_id]["name"]
+	text += "SETTLEMENTS\n"
+	for settlement in world_state.settlements:
+		text += "• %s — %s — %s\n" % [
+			settlement["name"],
+			settlement["type"].capitalize(),
+			world_state.get_faction_name(settlement["owner"])
 		]
 	text += "\nARMIES\n"
 	for army in world_state.armies:
-		text += "⚔ %s — %s — %d troops — morale %d — food %d\n" % [
+		text += "⚔ %s — %d troops — %s\n" % [
 			army["name"],
-			world_state.get_faction_name(army["owner"]),
 			army["soldiers"],
-			army["morale"],
-			army["food"]
+			world_state.get_faction_name(army["owner"])
 		]
 	world_map_label.text = text
+
+	# Real clickable map: settlement markers use the same coordinates as the world.
+	for i in range(world_state.settlements.size()):
+		var settlement: Dictionary = world_state.settlements[i]
+		var p: Vector2 = settlement["position"]
+		var map_x := 20.0 + ((p.x + 22.0) / 44.0) * 470.0
+		var map_y := 30.0 + ((p.y + 18.0) / 36.0) * 430.0
+		var travel := Button.new()
+		travel.text = "● " + String(settlement["name"])
+		travel.position = Vector2(map_x, map_y)
+		travel.size = Vector2(145, 34)
+		travel.add_theme_font_size_override("font_size", 11)
+		travel.tooltip_text = "Travel to %s" % String(settlement["name"])
+		travel.pressed.connect(_travel_to_settlement.bind(i))
+		map_canvas.add_child(travel)
+		travel_buttons.append(travel)
+
+	var current_marker := Label.new()
+	current_marker.text = "YOU"
+	current_marker.position = Vector2(8, 8)
+	current_marker.add_theme_font_size_override("font_size", 13)
+	map_canvas.add_child(current_marker)
+	travel_buttons.append(current_marker as Button)
+
+func _travel_to_settlement(settlement_id: int) -> void:
+	var result: Dictionary = world_state.travel_to_settlement(settlement_id)
+	if not result.get("ok", false):
+		return
+	var settlement: Dictionary = world_state.settlements[settlement_id]
+	var p: Vector2 = settlement["position"]
+	player.position = Vector3(p.x, 1.0, p.y + 4.0)
+	player.velocity = Vector3.ZERO
+	status_label.text = "Travelled to %s • %d day(s)" % [result["settlement"], result["days"]]
+	_refresh_world_map()
 
 func _advance_world_day() -> void:
 	world_state.advance_day()
