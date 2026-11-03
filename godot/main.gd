@@ -17,6 +17,7 @@ var touch_look_active := false
 var troops: Array[Dictionary] = []
 var status_label: Label
 var hp_label: Label
+var attack_cooldown := 0.0
 
 func _ready() -> void:
 	_build_world()
@@ -61,34 +62,78 @@ func _build_world() -> void:
 	_create_settlement(Vector3(-8, 0, -7))
 	_create_settlement(Vector3(10, 0, -10))
 	_create_tree_cluster()
+	_create_rocks_and_paths()
+
+func _mat(color: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color
+	m.roughness = 0.82
+	return m
+
+func _mesh_box(size: Vector3, pos: Vector3, color: Color, parent: Node3D, rotation := Vector3.ZERO) -> MeshInstance3D:
+	var n := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	n.mesh = mesh
+	n.position = pos
+	n.rotation_degrees = rotation
+	n.material_override = _mat(color)
+	parent.add_child(n)
+	return n
+
+func _mesh_cylinder(radius: float, height: float, pos: Vector3, color: Color, parent: Node3D) -> MeshInstance3D:
+	var n := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius * 1.05
+	mesh.height = height
+	n.mesh = mesh
+	n.position = pos
+	n.material_override = _mat(color)
+	parent.add_child(n)
+	return n
+
+func _mesh_sphere(radius: float, pos: Vector3, color: Color, parent: Node3D) -> MeshInstance3D:
+	var n := MeshInstance3D.new()
+	var mesh := SphereMesh.new()
+	mesh.radius = radius
+	mesh.height = radius * 2.0
+	n.mesh = mesh
+	n.position = pos
+	n.material_override = _mat(color)
+	parent.add_child(n)
+	return n
 
 func _create_settlement(center: Vector3) -> void:
 	for i in range(5):
-		var house := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = Vector3(3.0, 2.2, 2.8)
-		house.mesh = box
-		house.position = center + Vector3((i % 3) * 3.6 - 3.6, 1.1, (i / 3) * 3.8)
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.35, 0.28, 0.20)
-		house.material_override = mat
+		var house := Node3D.new()
+		house.name = "MedievalHouse"
+		house.position = center + Vector3((i % 3) * 4.2 - 4.2, 0, (i / 3) * 4.4)
 		add_child(house)
+		_mesh_box(Vector3(3.4, 2.4, 3.0), Vector3(0, 1.2, 0), Color(0.42, 0.30, 0.20), house)
+		_mesh_box(Vector3(3.7, 0.35, 3.3), Vector3(0, 2.55, 0), Color(0.18, 0.10, 0.07), house, Vector3(0, 0, 3.0))
+		_mesh_box(Vector3(0.7, 1.25, 0.08), Vector3(0, 0.63, -1.53), Color(0.16, 0.09, 0.05), house)
+		_mesh_box(Vector3(0.45, 0.55, 0.08), Vector3(-0.9, 1.35, -1.54), Color(0.12, 0.22, 0.25), house)
+		_mesh_box(Vector3(0.45, 0.55, 0.08), Vector3(0.9, 1.35, -1.54), Color(0.12, 0.22, 0.25), house)
 
 func _create_tree_cluster() -> void:
 	for i in range(35):
-		var tree := MeshInstance3D.new()
-		var trunk := CylinderMesh.new()
-		trunk.top_radius = 0.18
-		trunk.bottom_radius = 0.25
-		trunk.height = 1.8
-		tree.mesh = trunk
+		var tree := Node3D.new()
 		var x := float((i * 17) % 50) - 25.0
 		var z := float((i * 29) % 50) - 25.0
-		tree.position = Vector3(x, 0.9, z)
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.22, 0.12, 0.07)
-		tree.material_override = mat
+		tree.position = Vector3(x, 0, z)
 		add_child(tree)
+		_mesh_cylinder(0.18, 1.8, Vector3(0, 0.9, 0), Color(0.22, 0.12, 0.07), tree)
+		_mesh_sphere(0.95, Vector3(0, 2.0, 0), Color(0.08, 0.30, 0.10), tree)
+		_mesh_sphere(0.7, Vector3(0.45, 2.55, 0.1), Color(0.10, 0.38, 0.13), tree)
+
+func _create_rocks_and_paths() -> void:
+	for i in range(24):
+		var x := float((i * 11) % 48) - 24.0
+		var z := float((i * 7) % 38) - 19.0
+		_mesh_sphere(0.25 + float(i % 3) * 0.12, Vector3(x, 0.2, z), Color(0.25, 0.27, 0.25), self)
+	for i in range(11):
+		_mesh_box(Vector3(2.4, 0.08, 1.1), Vector3(-8 + i * 1.7, 0.05, -2.0), Color(0.32, 0.27, 0.19), self)
 
 func _build_player() -> void:
 	player = CharacterBody3D.new()
