@@ -109,6 +109,43 @@ func advance_day() -> void:
 		if int(army["food"]) == 0:
 			army["morale"] = max(0, int(army["morale"]) - 3)
 
+func get_region_neighbors(region_id: int) -> Array[int]:
+	var result: Array[int] = []
+	if region_id < 0 or region_id >= regions.size():
+		return result
+	var origin: Vector2 = regions[region_id]["position"]
+	var distances: Array[Dictionary] = []
+	for i in range(regions.size()):
+		if i == region_id:
+			continue
+		var p: Vector2 = regions[i]["position"]
+		distances.append({"id": i, "distance": origin.distance_to(p)})
+	distances.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["distance"] < b["distance"])
+	for item in distances.slice(0, min(3, distances.size())):
+		result.append(int(item["id"]))
+	return result
+
+func transfer_region(region_id: int, new_owner: String) -> bool:
+	if region_id < 0 or region_id >= regions.size():
+		return false
+	if _get_faction(new_owner).is_empty():
+		return false
+	var old_owner := String(regions[region_id]["owner"])
+	if old_owner == new_owner:
+		return true
+	var old_faction := _get_faction(old_owner)
+	var new_faction := _get_faction(new_owner)
+	regions[region_id]["owner"] = new_owner
+	old_faction["territory"].erase(region_id)
+	new_faction["territory"].append(region_id)
+	for settlement in settlements:
+		if int(settlement["region"]) == region_id:
+			settlement["owner"] = new_owner
+	for army in armies:
+		if int(army["region"]) == region_id:
+			army["owner"] = new_owner
+	return true
+
 func get_faction_color(id: String) -> Color:
 	var f := _get_faction(id)
 	return f.get("color", Color.WHITE)
