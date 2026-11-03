@@ -10,7 +10,9 @@ var regions: Array[Dictionary] = []
 var factions: Array[Dictionary] = []
 var settlements: Array[Dictionary] = []
 var armies: Array[Dictionary] = []
-var diplomacy: Dictionary = {}
+var diplomacy: Dictionary = {}\nvar battle_events: Array[Dictionary] = []
+var world_events: Array[String] = []
+
 
 func initialize_continent() -> void:
 	regions.clear(); factions.clear(); settlements.clear(); armies.clear(); diplomacy.clear()
@@ -96,6 +98,47 @@ func transfer_region(region_id:int,new_owner:String)->bool:
 	for settlement in settlements:
 		if int(settlement["region"])==region_id: settlement["owner"]=new_owner
 	return true
+
+# ---------------- ARMY MOVEMENT + AI ----------------
+func issue_army_move(army_id:int,target_region:int)->Dictionary:
+	if army_id<0 or army_id>=armies.size() or target_region<0 or target_region>=regions.size(): return {"ok":false,"reason":"invalid_target"}
+	var army:Dictionary=armies[army_id]
+	if target_region not in get_region_neighbors(int(army["region"])): return {"ok":false,"reason":"not_adjacent"}
+	army["target_region"]=target_region; army["moving"]=true
+	return {"ok":true,"army":String(army["name"]),"target":String(regions[target_region]["name"])}
+
+func _simulate_armies()->void:
+	for army in armies:
+		var current:=int(army["region"]); var target:=int(army.get("target_region",current))
+		if bool(army.get("moving",false)) and current!=target:
+			var neighbors:=get_region_neighbors(current)
+			if target in neighbors: army["region"]=target; army["moving"]=false
+	for army in armies:
+		var owner:=String(army["owner"]); var neighbors:=get_region_neighbors(int(army["region"]))
+		var enemies:Array[int]=[]
+		for r in neighbors:
+			if String(regions[r]["owner"])!=owner and _are_at_war(owner,String(regions[r]["owner"])): enemies.append(r)
+		if not enemies.is_empty(): army["target_region"]=enemies[randi_range(0,enemies.size()-1)]; army["moving"]=true
+
+func _are_at_war(a:String,b:String)->bool:
+	return diplomacy.get("%s|%s"%[a,b],"")=="war" or diplomacy.get("%s|%s"%[b,a],"")=="war"
+
+func _simulate_world_events()->void:
+	for army in armies:
+		var region_id:=int(army["region"]); var owner:=String(army["owner"])
+		for settlement in settlements:
+			if int(settlement["region"])!=region_id or String(settlement["owner"])==owner: continue
+			if not _are_at_war(owner,String(settlement["owner"])): continue
+			var result:=resolve_ai_battle(int(settlement["id"]),{"soldiers":int(army["soldiers"]),"morale":int(army["morale"]),"troops":army.get("troops",{})},get_settlement_defender(int(settlement["id"])),owner)
+			world_events.append("%s attacked %s."%[String(army["name"]),String(settlement["name"])])
+			battle_events.append(result); break
+
+func resolve_ai_battle(settlement_id:int,attacker:Dictionary,defender:Dictionary,attacker_owner:String)->Dictionary:
+	var attack_score:=float(attacker.get("soldiers",1))*(0.72+_battle_quality(attacker.get("troops",{})))*(0.75+float(attacker.get("morale",70))/200.0)
+	var defend_score:=float(defender.get("soldiers",1))*(0.72+_battle_quality(defender.get("troops",{})))*(0.75+float(defender.get("morale",65))/200.0)
+	var won:=attack_score>=defend_score; var captured:=false
+	if won: captured=transfer_region(int(settlements[settlement_id]["region"]),attacker_owner)
+	return {"type":"ai_battle","attacker":attacker_owner,"settlement":String(settlements[settlement_id]["name"]),"attacker_won":won,"captured":captured}
 
 # Shared battle engine. Manual and auto battles use the same army-quality model.
 func get_settlement_defender(settlement_id:int)->Dictionary:
