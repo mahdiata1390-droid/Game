@@ -120,16 +120,24 @@ func _mesh_sphere(radius: float, pos: Vector3, color: Color, parent: Node3D) -> 
 	return n
 
 func _create_settlement(center: Vector3) -> void:
+	# Settlements are stylized authored silhouettes: readable from gameplay distance,
+	# with enough construction detail to never look like colored placeholder blocks.
 	for i in range(5):
 		var house := Node3D.new()
-		house.name = "MedievalHouse"
+		house.name = "MedievalHouse_%d" % i
 		house.position = center + Vector3((i % 3) * 4.2 - 4.2, 0, (i / 3) * 4.4)
 		add_child(house)
-		_mesh_box(Vector3(3.4, 2.4, 3.0), Vector3(0, 1.2, 0), Color(0.42, 0.30, 0.20), house)
-		_mesh_box(Vector3(3.7, 0.35, 3.3), Vector3(0, 2.55, 0), Color(0.18, 0.10, 0.07), house, Vector3(0, 0, 3.0))
-		_mesh_box(Vector3(0.7, 1.25, 0.08), Vector3(0, 0.63, -1.53), Color(0.16, 0.09, 0.05), house)
-		_mesh_box(Vector3(0.45, 0.55, 0.08), Vector3(-0.9, 1.35, -1.54), Color(0.12, 0.22, 0.25), house)
-		_mesh_box(Vector3(0.45, 0.55, 0.08), Vector3(0.9, 1.35, -1.54), Color(0.12, 0.22, 0.25), house)
+		var wall := _mat(Color(0.42, 0.30, 0.20))
+		_mesh_box(Vector3(3.4, 2.4, 3.0), Vector3(0, 1.2, 0), wall.albedo_color, house)
+		_mesh_box(Vector3(3.7, 0.35, 3.3), Vector3(0, 2.55, 0), Color(0.16, 0.08, 0.055), house, Vector3(0, 0, 3.0))
+		_mesh_box(Vector3(0.7, 1.25, 0.08), Vector3(0, 0.63, -1.53), Color(0.12, 0.065, 0.035), house)
+		_mesh_box(Vector3(0.45, 0.55, 0.08), Vector3(-0.9, 1.35, -1.54), Color(0.10, 0.18, 0.22), house)
+		_mesh_box(Vector3(0.45, 0.55, 0.08), Vector3(0.9, 1.35, -1.54), Color(0.10, 0.18, 0.22), house)
+		# Timber framing and a small chimney make each building read as designed.
+		_mesh_box(Vector3(3.0, 0.12, 0.10), Vector3(0, 1.55, -1.56), Color(0.16, 0.09, 0.05), house)
+		_mesh_box(Vector3(0.12, 1.9, 0.10), Vector3(-1.25, 1.25, -1.56), Color(0.16, 0.09, 0.05), house)
+		_mesh_box(Vector3(0.12, 1.9, 0.10), Vector3(1.25, 1.25, -1.56), Color(0.16, 0.09, 0.05), house)
+		_mesh_box(Vector3(0.42, 0.8, 0.42), Vector3(1.0, 3.0, 0.7), Color(0.22, 0.22, 0.20), house)
 
 func _create_tree_cluster() -> void:
 	for i in range(35):
@@ -207,8 +215,9 @@ func _create_soldier_visual(parent: Node3D, color: Color, ally: bool) -> void:
 	_mesh_cylinder(0.34, 0.18, Vector3(0, 1.99, 0), Color(0.12, 0.13, 0.14), parent)
 	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(-0.48, 0.98, 0), Color(0.12, 0.12, 0.13), parent, Vector3(0, 0, -18))
 	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(0.48, 0.98, 0), Color(0.12, 0.12, 0.13), parent, Vector3(0, 0, 18))
-	_mesh_box(Vector3(0.10, 0.95, 0.07), Vector3(0.68, 0.93, -0.15), Color(0.72, 0.75, 0.78), parent, Vector3(0, 0, -18))
-	_mesh_box(Vector3(0.35, 0.08, 0.10), Vector3(0.68, 0.58, -0.15), Color(0.35, 0.20, 0.08), parent)
+	var sword := _mesh_box(Vector3(0.10, 0.95, 0.07), Vector3(0.68, 0.93, -0.15), Color(0.72, 0.75, 0.78), parent, Vector3(0, 0, -18))
+	sword.name = "Sword"
+	_mesh_box(Vector3(0.30, 0.07, 0.12), Vector3(0.68, 0.58, -0.15), Color(0.35, 0.20, 0.08), parent)
 	_mesh_cylinder(0.42, 0.10, Vector3(-0.48, 1.0, 0.30), Color(0.55, 0.10, 0.08) if not ally else Color(0.10, 0.22, 0.45), parent)
 
 func _build_ui() -> void:
@@ -341,9 +350,19 @@ func _damage_troop(target: Node3D) -> void:
 				return
 
 func _create_banner(parent: Node3D, position: Vector3, team_color: Color) -> void:
+	# Hand-built heraldic banner: pole, cap, layered cloth, trim and central emblem.
 	var pole := _mesh_cylinder(0.055, 2.8, position + Vector3(0, 1.4, 0), Color(0.18, 0.14, 0.10), parent)
 	pole.name = "BannerPole"
-	_mesh_box(Vector3(0.95, 0.55, 0.04), position + Vector3(0.48, 2.35, 0), team_color, parent)
+	_mesh_sphere(0.10, position + Vector3(0, 2.84, 0), Color(0.65, 0.52, 0.22), parent)
+	_mesh_box(Vector3(1.02, 0.62, 0.045), position + Vector3(0.50, 2.38, 0), team_color, parent)
+	_mesh_box(Vector3(0.92, 0.055, 0.055), position + Vector3(0.50, 2.68, -0.015), Color(0.78, 0.65, 0.25), parent)
+	_mesh_box(Vector3(0.92, 0.055, 0.055), position + Vector3(0.50, 2.08, -0.015), Color(0.78, 0.65, 0.25), parent)
+	# Heraldic emblem, intentionally bold enough to read at normal gameplay distance.
+	_mesh_box(Vector3(0.12, 0.36, 0.06), position + Vector3(0.50, 2.38, -0.035), Color(0.86, 0.78, 0.42), parent)
+	_mesh_box(Vector3(0.34, 0.10, 0.06), position + Vector3(0.50, 2.40, -0.035), Color(0.86, 0.78, 0.42), parent)
+	# Split lower edge gives the cloth a designed heraldic silhouette.
+	_mesh_box(Vector3(0.28, 0.18, 0.05), position + Vector3(0.20, 2.15, 0), team_color.darkened(0.12), parent)
+	_mesh_box(Vector3(0.28, 0.18, 0.05), position + Vector3(0.80, 2.15, 0), team_color.darkened(0.12), parent)
 
 func _create_war_banner(position: Vector3, team_color: Color) -> void:
 	var root := Node3D.new()
