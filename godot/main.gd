@@ -352,30 +352,23 @@ func _damage_troop(target: Node3D) -> void:
 				return
 
 func _create_banner(parent: Node3D, position: Vector3, team_color: Color) -> void:
-	# Hand-built heraldic banner: pole, cap, layered cloth, trim and central emblem.
-	var pole := _mesh_cylinder(0.055, 2.8, position + Vector3(0, 1.4, 0), Color(0.18, 0.14, 0.10), parent)
-	pole.name = "BannerPole"
+	# Battlefield banners use the same authored heraldic language as settlement flags.
+	_mesh_cylinder(0.055, 2.8, position + Vector3(0, 1.4, 0), Color(0.18, 0.14, 0.10), parent)
 	_mesh_sphere(0.10, position + Vector3(0, 2.84, 0), Color(0.65, 0.52, 0.22), parent)
-	_mesh_box(Vector3(1.02, 0.62, 0.045), position + Vector3(0.50, 2.38, 0), team_color, parent)
-	_mesh_box(Vector3(0.92, 0.055, 0.055), position + Vector3(0.50, 2.68, -0.015), Color(0.78, 0.65, 0.25), parent)
-	_mesh_box(Vector3(0.92, 0.055, 0.055), position + Vector3(0.50, 2.08, -0.015), Color(0.78, 0.65, 0.25), parent)
-	# Heraldic emblem, intentionally bold enough to read at normal gameplay distance.
-	_mesh_box(Vector3(0.12, 0.36, 0.06), position + Vector3(0.50, 2.38, -0.035), Color(0.86, 0.78, 0.42), parent)
-	_mesh_box(Vector3(0.34, 0.10, 0.06), position + Vector3(0.50, 2.40, -0.035), Color(0.86, 0.78, 0.42), parent)
-	# Split lower edge gives the cloth a designed heraldic silhouette.
-	_mesh_box(Vector3(0.28, 0.18, 0.05), position + Vector3(0.20, 2.15, 0), team_color.darkened(0.12), parent)
-	_mesh_box(Vector3(0.28, 0.18, 0.05), position + Vector3(0.80, 2.15, 0), team_color.darkened(0.12), parent)
+	_mesh_box(Vector3(1.02, 0.72, 0.05), position + Vector3(0.50, 2.38, 0), team_color, parent)
+	_mesh_box(Vector3(0.92, 0.055, 0.055), position + Vector3(0.50, 2.68, -0.035), Color(0.82, 0.70, 0.30), parent)
+	_mesh_box(Vector3(0.92, 0.055, 0.055), position + Vector3(0.50, 2.08, -0.035), Color(0.82, 0.70, 0.30), parent)
 
-func _create_war_banner(position: Vector3, team_color: Color) -> void:
+func _create_war_banner(position: Vector3, faction_id: String) -> void:
 	var root := Node3D.new()
-	root.name = "WarBanner"
+	root.name = "WarBanner_" + faction_id
 	root.position = position
 	add_child(root)
-	_create_banner(root, Vector3.ZERO, team_color)
+	_create_faction_banner(root, faction_id, 1.0)
 
 func _spawn_extra_banners() -> void:
-	_create_war_banner(Vector3(-12, 0, -10), Color(0.12, 0.34, 0.85))
-	_create_war_banner(Vector3(12, 0, 10), Color(0.75, 0.12, 0.10))
+	_create_war_banner(Vector3(-12, 0, -10), "north_kingdom")
+	_create_war_banner(Vector3(12, 0, 10), "eastern_tribes")
 
 func _player_attack() -> void:
 	if attack_cooldown > 0.0:
@@ -416,11 +409,12 @@ func _spawn_continent_world() -> void:
 		elif kind == "castle":
 			height = 1.3
 		if kind == "castle":
-			_build_castle_visual(marker, color)
+			_build_castle_visual(marker, color, owner)
 		elif kind == "city":
-			_build_city_visual(marker, color)
+			_build_city_visual(marker, color, owner)
 		else:
-			_build_village_visual(marker, color)
+			_build_village_visual(marker, color, owner)
+		_create_settlement_heraldry(marker, owner, kind)
 		var label := Label3D.new()
 		label.text = String(settlement["name"])
 		label.font_size = 24
@@ -428,13 +422,13 @@ func _spawn_continent_world() -> void:
 		label.position = Vector3(0, height + 2.35, 0)
 		marker.add_child(label)
 
-func _build_village_visual(root: Node3D, faction_color: Color) -> void:
+func _build_village_visual(root: Node3D, faction_color: Color, owner: String) -> void:
 	_mesh_box(Vector3(1.8, 0.8, 1.5), Vector3(0, 0.4, 0), Color(0.38, 0.27, 0.18), root)
 	_mesh_box(Vector3(2.0, 0.18, 1.7), Vector3(0, 0.88, 0), Color(0.14, 0.075, 0.045), root, Vector3(0, 0, 3))
 	_mesh_cylinder(0.055, 1.8, Vector3(0.75, 1.0, 0.35), Color(0.16,0.12,0.08), root)
 	_mesh_box(Vector3(0.55,0.32,0.04), Vector3(1.02,1.72,0.35), faction_color, root)
 
-func _build_city_visual(root: Node3D, faction_color: Color) -> void:
+func _build_city_visual(root: Node3D, faction_color: Color, owner: String) -> void:
 	# Compact skyline silhouette: gatehouse, four corner towers and central hall.
 	_mesh_box(Vector3(3.4, 1.3, 2.8), Vector3(0, 0.65, 0), Color(0.38,0.37,0.34), root)
 	for x in [-1.55, 1.55]:
@@ -444,7 +438,7 @@ func _build_city_visual(root: Node3D, faction_color: Color) -> void:
 	_mesh_cylinder(0.06, 2.8, Vector3(0, 2.1, 0), Color(0.16,0.12,0.08), root)
 	_mesh_box(Vector3(0.72,0.38,0.05), Vector3(0.36,3.25,0), faction_color, root)
 
-func _build_castle_visual(root: Node3D, faction_color: Color) -> void:
+func _build_castle_visual(root: Node3D, faction_color: Color, owner: String) -> void:
 	# Strong readable castle silhouette without forcing a close-up/detail zoom.
 	_mesh_box(Vector3(4.8, 0.65, 4.0), Vector3(0, 0.32, 0), Color(0.27,0.27,0.26), root)
 	for x in [-2.15, 2.15]:
@@ -455,6 +449,59 @@ func _build_castle_visual(root: Node3D, faction_color: Color) -> void:
 	_mesh_box(Vector3(5.1, 0.16, 0.18), Vector3(0, 2.65, -1.95), Color(0.20,0.19,0.17), root)
 	_mesh_cylinder(0.055, 3.5, Vector3(0, 2.2, 0), Color(0.16,0.12,0.08), root)
 	_mesh_box(Vector3(0.9,0.5,0.05), Vector3(0.45,3.8,0), faction_color, root)
+
+func _create_settlement_heraldry(root: Node3D, owner: String, kind: String) -> void:
+	# Each realm gets its own original heraldic identity, inspired by medieval-fantasy
+	# visual language rather than copying any film/show emblem.
+	var banner_root := Node3D.new()
+	banner_root.name = "FactionHeraldry"
+	banner_root.position = Vector3(0, 0, -1.9)
+	root.add_child(banner_root)
+	_create_faction_banner(banner_root, owner, 0.72 if kind == "village" else 0.92)
+
+func _create_faction_banner(parent: Node3D, faction_id: String, scale := 1.0) -> void:
+	var bg := world_state.get_faction_banner(faction_id)
+	var accent := world_state.get_faction_accent(faction_id)
+	var emblem := world_state.get_faction_emblem(faction_id)
+	var pole_h := 3.2 * scale
+	var flag_w := 1.35 * scale
+	var flag_h := 0.82 * scale
+	_mesh_cylinder(0.045 * scale, pole_h, Vector3(0, pole_h * 0.5, 0), Color(0.16,0.12,0.08), parent)
+	_mesh_sphere(0.085 * scale, Vector3(0, pole_h + 0.05 * scale, 0), accent, parent)
+	_mesh_box(Vector3(flag_w, flag_h, 0.055 * scale), Vector3(flag_w * 0.5, pole_h - 0.72 * scale, 0), bg, parent)
+	_mesh_box(Vector3(flag_w * 0.88, 0.055 * scale, 0.065 * scale), Vector3(flag_w * 0.5, pole_h - 0.35 * scale, -0.035 * scale), accent, parent)
+	_mesh_box(Vector3(flag_w * 0.88, 0.055 * scale, 0.065 * scale), Vector3(flag_w * 0.5, pole_h - 1.10 * scale, -0.035 * scale), accent, parent)
+	_draw_heraldic_emblem(parent, emblem, Vector3(flag_w * 0.50, pole_h - 0.72 * scale, -0.07 * scale), scale, accent)
+
+func _draw_heraldic_emblem(parent: Node3D, emblem: String, center: Vector3, scale: float, accent: Color) -> void:
+	# Bold geometric charges keep the flags readable at normal gameplay distance.
+	if emblem == "wolf":
+		_mesh_box(Vector3(0.10,0.46,0.07)*scale, center + Vector3(0,0.02,0), accent, parent)
+		_mesh_box(Vector3(0.42,0.10,0.07)*scale, center + Vector3(0,0.10,0), accent, parent)
+		_mesh_box(Vector3(0.28,0.12,0.07)*scale, center + Vector3(-0.17,-0.12,0), accent, parent, Vector3(0,0,-28))
+		_mesh_box(Vector3(0.28,0.12,0.07)*scale, center + Vector3(0.17,-0.12,0), accent, parent, Vector3(0,0,28))
+	elif emblem == "stag":
+		_mesh_cylinder(0.055*scale, 0.48*scale, center + Vector3(0,-0.01,0), accent, parent)
+		_mesh_box(Vector3(0.48,0.07,0.07)*scale, center + Vector3(0,0.12,0), accent, parent)
+		_mesh_box(Vector3(0.07,0.28,0.07)*scale, center + Vector3(-0.22,0.28,0), accent, parent, Vector3(0,0,-18))
+		_mesh_box(Vector3(0.07,0.28,0.07)*scale, center + Vector3(0.22,0.28,0), accent, parent, Vector3(0,0,18))
+		_mesh_box(Vector3(0.12,0.20,0.07)*scale, center + Vector3(-0.28,0.40,0), accent, parent, Vector3(0,0,-25))
+		_mesh_box(Vector3(0.12,0.20,0.07)*scale, center + Vector3(0.28,0.40,0), accent, parent, Vector3(0,0,25))
+	elif emblem == "falcon":
+		_mesh_box(Vector3(0.56,0.09,0.07)*scale, center, accent, parent)
+		_mesh_box(Vector3(0.32,0.10,0.07)*scale, center + Vector3(-0.22,0.15,0), accent, parent, Vector3(0,0,28))
+		_mesh_box(Vector3(0.32,0.10,0.07)*scale, center + Vector3(0.22,0.15,0), accent, parent, Vector3(0,0,-28))
+		_mesh_box(Vector3(0.10,0.24,0.07)*scale, center + Vector3(0,-0.12,0), accent, parent)
+	elif emblem == "sun":
+		_mesh_cylinder(0.18*scale, 0.06*scale, center, accent, parent)
+		for angle in [0,45,90,135]:
+			var rad := deg_to_rad(float(angle))
+			var p := center + Vector3(cos(rad)*0.30*scale, sin(rad)*0.30*scale, 0)
+			_mesh_box(Vector3(0.18,0.055,0.055)*scale, p, accent, parent, Vector3(0,0,float(angle)))
+	else:
+		_mesh_box(Vector3(0.10,0.50,0.07)*scale, center, accent, parent)
+		_mesh_box(Vector3(0.38,0.10,0.07)*scale, center + Vector3(0,0.10,0), accent, parent, Vector3(0,0,18))
+		_mesh_box(Vector3(0.38,0.10,0.07)*scale, center + Vector3(0,-0.10,0), accent, parent, Vector3(0,0,-18))
 
 func _process(_delta: float) -> void:
 	if world_state and status_label:
