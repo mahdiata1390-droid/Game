@@ -1,0 +1,51 @@
+name: Unity Compile Check
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unity-compile:
+    name: Unity compile check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Check Unity project structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f ProjectSettings/ProjectVersion.txt
+          grep -q 'm_EditorVersion: 2022.3.50f1' ProjectSettings/ProjectVersion.txt
+          test -f Assets/Scenes/Prototype.unity
+          test -f Assets/Scripts/PrototypeBootstrap.cs
+          test -f Assets/Scripts/Combat/BattleTroopAI.cs
+          test -f Assets/Scripts/Combat/WarbandBattleBootstrap.cs
+
+      - name: C# syntax/static sanity check
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          files = list(Path("Assets/Scripts").rglob("*.cs"))
+          assert files, "No C# files found"
+          bad = []
+          for p in files:
+              s = p.read_text(encoding="utf-8")
+              if "\\n" in s:
+                  bad.append(str(p))
+              if s.count("{") != s.count("}"):
+                  bad.append(f"{p}: brace mismatch")
+          if bad:
+              raise SystemExit("\n".join(bad))
+          print(f"Checked {len(files)} C# source files")
+          PY
+
+      - name: Report limitation
+        run: echo "Unity Editor compilation is not performed by this workflow; a Unity-capable runner/license is required for a real Editor compile."
