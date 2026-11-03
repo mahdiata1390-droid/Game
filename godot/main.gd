@@ -20,6 +20,9 @@ var hp_label: Label
 var attack_cooldown := 0.0
 var battle_time := 0.0
 var world_state: WorldState
+var world_map_panel: Control
+var world_map_label: Label
+var map_open := false
 
 func _ready() -> void:
 	world_state = WorldState.new()
@@ -32,6 +35,7 @@ func _ready() -> void:
 	_build_ui()
 	_spawn_extra_banners()
 	_spawn_continent_world()
+	_build_world_map_ui()
 
 func _spawn_extra_banners_once() -> void:
 	_spawn_extra_banners()
@@ -403,3 +407,69 @@ func _spawn_continent_world() -> void:
 func _process(_delta: float) -> void:
 	if world_state and status_label:
 		status_label.text = "ONE CONTINENT  •  Day %d  •  %d regions  •  %d settlements  •  %d armies" % [world_state.day, world_state.regions.size(), world_state.settlements.size(), world_state.armies.size()]
+
+
+func _build_world_map_ui() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "WorldMapUI"
+	add_child(layer)
+	var button := Button.new()
+	button.text = "WORLD MAP"
+	button.position = Vector2(28, 105)
+	button.size = Vector2(190, 58)
+	button.add_theme_font_size_override("font_size", 18)
+	button.pressed.connect(_toggle_world_map)
+	layer.add_child(button)
+
+	world_map_panel = ColorRect.new()
+	world_map_panel.position = Vector2(230, 70)
+	world_map_panel.size = Vector2(820, 590)
+	world_map_panel.color = Color(0.035, 0.045, 0.06, 0.96)
+	world_map_panel.visible = false
+	layer.add_child(world_map_panel)
+
+	world_map_label = Label.new()
+	world_map_label.position = Vector2(24, 20)
+	world_map_label.size = Vector2(770, 540)
+	world_map_label.add_theme_font_size_override("font_size", 18)
+	world_map_panel.add_child(world_map_label)
+
+	var close := Button.new()
+	close.text = "CLOSE"
+	close.position = Vector2(650, 515)
+	close.size = Vector2(130, 48)
+	close.pressed.connect(_toggle_world_map)
+	world_map_panel.add_child(close)
+
+func _toggle_world_map() -> void:
+	map_open = not map_open
+	world_map_panel.visible = map_open
+	if map_open:
+		_refresh_world_map()
+
+func _refresh_world_map() -> void:
+	var text := "THE CONTINENT\n\n"
+	text += "DAY %d     GOLD %d\n\n" % [world_state.day, world_state.gold]
+	text += "REGIONS / OWNERS / RESOURCES\n"
+	for region in world_state.regions:
+		text += "• %s — %s — %s — Pop %d\n" % [
+			region["name"],
+			world_state.get_faction_name(region["owner"]),
+			region["resource"],
+			region["population"]
+		]
+	text += "\nARMIES\n"
+	for army in world_state.armies:
+		text += "⚔ %s — %s — %d troops — morale %d — food %d\n" % [
+			army["name"],
+			world_state.get_faction_name(army["owner"]),
+			army["soldiers"],
+			army["morale"],
+			army["food"]
+		]
+	world_map_label.text = text
+
+func _advance_world_day() -> void:
+	world_state.advance_day()
+	if map_open:
+		_refresh_world_map()
