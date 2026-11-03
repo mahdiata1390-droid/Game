@@ -21,6 +21,7 @@ public sealed class PrototypeBootstrap : MonoBehaviour
         CreateTouchControls();
         CreateEnemy();
         CreateResourceNodes();
+        gameObject.AddComponent<WorldSimulation>();
     }
 
     private static void CreateLighting()
