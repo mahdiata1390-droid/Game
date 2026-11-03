@@ -682,27 +682,53 @@ func _refresh_world_map() -> void:
 		travel_buttons.append(travel)
 
 func _open_recruitment(settlement_id: int) -> void:
+	if settlement_id < 0 or settlement_id >= world_state.settlements.size():
+		return
 	var settlement: Dictionary = world_state.settlements[settlement_id]
 	var troop_types := ["levy", "spearman", "archer", "horseman"]
 	var costs := {"levy":5, "spearman":9, "archer":11, "horseman":18}
-	var lines := "RECRUITMENT • %s\nGold: %d\n\n" % [settlement["name"], world_state.gold]
-	for troop_type in troop_types:
-		lines += "%s — %d gold each\n" % [troop_type.capitalize(), costs[troop_type]]
-	var recruit := Button.new()
-	recruit.text = "Recruit 10 mixed troops"
-	recruit.position = Vector2(810, 525)
-	recruit.size = Vector2(140, 44)
-	recruit.add_theme_font_size_override("font_size", 11)
-	recruit.pressed.connect(func():
-		var result := world_state.recruit_from_settlement(settlement_id, "levy", 10)
-		if result["ok"]:
-			status_label.text = "Recruited %d troops • -%d gold" % [result["count"], result["cost"]]
-		else:
-			status_label.text = "Recruitment unavailable: %s" % result["reason"]
-		recruit.queue_free()
-		_refresh_world_map()
+	var panel := Panel.new()
+	panel.name = "RecruitmentPanel"
+	panel.position = Vector2(565, 360)
+	panel.size = Vector2(390, 245)
+	world_map_panel.add_child(panel)
+	var title := Label.new()
+	title.text = "RECRUITMENT • %s" % String(settlement["name"])
+	title.position = Vector2(16, 10)
+	title.add_theme_font_size_override("font_size", 17)
+	panel.add_child(title)
+	var gold_label := Label.new()
+	gold_label.text = "Gold: %d  •  Choose a troop type" % world_state.gold
+	gold_label.position = Vector2(16, 38)
+	panel.add_child(gold_label)
+	for i in range(troop_types.size()):
+		var troop_type := troop_types[i]
+		var button := Button.new()
+		button.text = "%s  •  %d gold each" % [troop_type.capitalize(), costs[troop_type]]
+		button.position = Vector2(16, 70 + i * 36)
+		button.size = Vector2(355, 30)
+		button.add_theme_font_size_override("font_size", 12)
+		button.pressed.connect(_recruit_troop.bind(settlement_id, troop_type, panel))
+		panel.add_child(button)
+	var close := Button.new()
+	close.text = "CLOSE"
+	close.position = Vector2(280, 205)
+	close.size = Vector2(90, 28)
+	close.pressed.connect(func():
+		if is_instance_valid(panel):
+			panel.queue_free()
 	)
-	world_map_panel.add_child(recruit)
+	panel.add_child(close)
+
+func _recruit_troop(settlement_id: int, troop_type: String, panel: Panel) -> void:
+	var result: Dictionary = world_state.recruit_from_settlement(settlement_id, troop_type, 10)
+	if result.get("ok", false):
+		status_label.text = "%s: +%d %s • -%d gold" % [result["army"], result["count"], troop_type, result["cost"]]
+	else:
+		status_label.text = "Recruitment unavailable: %s" % result.get("reason", "unknown")
+	if is_instance_valid(panel):
+		panel.queue_free()
+	_refresh_world_map()
 
 func _travel_to_settlement(settlement_id: int) -> void:
 	var result: Dictionary = world_state.travel_to_settlement(settlement_id)
