@@ -19,11 +19,11 @@ func initialize_continent() -> void:
 	armies.clear()
 	diplomacy.clear()
 	var faction_defs := [
-		{"id":"north_kingdom","name":"Kingdom of Nordmark","type":"kingdom","color":Color(0.12,0.32,0.82)},
-		{"id":"river_kingdom","name":"Kingdom of Valoria","type":"kingdom","color":Color(0.18,0.62,0.34)},
-		{"id":"eastern_tribes","name":"Eastern Tribes","type":"tribe","color":Color(0.72,0.28,0.12)},
-		{"id":"southern_sultanate","name":"Sultanate of Sahr","type":"kingdom","color":Color(0.72,0.56,0.14)},
-		{"id":"western_clans","name":"Western Clans","type":"tribe","color":Color(0.42,0.20,0.62)}
+		{"id":"north_kingdom","name":"Kingdom of Nordmark","type":"kingdom","culture":"Nordmarki","color":Color(0.10,0.20,0.42),"banner":Color(0.055,0.11,0.25),"accent":Color(0.86,0.88,0.90),"emblem":"wolf"},
+		{"id":"river_kingdom","name":"Kingdom of Valoria","type":"kingdom","culture":"Valorian","color":Color(0.58,0.38,0.12),"banner":Color(0.13,0.09,0.06),"accent":Color(0.92,0.72,0.22),"emblem":"stag"},
+		{"id":"eastern_tribes","name":"Eastern Tribes","type":"tribe","culture":"Steppe Clans","color":Color(0.72,0.18,0.10),"banner":Color(0.34,0.055,0.035),"accent":Color(0.90,0.74,0.36),"emblem":"falcon"},
+		{"id":"southern_sultanate","name":"Sultanate of Sahr","type":"kingdom","culture":"Sahrian","color":Color(0.72,0.48,0.08),"banner":Color(0.16,0.10,0.045),"accent":Color(0.95,0.78,0.28),"emblem":"sun"},
+		{"id":"western_clans","name":"Western Clans","type":"tribe","culture":"Western Clans","color":Color(0.30,0.18,0.42),"banner":Color(0.10,0.075,0.13),"accent":Color(0.72,0.78,0.76),"emblem":"raven"}
 	]
 	for f in faction_defs:
 		f["relations"] = {}
@@ -117,3 +117,19 @@ func get_faction_color(id: String) -> Color:
 func get_faction_name(id: String) -> String:
 	var f := _get_faction(id)
 	return String(f.get("name", id))
+
+func get_faction_banner(id: String) -> Color:
+	var f := _get_faction(id)
+	return f.get("banner", f.get("color", Color.WHITE))
+
+func get_faction_accent(id: String) -> Color:
+	var f := _get_faction(id)
+	return f.get("accent", Color.WHITE)
+
+func get_faction_emblem(id: String) -> String:
+	var f := _get_faction(id)
+	return String(f.get("emblem", "cross"))
+
+func get_faction_culture(id: String) -> String:
+	var f := _get_faction(id)
+	return String(f.get("culture", "Unknown"))
