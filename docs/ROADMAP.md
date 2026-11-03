@@ -12,6 +12,7 @@
 - [x] Third-person camera follow and touch drag-look source
 - [x] Camera-relative player movement and virtual joystick source
 - [x] Basic melee interaction source and one simple enemy behavior
+- [x] First warband layer: player formation, friendly troops, enemy squad, and troop-vs-troop combat AI
 - [x] Player health display source
 - [x] Local checkpoint persistence source with invalid/zero-health recovery
 - [x] Optional automatic respawn support, configured for the prototype player
