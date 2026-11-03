@@ -12,6 +12,7 @@ var settlements: Array[Dictionary] = []
 var armies: Array[Dictionary] = []
 var diplomacy: Dictionary = {}\nvar battle_events: Array[Dictionary] = []
 var world_events: Array[String] = []
+var battle_cooldowns: Dictionary = {}
 
 
 func initialize_continent() -> void:
@@ -74,6 +75,8 @@ func travel_to_settlement(settlement_id:int)->Dictionary:
 
 func advance_day()->void:
 	day+=1
+	for settlement_id in battle_cooldowns.keys():
+		battle_cooldowns[settlement_id] = max(0, int(battle_cooldowns[settlement_id]) - 1)
 	for region in regions:
 		region["prosperity"]=clamp(int(region["prosperity"])+randi_range(-2,2),0,100); region["population"]=int(region["population"])+max(1,int(region["population"])/500)
 	for settlement in settlements: settlement["prosperity"]=clamp(int(settlement["prosperity"])+randi_range(-1,2),0,100)
