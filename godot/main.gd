@@ -413,15 +413,46 @@ func _spawn_continent_world() -> void:
 			height = 1.5
 		elif kind == "castle":
 			height = 1.3
-		_mesh_box(Vector3(1.5, height, 1.5), Vector3(0, height * 0.5, 0), color, marker)
-		_mesh_cylinder(0.08, 2.2, Vector3(0, height + 1.1, 0), Color(0.16,0.12,0.08), marker)
-		_mesh_box(Vector3(0.65,0.35,0.04), Vector3(0.33, height + 1.8, 0), color, marker)
+		if kind == "castle":
+			_build_castle_visual(marker, color)
+		elif kind == "city":
+			_build_city_visual(marker, color)
+		else:
+			_build_village_visual(marker, color)
 		var label := Label3D.new()
 		label.text = String(settlement["name"])
 		label.font_size = 24
 		label.outline_size = 6
 		label.position = Vector3(0, height + 2.35, 0)
 		marker.add_child(label)
+
+func _build_village_visual(root: Node3D, faction_color: Color) -> void:
+	_mesh_box(Vector3(1.8, 0.8, 1.5), Vector3(0, 0.4, 0), Color(0.38, 0.27, 0.18), root)
+	_mesh_box(Vector3(2.0, 0.18, 1.7), Vector3(0, 0.88, 0), Color(0.14, 0.075, 0.045), root, Vector3(0, 0, 3))
+	_mesh_cylinder(0.055, 1.8, Vector3(0.75, 1.0, 0.35), Color(0.16,0.12,0.08), root)
+	_mesh_box(Vector3(0.55,0.32,0.04), Vector3(1.02,1.72,0.35), faction_color, root)
+
+func _build_city_visual(root: Node3D, faction_color: Color) -> void:
+	# Compact skyline silhouette: gatehouse, four corner towers and central hall.
+	_mesh_box(Vector3(3.4, 1.3, 2.8), Vector3(0, 0.65, 0), Color(0.38,0.37,0.34), root)
+	for x in [-1.55, 1.55]:
+		for z in [-1.15, 1.15]:
+			_mesh_cylinder(0.42, 2.5, Vector3(x, 1.25, z), Color(0.31,0.31,0.29), root)
+	_mesh_box(Vector3(0.9, 1.0, 0.12), Vector3(0, 0.55, -1.46), Color(0.12,0.075,0.04), root)
+	_mesh_cylinder(0.06, 2.8, Vector3(0, 2.1, 0), Color(0.16,0.12,0.08), root)
+	_mesh_box(Vector3(0.72,0.38,0.05), Vector3(0.36,3.25,0), faction_color, root)
+
+func _build_castle_visual(root: Node3D, faction_color: Color) -> void:
+	# Strong readable castle silhouette without forcing a close-up/detail zoom.
+	_mesh_box(Vector3(4.8, 0.65, 4.0), Vector3(0, 0.32, 0), Color(0.27,0.27,0.26), root)
+	for x in [-2.15, 2.15]:
+		for z in [-1.65, 1.65]:
+			_mesh_cylinder(0.52, 3.6, Vector3(x, 1.8, z), Color(0.32,0.32,0.30), root)
+	_mesh_box(Vector3(2.4, 2.2, 2.0), Vector3(0, 1.1, 0), Color(0.36,0.35,0.32), root)
+	_mesh_box(Vector3(1.0, 1.25, 0.14), Vector3(0, 0.63, -1.08), Color(0.12,0.075,0.04), root)
+	_mesh_box(Vector3(5.1, 0.16, 0.18), Vector3(0, 2.65, -1.95), Color(0.20,0.19,0.17), root)
+	_mesh_cylinder(0.055, 3.5, Vector3(0, 2.2, 0), Color(0.16,0.12,0.08), root)
+	_mesh_box(Vector3(0.9,0.5,0.05), Vector3(0.45,3.8,0), faction_color, root)
 
 func _process(_delta: float) -> void:
 	if world_state and status_label:
