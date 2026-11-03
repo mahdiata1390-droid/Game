@@ -85,6 +85,40 @@ func _get_faction(id: String) -> Dictionary:
 			return f
 	return {}
 
+func recruit_from_settlement(settlement_id: int, troop_type: String, count: int) -> Dictionary:
+	if settlement_id < 0 or settlement_id >= settlements.size():
+		return {"ok": false, "reason": "invalid_settlement"}
+	if count <= 0:
+		return {"ok": false, "reason": "invalid_count"}
+	var settlement: Dictionary = settlements[settlement_id]
+	var available := max(0, int(settlement["population"]) / 12 - int(settlement["garrison"]))
+	var recruit_count := min(count, available)
+	if recruit_count <= 0:
+		return {"ok": false, "reason": "no_recruits"}
+	var costs := {"levy": 5, "spearman": 9, "archer": 11, "horseman": 18}
+	var cost_per := int(costs.get(troop_type, 5))
+	var total_cost := recruit_count * cost_per
+	if gold < total_cost:
+		return {"ok": false, "reason": "not_enough_gold"}
+	gold -= total_cost
+	settlement["garrison"] = int(settlement["garrison"]) + recruit_count
+	for army in armies:
+		if int(army["region"]) == int(settlement["region"]) and String(army["owner"]) == String(settlement["owner"]):
+			army["soldiers"] = int(army["soldiers"]) + recruit_count
+			if not army.has("troops"):
+				army["troops"] = {"levy":0,"spearman":0,"archer":0,"horseman":0}
+			army["troops"][troop_type] = int(army["troops"].get(troop_type, 0)) + recruit_count
+			return {"ok": true, "count": recruit_count, "cost": total_cost, "army": String(army["name"])}
+	var owner := String(settlement["owner"])
+	_add_army("%s Muster" % settlement["name"], owner, int(settlement["region"]), recruit_count)
+	var new_army: Dictionary = armies.back()
+	new_army["troops"] = {"levy":0,"spearman":0,"archer":0,"horseman":0}
+	new_army["troops"][troop_type] = recruit_count
+	return {"ok": true, "count": recruit_count, "cost": total_cost, "army": String(new_army["name"])}
+
+func _add_army(name: String, owner: String, region_id: int, soldiers: int) -> void:
+	armies.append({"id":armies.size(),"name":name,"owner":owner,"region":region_id,"soldiers":soldiers,"morale":75,"food":100,"moving":false,"target_region":region_id,"troops":{"levy":soldiers,"spearman":0,"archer":0,"horseman":0}})
+
 func travel_to_settlement(settlement_id: int) -> Dictionary:
 	if settlement_id < 0 or settlement_id >= settlements.size():
 		return {"ok": false, "days": 0, "reason": "invalid_settlement"}
