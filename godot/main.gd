@@ -681,6 +681,21 @@ func _refresh_world_map() -> void:
 		map_canvas.add_child(travel)
 		travel_buttons.append(travel)
 
+func _open_start_mode() -> void:
+	var panel:=Panel.new()
+	panel.position=Vector2(220,150); panel.size=Vector2(560,300)
+	add_child(panel)
+	var title:=Label.new(); title.text="CHOOSE YOUR LIFE"; title.position=Vector2(24,20); title.add_theme_font_size_override("font_size",24); panel.add_child(title)
+	var modes=[["ORDINARY","Start with little gold and build your power."],["KING","Start as a ruler with 1000 gold."],["TRIBAL LEADER","Start as a tribal leader with 500 gold."]]
+	for i in range(modes.size()):
+		var b:=Button.new(); b.text=modes[i][0]+"  •  "+modes[i][1]; b.position=Vector2(24,70+i*58); b.size=Vector2(510,46)
+		b.pressed.connect(_choose_start_mode.bind(modes[i][0].to_lower().replace(" ","_"),panel)); panel.add_child(b)
+
+func _choose_start_mode(mode:String,panel:Panel)->void:
+	var result:=world_state.set_player_mode("tribal_leader" if mode=="tribal_leader" else ("king" if mode=="king" else "ordinary"))
+	status_label.text="You begin as %s • Gold %d" % [result["mode"],world_state.gold]
+	panel.queue_free()
+
 func _open_recruitment(settlement_id: int) -> void:
 	if settlement_id < 0 or settlement_id >= world_state.settlements.size():
 		return
