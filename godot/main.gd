@@ -25,6 +25,10 @@ func _ready() -> void:
 	_build_player()
 	_build_warband()
 	_build_ui()
+	_spawn_extra_banners()
+
+func _spawn_extra_banners_once() -> void:
+	_spawn_extra_banners()
 
 func _build_world() -> void:
 	var world_env := WorldEnvironment.new()
@@ -325,6 +329,22 @@ func _damage_troop(target: Node3D) -> void:
 				target.queue_free()
 				troops.remove_at(i)
 				return
+
+func _create_banner(parent: Node3D, position: Vector3, team_color: Color) -> void:
+	var pole := _mesh_cylinder(0.055, 2.8, position + Vector3(0, 1.4, 0), Color(0.18, 0.14, 0.10), parent)
+	pole.name = "BannerPole"
+	_mesh_box(Vector3(0.95, 0.55, 0.04), position + Vector3(0.48, 2.35, 0), team_color, parent)
+
+func _create_war_banner(position: Vector3, team_color: Color) -> void:
+	var root := Node3D.new()
+	root.name = "WarBanner"
+	root.position = position
+	world.add_child(root)
+	_create_banner(root, Vector3.ZERO, team_color)
+
+func _spawn_extra_banners() -> void:
+	_create_war_banner(Vector3(-12, 0, -10), Color(0.12, 0.34, 0.85))
+	_create_war_banner(Vector3(12, 0, 10), Color(0.75, 0.12, 0.10))
 
 func _player_attack() -> void:
 	if attack_cooldown > 0.0:
