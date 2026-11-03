@@ -190,3 +190,4 @@ func get_faction_banner(id:String)->Color: return _get_faction(id).get("banner",
 func get_faction_accent(id:String)->Color: return _get_faction(id).get("accent",Color.WHITE)
 func get_faction_emblem(id:String)->String: return String(_get_faction(id).get("emblem","cross"))
 func get_faction_culture(id:String)->String: return String(_get_faction(id).get("culture","Unknown"))
+
