@@ -173,16 +173,9 @@ func _build_warband() -> void:
 func _spawn_troop(team: String, pos: Vector3, color: Color) -> void:
 	var troop := CharacterBody3D.new()
 	troop.position = pos
+	troop.name = team + "_Soldier"
 	add_child(troop)
-	var mesh := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.height = 1.7
-	capsule.radius = 0.38
-	mesh.mesh = capsule
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mesh.material_override = mat
-	troop.add_child(mesh)
+	_create_soldier_visual(troop, color, team == "ALLY")
 	var collision := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
 	shape.height = 1.7
@@ -190,6 +183,18 @@ func _spawn_troop(team: String, pos: Vector3, color: Color) -> void:
 	collision.shape = shape
 	troop.add_child(collision)
 	troops.append({"node": troop, "team": team, "hp": 60, "cooldown": 0.0})
+
+func _create_soldier_visual(parent: Node3D, color: Color, ally: bool) -> void:
+	_mesh_box(Vector3(0.72, 0.85, 0.42), Vector3(0, 1.05, 0), color, parent)
+	_mesh_box(Vector3(0.22, 0.72, 0.22), Vector3(-0.23, 0.35, 0), Color(0.12, 0.12, 0.13), parent)
+	_mesh_box(Vector3(0.22, 0.72, 0.22), Vector3(0.23, 0.35, 0), Color(0.12, 0.12, 0.13), parent)
+	_mesh_sphere(0.30, Vector3(0, 1.78, 0), Color(0.72, 0.53, 0.38), parent)
+	_mesh_cylinder(0.34, 0.18, Vector3(0, 1.99, 0), Color(0.12, 0.13, 0.14), parent)
+	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(-0.48, 0.98, 0), Color(0.12, 0.12, 0.13), parent, Vector3(0, 0, -18))
+	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(0.48, 0.98, 0), Color(0.12, 0.12, 0.13), parent, Vector3(0, 0, 18))
+	_mesh_box(Vector3(0.10, 0.95, 0.07), Vector3(0.68, 0.93, -0.15), Color(0.72, 0.75, 0.78), parent, Vector3(0, 0, -18))
+	_mesh_box(Vector3(0.35, 0.08, 0.10), Vector3(0.68, 0.58, -0.15), Color(0.35, 0.20, 0.08), parent)
+	_mesh_cylinder(0.42, 0.10, Vector3(-0.48, 1.0, 0.30), Color(0.55, 0.10, 0.08) if not ally else Color(0.10, 0.22, 0.45), parent)
 
 func _build_ui() -> void:
 	var layer := CanvasLayer.new()
@@ -228,11 +233,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(player):
 		return
+	attack_cooldown = max(0.0, attack_cooldown - delta)
 	_update_player(delta)
 	_update_troops(delta)
 	hp_label.text = "HP: %d / %d" % [player_hp, MAX_HP]
 	if status_label.text == "":
-		status_label.text = "WASD / Touch • ATTACK for the prototype"
+		status_label.text = "Medieval Sandbox • prototype battlefield"
 
 func _update_player(_delta: float) -> void:
 	var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
@@ -295,6 +301,9 @@ func _damage_troop(target: Node3D) -> void:
 				return
 
 func _player_attack() -> void:
+	if attack_cooldown > 0.0:
+		return
+	attack_cooldown = 0.45
 	var closest: Node3D
 	var best := ATTACK_RANGE + 0.6
 	for data in troops:
