@@ -16,13 +16,14 @@
 - [x] Local checkpoint persistence source with invalid/zero-health recovery
 - [x] Optional automatic respawn support, configured for the prototype player
 - [x] Basic resource interaction button and inventory HUD source
-- [x] Basic interaction feedback messages and campfire flame/light flicker source\n- [ ] Animation, hit feedback, sound, and further interaction polish
+- [x] Basic interaction feedback messages and campfire flame/light flicker source
+- [ ] Animation, hit feedback, sound, and further interaction polish
 - [ ] Compile and test in Unity Play Mode
 - [ ] Produce and verify an Android build on a real device
 
 ## Phase 2 — Vertical slice
-- [ ] One compact village and surrounding terrain
-- [ ] Basic NPC routines and interaction
+- [x] Runtime village with houses, market stall, paths/marker props, and surrounding terrain props
+- [x] Basic ambient NPC routines and wildlife wandering
 - [x] Starter resource gathering and inventory loop (wood, stone, herbs; herb consumption heals the player)
 - [x] Basic campfire crafting from 3 wood + 2 stone, with local persistence
 - [x] Rest at a nearby campfire to restore up to 50 health
@@ -33,6 +34,7 @@
 ## Phase 3 — Sandbox foundation
 - [ ] Player origin selection
 - [ ] Optional activities and emergent events
+- [x] Day/night cycle, ambient lighting, fog, village simulation, and wildlife baseline
 - [ ] Settlement growth and simple world simulation
 - [ ] Early kingdom/leadership loop
 
