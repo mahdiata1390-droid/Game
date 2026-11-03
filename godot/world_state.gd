@@ -99,3 +99,8 @@ func advance_day() -> void:
 func get_faction_color(id: String) -> Color:
 	var f := _get_faction(id)
 	return f.get("color", Color.WHITE)
+
+
+func get_faction_name(id: String) -> String:
+	var f := _get_faction(id)
+	return String(f.get("name", id))
