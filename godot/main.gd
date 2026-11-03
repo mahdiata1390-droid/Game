@@ -23,7 +23,7 @@ var world_state: WorldState
 var world_map_panel: Control
 var world_map_label: Label
 var map_open := false
-var travel_buttons: Array[Button] = []
+var travel_buttons: Array[Node] = []
 var map_canvas: ColorRect
 
 func _ready() -> void:
