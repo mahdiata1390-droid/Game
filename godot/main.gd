@@ -608,7 +608,10 @@ func _refresh_world_map() -> void:
 
 	var text := "DAY %d     GOLD %d\n" % [world_state.day, world_state.gold]
 	text += "CURRENT REGION: %s\n\n" % world_state.regions[world_state.player_region_id]["name"]
-	text += "SETTLEMENTS\n"
+	text += "TERRITORIES\n"
+	for faction in world_state.factions:
+		text += "◆ %s — %d regions\n" % [faction["name"], faction["territory"].size()]
+	text += "\nSETTLEMENTS\n"
 	for settlement in world_state.settlements:
 		text += "• %s — %s — %s\n" % [
 			settlement["name"],
@@ -624,7 +627,30 @@ func _refresh_world_map() -> void:
 		]
 	world_map_label.text = text
 
-	# Real clickable map: settlement markers use the same coordinates as the world.
+	# Territory layer: every region gets an authored color block and border.
+	for region in world_state.regions:
+		var p: Vector2 = region["position"]
+		var map_x := 20.0 + ((p.x + 22.0) / 44.0) * 470.0
+		var map_y := 30.0 + ((p.y + 18.0) / 36.0) * 430.0
+		var territory := ColorRect.new()
+		territory.position = Vector2(map_x - 48, map_y - 30)
+		territory.size = Vector2(96, 60)
+		var faction_color := world_state.get_faction_color(String(region["owner"]))
+		territory.color = Color(faction_color.r, faction_color.g, faction_color.b, 0.30)
+		territory.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		map_canvas.add_child(territory)
+		var region_label := Label.new()
+		region_label.text = String(region["name"])
+		region_label.position = Vector2(map_x - 44, map_y - 24)
+		region_label.size = Vector2(88, 48)
+		region_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		region_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		region_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		region_label.add_theme_font_size_override("font_size", 10)
+		region_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		map_canvas.add_child(region_label)
+
+	# Real clickable settlement markers stay above the territory layer.
 	for i in range(world_state.settlements.size()):
 		var settlement: Dictionary = world_state.settlements[i]
 		var p: Vector2 = settlement["position"]
@@ -632,14 +658,13 @@ func _refresh_world_map() -> void:
 		var map_y := 30.0 + ((p.y + 18.0) / 36.0) * 430.0
 		var travel := Button.new()
 		travel.text = "● " + String(settlement["name"])
-		travel.position = Vector2(map_x, map_y)
+		travel.position = Vector2(map_x - 50, map_y + 22)
 		travel.size = Vector2(145, 34)
 		travel.add_theme_font_size_override("font_size", 11)
 		travel.tooltip_text = "Travel to %s" % String(settlement["name"])
 		travel.pressed.connect(_travel_to_settlement.bind(i))
 		map_canvas.add_child(travel)
 		travel_buttons.append(travel)
-
 
 func _travel_to_settlement(settlement_id: int) -> void:
 	var result: Dictionary = world_state.travel_to_settlement(settlement_id)
