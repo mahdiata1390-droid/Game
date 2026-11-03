@@ -434,6 +434,13 @@ func _build_world_map_ui() -> void:
 	world_map_label.add_theme_font_size_override("font_size", 18)
 	world_map_panel.add_child(world_map_label)
 
+	var next_day := Button.new()
+	next_day.text = "NEXT DAY"
+	next_day.position = Vector2(500, 515)
+	next_day.size = Vector2(130, 48)
+	next_day.pressed.connect(_advance_world_day)
+	world_map_panel.add_child(next_day)
+
 	var close := Button.new()
 	close.text = "CLOSE"
 	close.position = Vector2(650, 515)
