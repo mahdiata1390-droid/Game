@@ -5,6 +5,7 @@ var day: int = 1
 var gold: int = 250
 var player_faction: String = "Free Company"
 var player_start: String = "ordinary"
+var player_region_id: int = 0
 var regions: Array[Dictionary] = []
 var factions: Array[Dictionary] = []
 var settlements: Array[Dictionary] = []
@@ -83,6 +84,18 @@ func _get_faction(id: String) -> Dictionary:
 		if f["id"] == id:
 			return f
 	return {}
+
+func travel_to_settlement(settlement_id: int) -> Dictionary:
+	if settlement_id < 0 or settlement_id >= settlements.size():
+		return {"ok": false, "days": 0, "reason": "invalid_settlement"}
+	var settlement: Dictionary = settlements[settlement_id]
+	var target_region: int = int(settlement["region"])
+	var distance_regions := abs(target_region - player_region_id)
+	var travel_days := max(1, int(ceil(float(distance_regions) / 2.0)))
+	player_region_id = target_region
+	for i in range(travel_days):
+		advance_day()
+	return {"ok": true, "days": travel_days, "settlement": String(settlement["name"])}
 
 func advance_day() -> void:
 	day += 1
