@@ -558,12 +558,6 @@ func _refresh_world_map() -> void:
 		map_canvas.add_child(travel)
 		travel_buttons.append(travel)
 
-	var current_marker := Label.new()
-	current_marker.text = "YOU"
-	current_marker.position = Vector2(8, 8)
-	current_marker.add_theme_font_size_override("font_size", 13)
-	map_canvas.add_child(current_marker)
-	travel_buttons.append(current_marker as Button)
 
 func _travel_to_settlement(settlement_id: int) -> void:
 	var result: Dictionary = world_state.travel_to_settlement(settlement_id)
