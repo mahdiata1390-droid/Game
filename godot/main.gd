@@ -666,6 +666,28 @@ func _refresh_world_map() -> void:
 		map_canvas.add_child(travel)
 		travel_buttons.append(travel)
 
+func _open_recruitment(settlement_id: int) -> void:
+	var settlement: Dictionary = world_state.settlements[settlement_id]
+	var troop_types := ["levy", "spearman", "archer", "horseman"]
+	var costs := {"levy":5, "spearman":9, "archer":11, "horseman":18}
+	var lines := "RECRUITMENT • %s\nGold: %d\n\n" % [settlement["name"], world_state.gold]
+	for troop_type in troop_types:
+		lines += "%s — %d gold each\n" % [troop_type.capitalize(), costs[troop_type]]
+	var recruit := Button.new()
+	recruit.text = "Recruit 10 mixed troops"
+	recruit.position = Vector2(575, 525)
+	recruit.size = Vector2(220, 44)
+	recruit.pressed.connect(func():
+		var result := world_state.recruit_from_settlement(settlement_id, "levy", 10)
+		if result["ok"]:
+			status_label.text = "Recruited %d troops • -%d gold" % [result["count"], result["cost"]]
+		else:
+			status_label.text = "Recruitment unavailable: %s" % result["reason"]
+		recruit.queue_free()
+		_refresh_world_map()
+	)
+	world_map_panel.add_child(recruit)
+
 func _travel_to_settlement(settlement_id: int) -> void:
 	var result: Dictionary = world_state.travel_to_settlement(settlement_id)
 	if not result.get("ok", false):
