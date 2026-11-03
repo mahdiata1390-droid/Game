@@ -696,6 +696,22 @@ func _choose_start_mode(mode:String,panel:Panel)->void:
 	status_label.text="You begin as %s • Gold %d" % [result["mode"],world_state.gold]
 	panel.queue_free()
 
+func _open_trade(settlement_id:int)->void:
+	var panel:=Panel.new(); panel.position=Vector2(180,110); panel.size=Vector2(640,420); add_child(panel)
+	var title:=Label.new(); title.text="MARKET • "+String(world_state.settlements[settlement_id]["name"]); title.position=Vector2(24,18); title.add_theme_font_size_override("font_size",24); panel.add_child(title)
+	var prices:=world_state.get_market_prices(settlement_id)
+	var resources=["food","wood","iron"]
+	for i in range(resources.size()):
+		var res:=resources[i]; var row:=Label.new(); row.text="%s  •  Price %d  •  Owned %d" % [res.capitalize(),int(prices[res]),int(world_state.player_inventory.get(res,0))]; row.position=Vector2(28,70+i*90); panel.add_child(row)
+		var buy:=Button.new(); buy.text="BUY 10"; buy.position=Vector2(360,62+i*90); buy.size=Vector2(110,42); buy.pressed.connect(_trade.bind(settlement_id,res,10,true,panel)); panel.add_child(buy)
+		var sell:=Button.new(); sell.text="SELL 10"; sell.position=Vector2(485,62+i*90); sell.size=Vector2(110,42); sell.pressed.connect(_trade.bind(settlement_id,res,10,false,panel)); panel.add_child(sell)
+	var close:=Button.new(); close.text="CLOSE"; close.position=Vector2(250,350); close.size=Vector2(140,42); close.pressed.connect(panel.queue_free); panel.add_child(close)
+
+func _trade(settlement_id:int,res:String,amount:int,buy:bool,panel:Panel)->void:
+	var result:=world_state.trade_resource(settlement_id,res,amount,buy)
+	status_label.text=("TRADE COMPLETE" if result.get("ok",false) else "TRADE FAILED: "+String(result.get("reason","unknown")))
+	if result.get("ok",false): panel.queue_free()
+
 func _open_recruitment(settlement_id: int) -> void:
 	if settlement_id < 0 or settlement_id >= world_state.settlements.size():
 		return
