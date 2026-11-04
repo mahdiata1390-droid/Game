@@ -11,6 +11,8 @@ var title_label: Label
 var report_label: Label
 var mode_label: Label
 var prompt_shown := false
+var siege_active := false
+var siege_panel: Panel
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -23,7 +25,7 @@ func _process(_delta: float) -> void:
 		world_state = main_scene.get_node_or_null("WorldState") as WorldState
 	if not main_scene or not world_state:
 		return
-	if not battle_active and not prompt_shown:
+	if not battle_active and not prompt_shown and not siege_active:
 		_check_for_encounter()
 
 func _check_for_encounter() -> void:
@@ -53,7 +55,7 @@ func _show_battle_prompt(settlement_id: int) -> void:
 	var layer := _ensure_layer()
 	prompt = Panel.new()
 	prompt.position = Vector2(330, 160)
-	prompt.size = Vector2(620, 390)
+	prompt.size = Vector2(620, 460)
 	layer.add_child(prompt)
 	var title := Label.new()
 	title.text = "⚔ BATTLE AT %s" % world_state.settlements[settlement_id]["name"]
@@ -85,10 +87,70 @@ func _show_battle_prompt(settlement_id: int) -> void:
 	prompt.add_child(auto)
 	var cancel := Button.new()
 	cancel.text = "LEAVE / WAIT"
-	cancel.position = Vector2(200, 320)
+	var siege := Button.new()
+	siege.text = "SIEGE • BEGIN / CONTINUE"
+	siege.position = Vector2(35, 320)
+	siege.size = Vector2(550, 60)
+	siege.pressed.connect(_begin_siege)
+	prompt.add_child(siege)
+	cancel.position = Vector2(200, 395)
 	cancel.size = Vector2(220, 45)
 	cancel.pressed.connect(_leave_prompt)
 	prompt.add_child(cancel)
+
+func _begin_siege() -> void:
+	if is_instance_valid(prompt): prompt.queue_free()
+	prompt=null
+	var army_id:=-1
+	for i in range(world_state.armies.size()):
+		if String(world_state.armies[i]["owner"])==world_state.player_faction and int(world_state.armies[i]["region"])==world_state.player_region_id:
+			army_id=i; break
+	if army_id<0:
+		_show_simple_message("No player army is present in this region.")
+		prompt_shown=false
+		return
+	var result:=world_state.start_siege(battle_settlement_id,army_id)
+	if not result.get("ok",false):
+		_show_simple_message("SIEGE FAILED • "+String(result.get("reason","unknown")))
+		prompt_shown=false
+		return
+	siege_active=true
+	_show_siege_panel()
+
+func _show_siege_panel()->void:
+	var layer:=_ensure_layer()
+	siege_panel=Panel.new(); siege_panel.position=Vector2(300,120); siege_panel.size=Vector2(640,360); layer.add_child(siege_panel)
+	var title:=Label.new(); title.text="SIEGE • "+String(world_state.settlements[battle_settlement_id]["name"]); title.position=Vector2(25,20); title.add_theme_font_size_override("font_size",26); siege_panel.add_child(title)
+	var s:=world_state.settlements[battle_settlement_id]; var data:=world_state.sieges.get(battle_settlement_id,{})
+	var info:=Label.new(); info.text="Wall: %d\nGarrison: %d\nSiege progress: %d%%\nBreach: %s" % [int(s.get("wall_level",1)),int(s["garrison"]),int(data.get("progress",0)),("YES" if bool(data.get("breach",false)) else "NO")]; info.position=Vector2(25,75); info.add_theme_font_size_override("font_size",18); siege_panel.add_child(info)
+	var assault:=Button.new(); assault.text="ASSAULT THE WALLS"; assault.position=Vector2(25,190); assault.size=Vector2(275,60); assault.pressed.connect(_assault_siege); siege_panel.add_child(assault)
+	var wait:=Button.new(); wait.text="WAIT • +1 DAY"; wait.position=Vector2(325,190); wait.size=Vector2(275,60); wait.pressed.connect(_wait_siege); siege_panel.add_child(wait)
+	var end:=Button.new(); end.text="END SIEGE"; end.position=Vector2(220,285); end.size=Vector2(200,45); end.pressed.connect(_end_siege); siege_panel.add_child(end)
+
+func _assault_siege()->void:
+	var result:=world_state.assault_siege(battle_settlement_id)
+	if bool(result.get("captured",false)):
+		siege_active=false; _close_siege_panel(); _show_result({"attacker_won":true,"captured":true,"attacker_losses":result["attacker_losses"],"defender_losses":result["defender_losses"],"rounds":["The walls were breached.","The garrison was defeated.","The settlement was captured."],"settlement":String(world_state.settlements[battle_settlement_id]["name"])}); prompt_shown=false
+	else:
+		_show_siege_panel()
+
+func _wait_siege()->void:
+	world_state.advance_day(); _show_siege_panel()
+
+func _end_siege()->void:
+	if world_state.sieges.has(battle_settlement_id):
+		world_state.sieges.erase(battle_settlement_id)
+	world_state.settlements[battle_settlement_id]["siege"]=false
+	siege_active=false; _close_siege_panel(); prompt_shown=false
+
+func _close_siege_panel()->void:
+	if is_instance_valid(siege_panel): siege_panel.queue_free()
+	siege_panel=null
+
+func _show_simple_message(message:String)->void:
+	var layer:=_ensure_layer(); var p:=Panel.new(); p.position=Vector2(350,220); p.size=Vector2(540,180); layer.add_child(p)
+	var l:=Label.new(); l.text=message; l.position=Vector2(25,25); l.size=Vector2(490,80); l.add_theme_font_size_override("font_size",20); p.add_child(l)
+	var b:=Button.new(); b.text="OK"; b.position=Vector2(210,120); b.size=Vector2(120,35); b.pressed.connect(p.queue_free); p.add_child(b)
 
 func _leave_prompt() -> void:
 	if is_instance_valid(prompt):
