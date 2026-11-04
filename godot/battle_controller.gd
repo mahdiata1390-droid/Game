@@ -118,6 +118,7 @@ func _begin_siege() -> void:
 	_show_siege_panel()
 
 func _show_siege_panel()->void:
+	_close_siege_panel()
 	var layer:=_ensure_layer()
 	siege_panel=Panel.new(); siege_panel.position=Vector2(300,120); siege_panel.size=Vector2(640,360); layer.add_child(siege_panel)
 	var title:=Label.new(); title.text="SIEGE • "+String(world_state.settlements[battle_settlement_id]["name"]); title.position=Vector2(25,20); title.add_theme_font_size_override("font_size",26); siege_panel.add_child(title)
