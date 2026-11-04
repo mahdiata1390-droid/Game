@@ -47,6 +47,8 @@ func initialize_continent() -> void:
 		_get_faction(d[3])["territory"].append(i)
 	_add_settlement("Northwatch","castle",0,Vector2(-18,-13),"north_kingdom",720); _add_settlement("Pinehaven","village",1,Vector2(-6,-15),"north_kingdom",260); _add_settlement("Valoria","city",2,Vector2(7,-14),"river_kingdom",1450); _add_settlement("Steppe Camp","village",3,Vector2(19,-9),"eastern_tribes",310); _add_settlement("Frostport","town",4,Vector2(-20,0),"north_kingdom",610); _add_settlement("Kingsbridge","city",5,Vector2(-5,-1),"river_kingdom",1300); _add_settlement("Goldford","town",6,Vector2(8,-1),"river_kingdom",820); _add_settlement("Redstone","castle",7,Vector2(19,2),"eastern_tribes",540); _add_settlement("Clanhold","castle",8,Vector2(-17,12),"western_clans",490); _add_settlement("Basinfield","village",9,Vector2(-3,11),"river_kingdom",280); _add_settlement("Sahr","city",10,Vector2(10,12),"southern_sultanate",1600); _add_settlement("Pearl Bay","town",11,Vector2(20,15),"southern_sultanate",730)
 	_add_army("Northwatch Host","north_kingdom",0,180); _add_army("Valoria Royal Army","river_kingdom",2,260); _add_army("Steppe Riders","eastern_tribes",3,210); _add_army("Sahr Expedition","southern_sultanate",10,240); _add_army("Western Warband","western_clans",8,150)
+	ships.append({"id":0,"name":"Pearl Trader","owner":"southern_sultanate","region":11,"crew":35,"cargo":{"food":40,"wood":15,"iron":5},"moving":false,"target_region":11})
+	ships.append({"id":1,"name":"Frost Cutter","owner":"north_kingdom","region":4,"crew":28,"cargo":{"food":25,"wood":25,"iron":3},"moving":false,"target_region":4})
 	for a in factions:
 		for b in factions:
 			if a["id"] != b["id"]: a["relations"][b["id"]] = 0
@@ -314,6 +316,23 @@ func _apply_army_losses(army_id:int,losses:int)->void:
 	army["morale"]=max(0,int(army["morale"])-min(30,losses/3))
 	if remaining<=0: armies.remove_at(army_id)
 
+func issue_ship_move(ship_id:int,target_region:int)->Dictionary:
+	if ship_id<0 or ship_id>=ships.size() or target_region<0 or target_region>=regions.size(): return {"ok":false,"reason":"invalid_target"}
+	if String(regions[target_region]["resource"])!="fish" and String(regions[target_region]["resource"])!="salt": return {"ok":false,"reason":"not_a_port"}
+	ships[ship_id]["target_region"]=target_region; ships[ship_id]["moving"]=true
+	return {"ok":true,"ship":ships[ship_id]["name"],"target":regions[target_region]["name"]}
+
+func naval_battle(ship_a_id:int,ship_b_id:int)->Dictionary:
+	if ship_a_id<0 or ship_a_id>=ships.size() or ship_b_id<0 or ship_b_id>=ships.size(): return {"ok":false}
+	var a:=ships[ship_a_id]; var b:=ships[ship_b_id]
+	var ascore:=int(a["crew"])+int(a["cargo"].get("iron",0))*2; var bscore:=int(b["crew"])+int(b["cargo"].get("iron",0))*2
+	var winner:=ship_a_id if ascore>=bscore else ship_b_id
+	var loser:=ship_b_id if winner==ship_a_id else ship_a_id
+	ships[winner]["crew"]=max(1,int(ships[winner]["crew"])-randi_range(3,10))
+	world_events.append("%s defeated %s at sea."%[ships[winner]["name"],ships[loser]["name"]])
+	ships.remove_at(loser)
+	return {"ok":true,"winner":winner,"loser":loser}
+
 func set_diplomacy(a:String,b:String,state:String)->Dictionary:
 	if _get_faction(a).is_empty() or _get_faction(b).is_empty() or a==b or not ["war","peace","alliance","trade"].has(state): return {"ok":false}
 	diplomacy["%s|%s"%[a,b]]=state; diplomacy["%s|%s"%[b,a]]=state
@@ -334,7 +353,7 @@ func create_caravan(origin_id:int,destination_id:int)->Dictionary:
 	return result
 
 func save_game()->bool:
-	var data={"day":day,"gold":gold,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans}
+	var data={"day":day,"gold":gold,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships}
 	var file:=FileAccess.open(save_path,FileAccess.WRITE)
 	if file==null: return false
 	file.store_string(JSON.stringify(data)); file.close(); return true
@@ -345,7 +364,7 @@ func load_game()->bool:
 	if file==null: return false
 	var parsed=JSON.parse_string(file.get_as_text()); file.close()
 	if typeof(parsed)!=TYPE_DICTIONARY: return false
-	for key in ["day","gold","player_region_id","player_mode","player_level","player_xp","player_inventory","family","weather","time_of_day","regions","factions","settlements","armies","diplomacy","caravans"]:
+	for key in ["day","gold","player_region_id","player_mode","player_level","player_xp","player_inventory","family","weather","time_of_day","regions","factions","settlements","armies","diplomacy","caravans","ships"]:
 		if parsed.has(key): set(key,parsed[key])
 	return true
 
