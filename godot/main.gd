@@ -874,6 +874,15 @@ func _open_army_command(army_id: int) -> void:
 	info.size = Vector2(350, 65)
 	info.add_theme_font_size_override("font_size", 14)
 	army_command_panel.add_child(info)
+	var formation_title:=Label.new(); formation_title.text="FORMATION"; formation_title.position=Vector2(16,80); formation_title.add_theme_font_size_override("font_size",12); army_command_panel.add_child(formation_title)
+	var formations=["line","shield_wall","wedge","skirmish"]
+	for j in range(formations.size()):
+		var fb:=Button.new(); fb.text=formations[j].to_upper(); fb.position=Vector2(16+(j%2)*88,100+(j/2)*28); fb.size=Vector2(82,24); fb.pressed.connect(_set_army_formation.bind(army_id,formations[j])); army_command_panel.add_child(fb)
+	var order_title:=Label.new(); order_title.text="ORDER"; order_title.position=Vector2(200,80); order_title.add_theme_font_size_override("font_size",12); army_command_panel.add_child(order_title)
+	var orders=["hold","attack","defend","raid"]
+	for j in range(orders.size()):
+		var ob:=Button.new(); ob.text=orders[j].to_upper(); ob.position=Vector2(200+(j%2)*88,100+(j/2)*28); ob.size=Vector2(82,24); ob.pressed.connect(_set_army_order.bind(army_id,orders[j])); army_command_panel.add_child(ob)
+
 	var close := Button.new()
 	close.text = "CLOSE"
 	close.position = Vector2(280, 145)
@@ -894,6 +903,12 @@ func _open_army_command(army_id: int) -> void:
 		move.add_theme_font_size_override("font_size", 11)
 		move.pressed.connect(_issue_player_army_move.bind(army_id, region_id))
 		army_command_panel.add_child(move)
+
+func _set_army_formation(army_id:int,formation:String)->void:
+	var r:=world_state.set_army_formation(army_id,formation); status_label.text="Formation: "+formation if r.get("ok",false) else "Formation failed."
+
+func _set_army_order(army_id:int,order:String)->void:
+	var r:=world_state.set_army_order(army_id,order); status_label.text="Order: "+order if r.get("ok",false) else "Order failed."
 
 func _issue_player_army_move(army_id: int, target_region: int) -> void:
 	var result: Dictionary = world_state.issue_army_move(army_id, target_region)
