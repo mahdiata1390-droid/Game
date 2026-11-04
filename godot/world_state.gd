@@ -14,13 +14,22 @@ var player_mode:String = "ordinary"
 var player_level:int = 1
 var player_xp:int = 0
 var player_inventory:Dictionary = {"food":30,"wood":10,"iron":5}
-var diplomacy: Dictionary = {}\nvar battle_events: Array[Dictionary] = []
+var diplomacy: Dictionary = {}
+var battle_events: Array[Dictionary] = []
 var world_events: Array[String] = []
 var battle_cooldowns: Dictionary = {}
+var caravans:Array[Dictionary] = []
+var ships:Array[Dictionary] = []
+var family:Dictionary = {"age":18,"generation":1,"heir_name":"Unnamed Heir","heir_age":0}
+var weather:String = "clear"
+var time_of_day:float = 8.0
+var yearly_tax:int = 0
+var player_income:int = 0
+var save_path:String = "user://one_continent_save.json"
 
 
 func initialize_continent() -> void:
-	regions.clear(); factions.clear(); settlements.clear(); armies.clear(); diplomacy.clear()
+	regions.clear(); factions.clear(); settlements.clear(); armies.clear(); diplomacy.clear(); caravans.clear(); ships.clear(); battle_events.clear(); world_events.clear(); battle_cooldowns.clear(); day=1; gold=250; player_level=1; player_xp=0; player_mode="ordinary"; player_region_id=0; player_inventory={"food":30,"wood":10,"iron":5}; family={"age":18,"generation":1,"heir_name":"Unnamed Heir","heir_age":0}
 	var faction_defs := [
 		{"id":"Free Company","name":"Free Company","type":"player","culture":"Free Company","color":Color(0.28,0.31,0.34),"banner":Color(0.08,0.09,0.11),"accent":Color(0.78,0.68,0.38),"emblem":"cross"},
 		{"id":"north_kingdom","name":"Kingdom of Nordmark","type":"kingdom","culture":"Nordmarki","color":Color(0.10,0.20,0.42),"banner":Color(0.055,0.11,0.25),"accent":Color(0.86,0.88,0.90),"emblem":"wolf"},
@@ -29,7 +38,7 @@ func initialize_continent() -> void:
 		{"id":"southern_sultanate","name":"Sultanate of Sahr","type":"kingdom","culture":"Sahrian","color":Color(0.72,0.48,0.08),"banner":Color(0.16,0.10,0.045),"accent":Color(0.95,0.78,0.28),"emblem":"sun"},
 		{"id":"western_clans","name":"Western Clans","type":"tribe","culture":"Western Clans","color":Color(0.30,0.18,0.42),"banner":Color(0.10,0.075,0.13),"accent":Color(0.72,0.78,0.76),"emblem":"raven"}]
 	for f in faction_defs:
-		f["relations"] = {}; f["territory"] = []; factions.append(f)
+		f["relations"] = {}; f["territory"] = []; f["treasury"] = 1000 if f["id"] != "Free Company" else 250; factions.append(f)
 	var region_defs := [
 		["Highlands",Vector2(-18,-13),"iron","north_kingdom"],["Pine March",Vector2(-6,-15),"wood","north_kingdom"],["Kingsroad",Vector2(7,-14),"grain","river_kingdom"],["Eastern Steppe",Vector2(19,-9),"horses","eastern_tribes"],["Frost Coast",Vector2(-20,0),"fish","north_kingdom"],["Heartland",Vector2(-5,-1),"grain","river_kingdom"],["Golden Fields",Vector2(8,-1),"grain","river_kingdom"],["Red Frontier",Vector2(19,2),"salt","eastern_tribes"],["Western Forest",Vector2(-17,12),"wood","western_clans"],["Central Basin",Vector2(-3,11),"stone","river_kingdom"],["Sahr Desert",Vector2(10,12),"spice","southern_sultanate"],["Southern Coast",Vector2(20,15),"fish","southern_sultanate"]]
 	for i in range(region_defs.size()):
@@ -80,16 +89,42 @@ func travel_to_settlement(settlement_id:int)->Dictionary:
 
 func advance_day()->void:
 	day+=1
+	time_of_day=fmod(time_of_day+24.0,24.0)
+	var weather_roll:=randi_range(0,99)
+	weather="rain" if weather_roll<18 else ("storm" if weather_roll<24 else ("snow" if weather_roll<34 else ("clear" if weather_roll<82 else "fog")))
 	player_inventory["food"]=max(0,int(player_inventory.get("food",0))-1)
 	if int(player_inventory["food"])==0: gold=max(0,gold-2)
 	for settlement_id in battle_cooldowns.keys():
-		battle_cooldowns[settlement_id] = max(0, int(battle_cooldowns[settlement_id]) - 1)
+		battle_cooldowns[settlement_id]=max(0,int(battle_cooldowns[settlement_id])-1)
 	for region in regions:
-		region["prosperity"]=clamp(int(region["prosperity"])+randi_range(-2,2),0,100); region["population"]=int(region["population"])+max(1,int(region["population"])/500)
-	for settlement in settlements: settlement["prosperity"]=clamp(int(settlement["prosperity"])+randi_range(-1,2),0,100)
+		region["prosperity"]=clamp(int(region["prosperity"])+randi_range(-2,2),0,100)
+		region["population"]=int(region["population"])+max(1,int(region["population"])/500)
+	for settlement in settlements:
+		settlement["prosperity"]=clamp(int(settlement["prosperity"])+randi_range(-1,2),0,100)
+		var owner:=String(settlement["owner"])
+		var faction:=_get_faction(owner)
+		if not faction.is_empty(): faction["treasury"]=int(faction.get("treasury",0))+max(1,int(settlement["population"])/250)
 	for army in armies:
 		army["food"]=max(0,int(army["food"])-max(1,int(army["soldiers"])/80))
 		if int(army["food"])==0: army["morale"]=max(0,int(army["morale"])-3)
+	if day%30==0:
+		family["age"]=int(family["age"])+1
+		family["heir_age"]=int(family.get("heir_age",0))+1
+		if int(family["age"])>=60:
+			family["generation"]=int(family["generation"])+1
+			family["age"]=18
+			player_level=max(1,player_level)
+	if day%7==0: _simulate_armies()
+	_simulate_caravans()
+	_simulate_world_events()
+	if day%10==0: save_game()
+
+func _simulate_caravans()->void:
+	for i in range(caravans.size()-1,-1,-1):
+		caravans[i]["days_left"]=int(caravans[i].get("days_left",1))-1
+		if int(caravans[i]["days_left"])<=0:
+			resolve_caravan(caravans[i])
+			caravans.remove_at(i)
 
 func get_region_neighbors(region_id:int)->Array[int]:
 	var result:Array[int]=[]; if region_id<0 or region_id>=regions.size(): return result
@@ -200,16 +235,23 @@ func _simulate_world_events()->void:
 		for settlement in settlements:
 			if int(settlement["region"])!=region_id or String(settlement["owner"])==owner: continue
 			if not _are_at_war(owner,String(settlement["owner"])): continue
-			var result:=resolve_ai_battle(int(settlement["id"]),{"soldiers":int(army["soldiers"]),"morale":int(army["morale"]),"troops":army.get("troops",{})},get_settlement_defender(int(settlement["id"])),owner)
+			var result:=resolve_ai_battle(int(settlement["id"]),{"army_id":int(army["id"]),"soldiers":int(army["soldiers"]),"morale":int(army["morale"]),"troops":army.get("troops",{})},get_settlement_defender(int(settlement["id"])),owner)
 			world_events.append("%s attacked %s."%[String(army["name"]),String(settlement["name"])])
 			battle_events.append(result); break
 
 func resolve_ai_battle(settlement_id:int,attacker:Dictionary,defender:Dictionary,attacker_owner:String)->Dictionary:
 	var attack_score:=float(attacker.get("soldiers",1))*(0.72+_battle_quality(attacker.get("troops",{})))*(0.75+float(attacker.get("morale",70))/200.0)
 	var defend_score:=float(defender.get("soldiers",1))*(0.72+_battle_quality(defender.get("troops",{})))*(0.75+float(defender.get("morale",65))/200.0)
-	var won:=attack_score>=defend_score; var captured:=false
-	if won: captured=transfer_region(int(settlements[settlement_id]["region"]),attacker_owner)
-	return {"type":"ai_battle","attacker":attacker_owner,"settlement":String(settlements[settlement_id]["name"]),"attacker_won":won,"captured":captured}
+	var won:=attack_score>=defend_score
+	var attacker_losses:=clamp(int(defender.get("soldiers",1)*(0.20 if won else 0.48)),1,int(attacker.get("soldiers",1)))
+	var defender_losses:=clamp(int(attacker.get("soldiers",1)*(0.52 if won else 0.20)),1,int(defender.get("soldiers",1)))
+	var army_id:=int(attacker.get("army_id",-1))
+	if army_id>=0 and army_id<armies.size():
+		_apply_army_losses(army_id,attacker_losses)
+	settlements[settlement_id]["garrison"]=max(0,int(settlements[settlement_id]["garrison"])-defender_losses)
+	var captured:=false
+	if won and int(settlements[settlement_id]["garrison"])<=0: captured=transfer_region(int(settlements[settlement_id]["region"]),attacker_owner)
+	return {"type":"ai_battle","attacker":attacker_owner,"settlement":String(settlements[settlement_id]["name"]),"attacker_won":won,"attacker_losses":attacker_losses,"defender_losses":defender_losses,"captured":captured}
 
 # Shared battle engine. Manual and auto battles use the same army-quality model.
 func get_settlement_defender(settlement_id:int)->Dictionary:
@@ -251,8 +293,61 @@ func capture_settlement(settlement_id:int)->bool:
 	return transfer_region(region_id,player_faction)
 
 func apply_manual_victory(settlement_id:int,attacker_losses:int,defender_losses:int)->Dictionary:
-	var captured:=capture_settlement(settlement_id)
+	var player_army_id:=-1
+	for army in armies:
+		if String(army["owner"])==player_faction and int(army["region"])==player_region_id: player_army_id=int(army["id"]); break
+	if player_army_id>=0: _apply_army_losses(player_army_id,attacker_losses)
+	settlements[settlement_id]["garrison"]=max(0,int(settlements[settlement_id]["garrison"])-defender_losses)
+	var captured:=false
+	if int(settlements[settlement_id]["garrison"])<=0: captured=capture_settlement(settlement_id)
+	add_player_xp(max(10,defender_losses))
 	return {"captured":captured,"attacker_losses":max(0,attacker_losses),"defender_losses":max(0,defender_losses),"settlement":String(settlements[settlement_id]["name"])}
+
+	return {"captured":captured,"attacker_losses":max(0,attacker_losses),"defender_losses":max(0,defender_losses),"settlement":String(settlements[settlement_id]["name"])}
+
+func _apply_army_losses(army_id:int,losses:int)->void:
+	if army_id<0 or army_id>=armies.size(): return
+	var army:Dictionary=armies[army_id]
+	var old:=max(1,int(army["soldiers"])); var remaining:=max(0,old-losses); var ratio:=float(remaining)/float(old)
+	army["soldiers"]=remaining
+	for kind in army["troops"].keys(): army["troops"][kind]=int(round(int(army["troops"][kind])*ratio))
+	army["morale"]=max(0,int(army["morale"])-min(30,losses/3))
+	if remaining<=0: armies.remove_at(army_id)
+
+func set_diplomacy(a:String,b:String,state:String)->Dictionary:
+	if _get_faction(a).is_empty() or _get_faction(b).is_empty() or a==b or not ["war","peace","alliance","trade"].has(state): return {"ok":false}
+	diplomacy["%s|%s"%[a,b]]=state; diplomacy["%s|%s"%[b,a]]=state
+	world_events.append("%s and %s are now %s."%[get_faction_name(a),get_faction_name(b),state])
+	return {"ok":true,"state":state}
+
+func raid_settlement(settlement_id:int)->Dictionary:
+	if settlement_id<0 or settlement_id>=settlements.size(): return {"ok":false,"reason":"invalid_settlement"}
+	var s:=settlements[settlement_id]; var owner:=String(s["owner"])
+	if not _are_at_war(player_faction,owner): return {"ok":false,"reason":"not_at_war"}
+	var loot:=max(10,int(s["prosperity"])*2); gold+=loot; s["prosperity"]=max(0,int(s["prosperity"])-12); s["garrison"]=max(0,int(s["garrison"])-10)
+	world_events.append("Free Company raided %s for %d gold."%[s["name"],loot])
+	return {"ok":true,"loot":loot}
+
+func create_caravan(origin_id:int,destination_id:int)->Dictionary:
+	var result:=create_trade_caravan(origin_id,destination_id)
+	if result.get("ok",false): caravans.append(result["caravan"])
+	return result
+
+func save_game()->bool:
+	var data={"day":day,"gold":gold,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans}
+	var file:=FileAccess.open(save_path,FileAccess.WRITE)
+	if file==null: return false
+	file.store_string(JSON.stringify(data)); file.close(); return true
+
+func load_game()->bool:
+	if not FileAccess.file_exists(save_path): return false
+	var file:=FileAccess.open(save_path,FileAccess.READ)
+	if file==null: return false
+	var parsed=JSON.parse_string(file.get_as_text()); file.close()
+	if typeof(parsed)!=TYPE_DICTIONARY: return false
+	for key in ["day","gold","player_region_id","player_mode","player_level","player_xp","player_inventory","family","weather","time_of_day","regions","factions","settlements","armies","diplomacy","caravans"]:
+		if parsed.has(key): set(key,parsed[key])
+	return true
 
 func get_faction_color(id:String)->Color: return _get_faction(id).get("color",Color.WHITE)
 func get_faction_name(id:String)->String: return String(_get_faction(id).get("name",id))
