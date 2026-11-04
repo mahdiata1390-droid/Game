@@ -595,6 +595,53 @@ func _build_world_map_ui() -> void:
 	close.pressed.connect(_toggle_world_map)
 	world_map_panel.add_child(close)
 
+	var market:=Button.new(); market.text="MARKET"; market.position=Vector2(575,625); market.size=Vector2(100,36); market.pressed.connect(_open_current_market); world_map_panel.add_child(market)
+	var diplomacy:=Button.new(); diplomacy.text="DIPLOMACY"; diplomacy.position=Vector2(685,625); diplomacy.size=Vector2(120,36); diplomacy.pressed.connect(_open_diplomacy); world_map_panel.add_child(diplomacy)
+	var caravan:=Button.new(); caravan.text="CARAVAN"; caravan.position=Vector2(815,625); caravan.size=Vector2(110,36); caravan.pressed.connect(_create_quick_caravan); world_map_panel.add_child(caravan)
+	var save:=Button.new(); save.text="SAVE"; save.position=Vector2(575,665); save.size=Vector2(100,30); save.pressed.connect(_save_game); world_map_panel.add_child(save)
+	var load:=Button.new(); load.text="LOAD"; load.position=Vector2(685,665); load.size=Vector2(100,30); load.pressed.connect(_load_game); world_map_panel.add_child(load)
+
+func _open_current_market()->void:
+	for i in range(world_state.settlements.size()):
+		if int(world_state.settlements[i]["region"])==world_state.player_region_id:
+			_open_trade(i); return
+	status_label.text="No settlement market in this region."
+
+func _open_diplomacy()->void:
+	var panel:=Panel.new(); panel.position=Vector2(230,105); panel.size=Vector2(600,430); add_child(panel)
+	var title:=Label.new(); title.text="DIPLOMACY • FREE COMPANY"; title.position=Vector2(20,16); title.add_theme_font_size_override("font_size",22); panel.add_child(title)
+	var states=["peace","war","trade","alliance"]; var y:=58
+	for f in world_state.factions:
+		if String(f["id"])=="Free Company": continue
+		var label:=Label.new(); label.text=String(f["name"]); label.position=Vector2(20,y+6); label.size=Vector2(230,30); panel.add_child(label)
+		for j in range(states.size()):
+			var b:=Button.new(); b.text=states[j].to_upper(); b.position=Vector2(250+j*78,y); b.size=Vector2(72,30); b.pressed.connect(_set_diplomacy.bind(String(f["id"]),states[j],panel)); panel.add_child(b)
+		y+=52
+	var close2:=Button.new(); close2.text="CLOSE"; close2.position=Vector2(250,360); close2.size=Vector2(100,34); close2.pressed.connect(panel.queue_free); panel.add_child(close2)
+
+func _set_diplomacy(faction:String,state:String,panel:Panel)->void:
+	var result:=world_state.set_diplomacy(world_state.player_faction,faction,state)
+	status_label.text="Diplomacy: %s" % state.to_upper()
+	if result.get("ok",false): panel.queue_free()
+
+func _create_quick_caravan()->void:
+	var origin:=-1; var destination:=-1
+	for i in range(world_state.settlements.size()):
+		if int(world_state.settlements[i]["region"])==world_state.player_region_id: origin=i; break
+	if origin<0: status_label.text="No settlement for caravan."; return
+	for i in range(world_state.settlements.size()):
+		if i!=origin: destination=i; break
+	if destination<0: return
+	var result:=world_state.create_caravan(origin,destination)
+	status_label.text="Caravan launched." if result.get("ok",false) else "Caravan failed: %s" % result.get("reason","unknown")
+
+func _save_game()->void:
+	status_label.text="GAME SAVED" if world_state.save_game() else "SAVE FAILED"
+
+func _load_game()->void:
+	status_label.text="GAME LOADED" if world_state.load_game() else "NO SAVE FOUND"
+	if map_open: _refresh_world_map()
+
 func _toggle_world_map() -> void:
 	map_open = not map_open
 	world_map_panel.visible = map_open
