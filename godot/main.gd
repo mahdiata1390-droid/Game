@@ -558,7 +558,7 @@ func _build_world_map_ui() -> void:
 
 	world_map_panel = ColorRect.new()
 	world_map_panel.position = Vector2(150, 45)
-	world_map_panel.size = Vector2(980, 650)
+	world_map_panel.size = Vector2(980, 720)
 	world_map_panel.color = Color(0.035, 0.045, 0.06, 0.97)
 	world_map_panel.visible = false
 	layer.add_child(world_map_panel)
@@ -571,13 +571,13 @@ func _build_world_map_ui() -> void:
 
 	map_canvas = ColorRect.new()
 	map_canvas.position = Vector2(24, 58)
-	map_canvas.size = Vector2(520, 500)
+	map_canvas.size = Vector2(520, 560)
 	map_canvas.color = Color(0.10, 0.15, 0.12, 1.0)
 	world_map_panel.add_child(map_canvas)
 
 	world_map_label = Label.new()
 	world_map_label.position = Vector2(575, 58)
-	world_map_label.size = Vector2(375, 500)
+	world_map_label.size = Vector2(375, 560)
 	world_map_label.add_theme_font_size_override("font_size", 16)
 	world_map_panel.add_child(world_map_label)
 
@@ -600,6 +600,7 @@ func _build_world_map_ui() -> void:
 	var caravan:=Button.new(); caravan.text="CARAVAN"; caravan.position=Vector2(815,625); caravan.size=Vector2(110,36); caravan.pressed.connect(_create_quick_caravan); world_map_panel.add_child(caravan)
 	var save:=Button.new(); save.text="SAVE"; save.position=Vector2(575,665); save.size=Vector2(100,30); save.pressed.connect(_save_game); world_map_panel.add_child(save)
 	var load:=Button.new(); load.text="LOAD"; load.position=Vector2(685,665); load.size=Vector2(100,30); load.pressed.connect(_load_game); world_map_panel.add_child(load)
+	var manage:=Button.new(); manage.text="MANAGE"; manage.position=Vector2(795,665); manage.size=Vector2(110,30); manage.pressed.connect(_open_management); world_map_panel.add_child(manage)
 
 func _open_current_market()->void:
 	for i in range(world_state.settlements.size()):
@@ -641,6 +642,36 @@ func _save_game()->void:
 func _load_game()->void:
 	status_label.text="GAME LOADED" if world_state.load_game() else "NO SAVE FOUND"
 	if map_open: _refresh_world_map()
+
+func _open_management()->void:
+	var panel:=Panel.new(); panel.position=Vector2(205,90); panel.size=Vector2(670,560); add_child(panel)
+	var title:=Label.new(); title.text="FREE COMPANY • MANAGEMENT"; title.position=Vector2(22,16); title.add_theme_font_size_override("font_size",23); panel.add_child(title)
+	var info:=Label.new(); var summary:=world_state.get_world_status(); info.text="Level %d  •  Gold %d  •  Day %d  •  Weather %s\nEquipment: %s / %s / %s / %s" % [summary["level"],summary["gold"],summary["day"],summary["weather"],world_state.player_equipment["weapon"],world_state.player_equipment["armor"],world_state.player_equipment["horse"],world_state.player_equipment["shield"]]; info.position=Vector2(22,55); info.size=Vector2(620,60); panel.add_child(info)
+	var settlement_id:=-1
+	for i in range(world_state.settlements.size()):
+		if int(world_state.settlements[i]["region"])==world_state.player_region_id and String(world_state.settlements[i]["owner"])==world_state.player_faction: settlement_id=i; break
+	if settlement_id>=0:
+		var s:=world_state.settlements[settlement_id]
+		var city:=Label.new(); city.text="Settlement: %s • Garrison %d • Wall %d\nBuildings: Farm %d • Workshop %d • Market %d • Barracks %d" % [s["name"],s["garrison"],s["wall_level"],s["buildings"]["farm"],s["buildings"]["workshop"],s["buildings"]["market"],s["buildings"]["barracks"]]; city.position=Vector2(22,125); city.size=Vector2(620,55); panel.add_child(city)
+		var builds=["farm","workshop","market","barracks"]
+		for i in range(builds.size()):
+			var bb:=Button.new(); bb.text="UPGRADE "+builds[i].to_upper(); bb.position=Vector2(22+i*155,190); bb.size=Vector2(145,36); bb.pressed.connect(_upgrade_building.bind(settlement_id,builds[i],panel)); panel.add_child(bb)
+	var eq_title:=Label.new(); eq_title.text="EQUIPMENT"; eq_title.position=Vector2(22,245); eq_title.add_theme_font_size_override("font_size",18); panel.add_child(eq_title)
+	var equipment=[["weapon","steel_sword",120],["armor","plate_armor",250],["horse","war_horse",300],["shield","steel_shield",100]]
+	for i in range(equipment.size()):
+		var e:=equipment[i]; var eb:=Button.new(); eb.text="%s • %d G"%(String(e[1]).replace("_"," ").capitalize(),int(e[2])); eb.position=Vector2(22+(i%2)*250,280+(i/2)*42); eb.size=Vector2(230,34); eb.pressed.connect(_upgrade_equipment.bind(String(e[0]),String(e[1]),int(e[2]),panel)); panel.add_child(eb)
+	var family_label:=Label.new(); family_label.text="FAMILY • Generation %d • Heir: %s" % [world_state.family["generation"],world_state.family["heir_name"]]; family_label.position=Vector2(22,375); panel.add_child(family_label)
+	var guardian:=Button.new(); guardian.text="HIRE HOUSEHOLD GUARDIAN • 75 G"; guardian.position=Vector2(22,410); guardian.size=Vector2(270,36); guardian.pressed.connect(_hire_guardian); panel.add_child(guardian)
+	var close:=Button.new(); close.text="CLOSE"; close.position=Vector2(270,500); close.size=Vector2(120,36); close.pressed.connect(panel.queue_free); panel.add_child(close)
+
+func _upgrade_building(settlement_id:int,building:String,panel:Panel)->void:
+	var r:=world_state.upgrade_settlement_building(settlement_id,building); status_label.text="Building upgraded." if r.get("ok",false) else "Upgrade failed: "+String(r.get("reason","unknown")); panel.queue_free(); _refresh_world_map()
+
+func _upgrade_equipment(slot:String,item:String,cost:int,panel:Panel)->void:
+	var r:=world_state.upgrade_player_equipment(slot,item,cost); status_label.text="Equipped "+item if r.get("ok",false) else "Equipment failed: "+String(r.get("reason","unknown")); panel.queue_free()
+
+func _hire_guardian()->void:
+	var r:=world_state.recruit_guardian(); status_label.text="Household guardian hired." if r.get("ok",false) else "Cannot hire guardian."
 
 func _toggle_world_map() -> void:
 	map_open = not map_open
