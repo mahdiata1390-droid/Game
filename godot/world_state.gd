@@ -109,6 +109,23 @@ func transfer_region(region_id:int,new_owner:String)->bool:
 		if int(settlement["region"])==region_id: settlement["owner"]=new_owner
 	return true
 
+func create_trade_caravan(origin_id:int,destination_id:int)->Dictionary:
+	if origin_id<0 or origin_id>=settlements.size() or destination_id<0 or destination_id>=settlements.size() or origin_id==destination_id:
+		return {"ok":false,"reason":"invalid_route"}
+	var origin:Dictionary=settlements[origin_id]; var destination:Dictionary=settlements[destination_id]
+	var caravan:Dictionary={"name":"Caravan %s → %s"%[origin["name"],destination["name"]],"origin":origin_id,"destination":destination_id,"days_left":max(2,abs(int(origin["region"])-int(destination["region"]))+1),"cargo":{"food":20,"wood":10,"iron":5},"profit":0}
+	var origin_prices:=get_market_prices(origin_id); var dest_prices:=get_market_prices(destination_id)
+	for item in caravan["cargo"].keys():
+		var qty:=int(caravan["cargo"][item]); caravan["profit"]+=max(0,int(dest_prices[item])-int(origin_prices[item]))*qty
+	world_events.append("A trade caravan departed from %s to %s."%[origin["name"],destination["name"]])
+	return {"ok":true,"caravan":caravan}
+
+func resolve_caravan(caravan:Dictionary)->Dictionary:
+	var profit:=max(0,int(caravan.get("profit",0)))
+	gold+=profit
+	world_events.append("Trade caravan arrived with %d gold profit."%profit)
+	return {"ok":true,"profit":profit}
+
 func get_market_prices(settlement_id:int)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size(): return {}
 	var s:Dictionary=settlements[settlement_id]
