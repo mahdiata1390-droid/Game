@@ -27,6 +27,8 @@ var laws := {"tax": 10, "conscription": 5, "trade_duty": 5}
 var player_title := "Wanderer"
 var player_house := "Free Company"
 var world_seed := 734921
+var political_influence := 25
+var political_events: Array[String] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -255,11 +257,8 @@ func _weekly_world_tick() -> void:
     technology_points += 1
 
 func _monthly_family_tick() -> void:
-    if world.family_members.size() == 0 and int(world.family.get("age",18)) >= 21:
-        world.family_members.append({"name":"Household Partner","role":"spouse","age":20,"loyalty":85})
-    if world.family_members.size() == 1 and int(world.family.get("age",18)) >= 28:
-        world.family_members.append({"name":"Heir","role":"heir","age":1,"loyalty":90})
-        world.family["heir_name"] = "Heir"
+    # Family aging and succession are owned by CampaignSystems to avoid double-aging.
+    political_influence = min(100, political_influence + 1)
 
 func get_player_combat_bonus() -> float:
     var level_sum := 0
@@ -352,3 +351,79 @@ func _faction_name(id:String) -> String:
 func _emit_event(message:String) -> void:
     if world:
         world.world_events.append(message)
+
+func _faction_ids() -> Array[String]:
+    var ids: Array[String] = []
+    for faction in world.factions:
+        var id := String(faction["id"])
+        if id != "Free Company":
+            ids.append(id)
+    return ids
+
+func get_political_influence() -> int:
+    return political_influence
+
+func change_law_with_influence(name: String, value: int) -> Dictionary:
+    if not laws.has(name):
+        return {"ok":false,"reason":"invalid_law"}
+    var target := clamp(value, 0, 30)
+    var current := int(laws[name])
+    if target == current:
+        return {"ok":false,"reason":"no_change"}
+    var cost := max(1, abs(target-current) * 2)
+    if political_influence < cost:
+        return {"ok":false,"reason":"not_enough_influence","cost":cost}
+    political_influence -= cost
+    laws[name] = target
+    if name == "tax":
+        for settlement in world.settlements:
+            settlement["tax_rate"] = float(target) / 100.0
+    if name == "conscription":
+        for settlement in world.settlements:
+            settlement["garrison"] = max(0, int(settlement["garrison"]) + (target-current) / 2)
+    political_events.push_front("Law changed: %s %d -> %d." % [name, current, target])
+    _trim_political_events()
+    return {"ok":true,"law":name,"value":target,"cost":cost}
+
+func negotiate_peace(faction_id: String) -> Dictionary:
+    if faction_id == "Free Company" or _faction(faction_id).is_empty():
+        return {"ok":false,"reason":"invalid_faction"}
+    var key := _relation_key("Free Company", faction_id)
+    var reverse := _relation_key(faction_id, "Free Company")
+    var relation := String(world.diplomacy.get(key, world.diplomacy.get(reverse, "neutral")))
+    if relation != "war":
+        return {"ok":false,"reason":"not_at_war"}
+    var cost := 12
+    if political_influence < cost:
+        return {"ok":false,"reason":"not_enough_influence"}
+    political_influence -= cost
+    world.diplomacy[key] = "peace"
+    world.diplomacy[reverse] = "peace"
+    political_events.push_front("Peace negotiated with %s." % _faction_name(faction_id))
+    _trim_political_events()
+    return {"ok":true}
+
+func declare_war(faction_id: String) -> Dictionary:
+    if faction_id == "Free Company" or _faction(faction_id).is_empty():
+        return {"ok":false,"reason":"invalid_faction"}
+    var key := _relation_key("Free Company", faction_id)
+    var reverse := _relation_key(faction_id, "Free Company")
+    var cost := 18
+    if political_influence < cost:
+        return {"ok":false,"reason":"not_enough_influence"}
+    political_influence -= cost
+    world.diplomacy[key] = "war"
+    world.diplomacy[reverse] = "war"
+    political_events.push_front("War declared on %s." % _faction_name(faction_id))
+    _trim_political_events()
+    return {"ok":true}
+
+func get_political_status() -> String:
+    var out := "Influence: %d\nLaws: tax %d • conscription %d • trade duty %d\n\nRecent political events:\n" % [political_influence, int(laws["tax"]), int(laws["conscription"]), int(laws["trade_duty"])]
+    for event in political_events:
+        out += "• " + event + "\n"
+    return out
+
+func _trim_political_events() -> void:
+    while political_events.size() > 8:
+        political_events.pop_back()
