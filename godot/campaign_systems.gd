@@ -348,23 +348,26 @@ func recruit_ship_crew(ship_id: int, amount: int) -> Dictionary:
 	return {"ok":true,"crew":int(ship["crew"]),"max_crew":max_crew,"cost":cost}
 
 func _advance_family_month() -> void:
-    world.family["age"] = int(world.family.get("age",18)) + 1
+    # Monthly simulation changes loyalty only. Ages advance once per campaign year.
     for member in world.family_members:
-        member["age"] = int(member.get("age",0)) + 1
         member["loyalty"] = clamp(int(member.get("loyalty",50)) + randi_range(-2,2),0,100)
-    var heir_age := int(world.family.get("heir_age",0))
-    if String(world.family.get("heir_name","Unnamed Heir")) != "Unnamed Heir":
-        world.family["heir_age"] = heir_age + 1
-    elif int(world.family["age"]) >= 28:
-        world.family["heir_name"] = "First Heir"
-        world.family["heir_age"] = 1
-        family_events.push_front("A first heir has been born into the house.")
     if family_events.size() > 8:
         family_events.pop_back()
 
 func _advance_family_year() -> void:
-    var age := int(world.family.get("age",18))
+    # One campaign year = one in-world year.
+    world.family["age"] = int(world.family.get("age",18)) + 1
+    for member in world.family_members:
+        member["age"] = int(member.get("age",0)) + 1
     var heir_name := String(world.family.get("heir_name","Unnamed Heir"))
+    if heir_name != "Unnamed Heir":
+        world.family["heir_age"] = int(world.family.get("heir_age",0)) + 1
+    elif int(world.family.get("age",18)) >= 28:
+        world.family["heir_name"] = "First Heir"
+        world.family["heir_age"] = 1
+        heir_name = "First Heir"
+        family_events.push_front("A first heir has been born into the house.")
+    var age := int(world.family.get("age",18))
     if age >= 45 and heir_name != "Unnamed Heir" and not bool(succession_state.get("active",false)):
         succession_state["active"] = true
         succession_state["heir"] = heir_name
