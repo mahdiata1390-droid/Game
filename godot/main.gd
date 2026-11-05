@@ -41,6 +41,7 @@ var interior_npcs: Array[Node3D] = []
 var inventory_panel: Panel
 var inventory_label: Label
 var inventory_open := false
+var status_hold := 0.0
 
 func _ready() -> void:
 	world_state = WorldState.new()
@@ -841,9 +842,11 @@ func _draw_heraldic_emblem(parent: Node3D, emblem: String, center: Vector3, scal
 		_mesh_box(Vector3(0.38,0.10,0.07)*scale, center + Vector3(0,0.10,0), accent, parent, Vector3(0,0,18))
 		_mesh_box(Vector3(0.38,0.10,0.07)*scale, center + Vector3(0,-0.10,0), accent, parent, Vector3(0,0,-18))
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if world_state and status_label:
-		status_label.text = "ONE CONTINENT  •  Day %d  •  %d regions  •  %d settlements  •  %d armies" % [world_state.day, world_state.regions.size(), world_state.settlements.size(), world_state.armies.size()]
+		status_hold = max(0.0, status_hold - delta)
+		if status_hold <= 0.0:
+			status_label.text = "ONE CONTINENT  •  Day %d  •  %d regions  •  %d settlements  •  %d armies" % [world_state.day, world_state.regions.size(), world_state.settlements.size(), world_state.armies.size()]
 
 
 func _build_world_map_ui() -> void:
@@ -1007,6 +1010,11 @@ func _refresh_world_map() -> void:
 			world_state.get_faction_name(army["owner"])
 		]
 	world_map_label.text = text
+
+	# Rebuild the map layer cleanly so repeated refreshes never stack duplicate
+	# territories, labels, or settlement markers.
+	for child in map_canvas.get_children():
+		child.queue_free()
 
 	# Territory layer: every region gets an authored color block and border.
 	for region in world_state.regions:
