@@ -35,7 +35,7 @@ var world_map_panel: Control
 var world_map_label: Label
 var map_open := false
 var travel_buttons: Array[Node] = []
-var map_canvas: ColorRect
+var map_canvas: Control
 var army_command_panel: Panel
 var camera_first_person := false
 var settlement_interior: Node3D
@@ -1010,11 +1010,14 @@ func _build_world_map_ui() -> void:
 	title.add_theme_font_size_override("font_size", 22)
 	world_map_panel.add_child(title)
 
-	map_canvas = ColorRect.new()
+	map_canvas = Control.new()
+	map_canvas.name = "StrategicMap"
 	map_canvas.position = Vector2(24, 58)
 	map_canvas.size = Vector2(520, 560)
-	map_canvas.color = Color(0.10, 0.15, 0.12, 1.0)
+	map_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	map_canvas.set_script(load("res://world_map_visual.gd"))
 	world_map_panel.add_child(map_canvas)
+	map_canvas.set_world(world_state)
 
 	world_map_label = Label.new()
 	world_map_label.position = Vector2(575, 58)
@@ -1151,29 +1154,6 @@ func _refresh_world_map() -> void:
 	# territories, labels, or settlement markers.
 	for child in map_canvas.get_children():
 		child.queue_free()
-
-	# Territory layer: every region gets an authored color block and border.
-	for region in world_state.regions:
-		var p: Vector2 = region["position"]
-		var map_x := 20.0 + ((p.x + 22.0) / 44.0) * 470.0
-		var map_y := 30.0 + ((p.y + 18.0) / 36.0) * 430.0
-		var territory := ColorRect.new()
-		territory.position = Vector2(map_x - 48, map_y - 30)
-		territory.size = Vector2(96, 60)
-		var faction_color := world_state.get_faction_color(String(region["owner"]))
-		territory.color = Color(faction_color.r, faction_color.g, faction_color.b, 0.30)
-		territory.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		map_canvas.add_child(territory)
-		var region_label := Label.new()
-		region_label.text = String(region["name"])
-		region_label.position = Vector2(map_x - 44, map_y - 24)
-		region_label.size = Vector2(88, 48)
-		region_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		region_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		region_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		region_label.add_theme_font_size_override("font_size", 10)
-		region_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		map_canvas.add_child(region_label)
 
 	# Player army command controls: select an army, then choose an adjacent region.
 	for i in range(world_state.armies.size()):
