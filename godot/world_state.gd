@@ -293,7 +293,11 @@ func _are_at_war(a:String,b:String)->bool:
 	return diplomacy.get("%s|%s"%[a,b],"")=="war" or diplomacy.get("%s|%s"%[b,a],"")=="war"
 
 func _simulate_world_events()->void:
-	for army in armies:
+	# Iterate from the end because AI battles can remove an army and reindex the array.
+	# Descending indices keep all not-yet-processed indices valid.
+	for army_index in range(armies.size()-1,-1,-1):
+		if army_index<0 or army_index>=armies.size(): continue
+		var army:Dictionary=armies[army_index]
 		var region_id:=int(army["region"]); var owner:=String(army["owner"])
 		for settlement in settlements:
 			if int(settlement["region"])!=region_id or String(settlement["owner"])==owner: continue
@@ -466,15 +470,8 @@ func _apply_army_troop_losses(army_id:int,losses:Dictionary)->int:
 	return applied
 
 func apply_manual_victory(settlement_id:int,attacker_losses:int,defender_losses:int)->Dictionary:
-	var player_army_id:=-1
-	for army in armies:
-		if String(army["owner"])==player_faction and int(army["region"])==player_region_id: player_army_id=int(army["id"]); break
-	if player_army_id>=0: _apply_army_losses(player_army_id,attacker_losses)
-	settlements[settlement_id]["garrison"]=max(0,int(settlements[settlement_id]["garrison"])-defender_losses)
-	var captured:=false
-	if int(settlements[settlement_id]["garrison"])<=0: captured=capture_settlement(settlement_id)
-	add_player_xp(max(10,defender_losses))
-	return {"captured":captured,"attacker_losses":max(0,attacker_losses),"defender_losses":max(0,defender_losses),"settlement":String(settlements[settlement_id]["name"])}
+	# Legacy compatibility path: keep it capture-safe and route through the typed battle engine.
+	return apply_manual_battle_result(settlement_id,attacker_losses,defender_losses,{}, {}, true)
 
 func _apply_army_losses(army_id:int,losses:int)->void:
 	if army_id<0 or army_id>=armies.size(): return
