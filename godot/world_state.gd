@@ -578,22 +578,62 @@ func start_siege(settlement_id:int,army_id:int)->Dictionary:
 	var s:=settlements[settlement_id]; var a:=armies[army_id]
 	if String(a["owner"])!=player_faction or int(a["region"])!=int(s["region"]) or String(s["owner"])==player_faction: return {"ok":false,"reason":"invalid_siege"}
 	if not _are_at_war(player_faction,String(s["owner"])): return {"ok":false,"reason":"not_at_war"}
-	sieges[settlement_id]={"army_id":army_id,"progress":0,"days":0,"breach":false}; s["siege"]=true
+	sieges[settlement_id]={"army_id":army_id,"progress":0,"days":0,"breach":false,"phase":"approach","wall_hp":int(s.get("wall_level",1))*100,"gate_hp":120,"gate_breached":false}; s["siege"]=true
 	world_events.append("%s began a siege of %s."%[a["name"],s["name"]])
 	return {"ok":true,"settlement":s["name"]}
 
 func assault_siege(settlement_id:int)->Dictionary:
 	if not sieges.has(settlement_id): return {"ok":false,"reason":"no_siege"}
-	var siege:Dictionary=sieges[settlement_id]; var s:=settlements[settlement_id]; var army_id:=int(siege["army_id"])
+	var siege:Dictionary=sieges[settlement_id]
+	var s:Dictionary=settlements[settlement_id]
+	var army_id:=int(siege["army_id"])
 	if army_id<0 or army_id>=armies.size(): return {"ok":false,"reason":"army_missing"}
-	var a:=armies[army_id]; var wall:=int(s.get("wall_level",1)); var attack:=int(a["soldiers"])+int(a["troops"].get("horseman",0))*2; var defense:=int(s["garrison"])+wall*30
-	var won:=attack>=defense; var aloss:=clamp(int(defense*(0.12 if won else 0.32)),1,int(a["soldiers"])); var dloss:=clamp(int(attack*(0.45 if won else 0.15)),1,int(s["garrison"]))
-	_apply_army_losses(army_id,aloss); s["garrison"]=max(0,int(s["garrison"])-dloss)
-	if won and s["garrison"]<=0:
-		s["wall_level"]=max(0,wall-1); s["siege"]=false; sieges.erase(settlement_id); s["owner"]=player_faction; transfer_region(int(s["region"]),player_faction); add_player_xp(dloss)
-		return {"ok":true,"won":true,"attacker_losses":aloss,"defender_losses":dloss,"captured":true}
-	siege["progress"]=min(100,int(siege["progress"])+(15 if won else 5)); siege["breach"]=int(siege["progress"])>=60; sieges[settlement_id]=siege
-	return {"ok":true,"won":won,"attacker_losses":aloss,"defender_losses":dloss,"captured":false,"progress":siege["progress"]}
+	var a:Dictionary=armies[army_id]
+	var wall:=int(s.get("wall_level",1))
+	var attack_power:=max(1,int(a["soldiers"])+int(a["troops"].get("horseman",0))*2)
+	var defense_power:=max(1,int(s["garrison"])+wall*25)
+	var ratio:=float(attack_power)/float(defense_power)
+	var attacker_loss:=clamp(int(defense_power*(0.08 if ratio>=1.0 else 0.16)),1,max(1,int(a["soldiers"])))
+	var defender_loss:=clamp(int(attack_power*(0.22 if ratio>=1.0 else 0.10)),1,max(1,int(s["garrison"])))
+	_apply_army_losses(army_id,attacker_loss)
+	if army_id>=armies.size():
+		settlement_siege_end(settlement_id)
+		return {"ok":true,"won":false,"attacker_losses":attacker_loss,"defender_losses":defender_loss,"captured":false,"progress":int(siege["progress"]),"phase":"repulsed"}
+	var current_garrison:=int(s["garrison"])
+	s["garrison"]=max(0,current_garrison-defender_loss)
+	var gate_damage:=max(8,int(attack_power/12))
+	var wall_damage:=max(5,int(attack_power/18))
+	var gate_hp:=max(0,int(siege.get("gate_hp",120))-gate_damage)
+	var wall_hp:=max(0,int(siege.get("wall_hp",wall*100))-wall_damage)
+	siege["gate_hp"]=gate_hp
+	siege["wall_hp"]=wall_hp
+	var progress_gain:=15 if ratio>=1.0 else 8
+	siege["progress"]=min(100,int(siege["progress"])+progress_gain)
+	if gate_hp<=0 and not bool(siege.get("gate_breached",false)):
+		siege["gate_breached"]=true
+		siege["breach"]=true
+		siege["phase"]="gate breached"
+	elif wall_hp<=wall*35 and not bool(siege.get("breach",false)):
+		siege["breach"]=true
+		siege["phase"]="wall breached"
+	elif ratio>=1.0:
+		siege["phase"]="assaulting"
+	else:
+		siege["phase"]="repulsed assault"
+	var captured:=false
+	if int(s["garrison"])<=0 and bool(siege.get("breach",false)):
+		s["wall_level"]=max(0,wall-1)
+		s["siege"]=false
+		captured=capture_settlement(settlement_id)
+		sieges.erase(settlement_id)
+		add_player_xp(defender_loss+50)
+		return {"ok":true,"won":true,"attacker_losses":attacker_loss,"defender_losses":defender_loss,"captured":captured,"progress":100,"phase":"captured","gate_breached":true}
+	sieges[settlement_id]=siege
+	return {"ok":true,"won":ratio>=1.0,"attacker_losses":attacker_loss,"defender_losses":defender_loss,"captured":false,"progress":int(siege["progress"]),"phase":String(siege["phase"]),"gate_breached":bool(siege.get("gate_breached",false))}
+
+func settlement_siege_end(settlement_id:int)->void:
+	if settlement_id>=0 and settlement_id<settlements.size(): settlements[settlement_id]["siege"]=false
+	sieges.erase(settlement_id)
 
 func _simulate_sieges()->void:
 	var finished:Array[int]=[]
