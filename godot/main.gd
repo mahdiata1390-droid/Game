@@ -50,12 +50,15 @@ var pause_panel: Panel
 var game_paused := false
 
 func _ready() -> void:
+	# Boot the renderable world and player before campaign systems initialize.
+	# If a later gameplay subsystem has a runtime problem, Android still gets a
+	# visible scene instead of a blank/grey viewport.
+	_build_world()
+	_build_player()
 	world_state = WorldState.new()
 	world_state.name = "WorldState"
 	add_child(world_state)
 	world_state.initialize_continent()
-	_build_world()
-	_build_player()
 	_build_warband()
 	_build_ui()
 	_build_interaction_ui()
@@ -209,7 +212,8 @@ func _build_player() -> void:
 
 	camera = Camera3D.new()
 	camera.position = Vector3(0, 4.2, 7.5)
-	camera.rotation_degrees = Vector3(-12, 180, 0)
+	# Camera sits behind the player and therefore looks toward -Z.
+	camera.rotation_degrees = Vector3(-12, 0, 0)
 	player.add_child(camera)
 	camera.current = true
 
