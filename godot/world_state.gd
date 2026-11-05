@@ -141,20 +141,9 @@ func _simulate_settlement_production(settlement:Dictionary)->void:
 	settlement["stockpile"]=stock
 
 func _simulate_family()->void:
+	# CampaignSystems owns family aging and succession. WorldState only keeps the
+	# family clock initialized so the two systems never advance it twice.
 	family["age"]=int(family.get("age",18))
-	if day%30!=0: return
-	family["age"]=int(family["age"])+1
-	for member in family_members: member["age"]=int(member.get("age",0))+1
-	if family_members.is_empty() and int(family["age"])>=22:
-		family_members.append({"name":"Household Spouse","role":"spouse","age":20,"loyalty":80})
-	if int(family["age"])>=30 and family_members.size()<2:
-		family_members.append({"name":"First Heir","role":"heir","age":1,"loyalty":85}); family["heir_name"]="First Heir"
-	if int(family["age"])>=60:
-		family["generation"]=int(family.get("generation",1))+1
-		family["age"]=18
-		var heir:=String(family.get("heir_name","First Heir"))
-		family["heir_age"]=max(18,int(family.get("heir_age",18)))
-		world_events.append("%s became the head of the next generation."%heir)
 
 func _simulate_ship_movement()->void:
 	for ship in ships:
