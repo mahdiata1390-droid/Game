@@ -13,6 +13,10 @@ var yaw := 0.0
 var pitch := -12.0
 var move_touch := Vector2.ZERO
 var look_touch := Vector2.ZERO
+var touch_forward := false
+var touch_back := false
+var touch_left := false
+var touch_right := false
 var touch_look_active := false
 var troops: Array[Dictionary] = []
 var status_label: Label
