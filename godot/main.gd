@@ -296,9 +296,9 @@ func _build_ui() -> void:
 	layer.add_child(status_label)
 
 	var attack := Button.new()
-	attack.text = "ATTACK"
-	attack.position = Vector2(1080, 580)
-	attack.size = Vector2(150, 80)
+	attack.text = "⚔ ATTACK"
+	attack.position = Vector2(1035, 545)
+	attack.size = Vector2(205, 105)
 	attack.add_theme_font_size_override("font_size", 22)
 	attack.pressed.connect(_player_attack)
 	layer.add_child(attack)
@@ -711,6 +711,8 @@ func _spawn_extra_banners() -> void:
 	_create_war_banner(Vector3(12, 0, 10), "eastern_tribes")
 
 func _player_attack() -> void:
+	if interior_active:
+		return
 	if attack_cooldown > 0.0:
 		return
 	attack_cooldown = 0.45
@@ -731,9 +733,9 @@ func _player_attack() -> void:
 		if world_state and world_state.has_method("get_player_combat_bonus"):
 			player_damage = max(ATTACK_DAMAGE, int(round(float(ATTACK_DAMAGE) * float(world_state.get_player_combat_bonus()))))
 		_damage_troop(closest, player_damage)
-		status_label.text = "Hit!"
+		_show_status("⚔ HIT", 0.8)
 	else:
-		status_label.text = "No enemy in range."
+		_show_status("No enemy in range.", 0.8)
 
 
 func _spawn_continent_world() -> void:
@@ -846,6 +848,11 @@ func _draw_heraldic_emblem(parent: Node3D, emblem: String, center: Vector3, scal
 		_mesh_box(Vector3(0.38,0.10,0.07)*scale, center + Vector3(0,0.10,0), accent, parent, Vector3(0,0,18))
 		_mesh_box(Vector3(0.38,0.10,0.07)*scale, center + Vector3(0,-0.10,0), accent, parent, Vector3(0,0,-18))
 
+func _show_status(message: String, duration: float = 2.0) -> void:
+	if status_label:
+		status_label.text = message
+		status_hold = duration
+
 func _process(delta: float) -> void:
 	if world_state and status_label:
 		status_hold = max(0.0, status_hold - delta)
@@ -922,7 +929,7 @@ func _open_diplomacy()->void:
 	var title:=Label.new(); title.text="DIPLOMACY • FREE COMPANY"; title.position=Vector2(20,16); title.add_theme_font_size_override("font_size",22); panel.add_child(title)
 	var states=["peace","war","trade","alliance"]; var y:=58
 	for f in world_state.factions:
-		if String(f["id"])=="Free Company": continue
+		if String(f["id"])==String(world_state.player_faction) or String(f["id"])=="Free Company": continue
 		var label:=Label.new(); label.text=String(f["name"]); label.position=Vector2(20,y+6); label.size=Vector2(230,30); panel.add_child(label)
 		for j in range(states.size()):
 			var b:=Button.new(); b.text=states[j].to_upper(); b.position=Vector2(250+j*78,y); b.size=Vector2(72,30); b.pressed.connect(_set_diplomacy.bind(String(f["id"]),states[j],panel)); panel.add_child(b)
@@ -931,7 +938,7 @@ func _open_diplomacy()->void:
 
 func _set_diplomacy(faction:String,state:String,panel:Panel)->void:
 	var result:=world_state.set_diplomacy(world_state.player_faction,faction,state)
-	status_label.text="Diplomacy: %s" % state.to_upper()
+	_show_status("Diplomacy: %s" % state.to_upper(), 2.5)
 	if result.get("ok",false): panel.queue_free()
 
 func _create_quick_caravan()->void:
@@ -943,13 +950,13 @@ func _create_quick_caravan()->void:
 		if i!=origin: destination=i; break
 	if destination<0: return
 	var result:=world_state.create_caravan(origin,destination)
-	status_label.text="Caravan launched." if result.get("ok",false) else "Caravan failed: %s" % result.get("reason","unknown")
+	_show_status("Caravan launched." if result.get("ok",false) else "Caravan failed: %s" % result.get("reason","unknown"), 2.5)
 
 func _save_game()->void:
-	status_label.text="GAME SAVED" if world_state.save_game() else "SAVE FAILED"
+	_show_status("GAME SAVED" if world_state.save_game() else "SAVE FAILED", 2.5)
 
 func _load_game()->void:
-	status_label.text="GAME LOADED" if world_state.load_game() else "NO SAVE FOUND"
+	_show_status("GAME LOADED" if world_state.load_game() else "NO SAVE FOUND", 2.5)
 	if map_open: _refresh_world_map()
 
 func _open_management()->void:
