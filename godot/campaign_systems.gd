@@ -170,6 +170,44 @@ func get_player_ship_ids() -> Array[int]:
             ids.append(i)
     return ids
 
+
+func upgrade_ship(ship_id: int, stat: String) -> Dictionary:
+    if ship_id < 0 or ship_id >= world.ships.size():
+        return {"ok":false,"reason":"invalid_ship"}
+    var ship: Dictionary = world.ships[ship_id]
+    if String(ship.get("owner","")) != "free_company":
+        return {"ok":false,"reason":"not_player_ship"}
+    var level_key := stat + "_level"
+    var level := int(ship.get(level_key, 0))
+    if level >= 3:
+        return {"ok":false,"reason":"max_level"}
+    var cost := 150 + level * 100
+    if int(world.gold) < cost:
+        return {"ok":false,"reason":"not_enough_gold","cost":cost}
+    world.gold -= cost
+    ship[level_key] = level + 1
+    match stat:
+        "hull":
+            ship["hull"] = min(100 + (level + 1) * 10, 130)
+        "cannons":
+            ship["cannons"] = int(ship.get("cannons", 0)) + 2
+        "cargo":
+            ship["cargo_capacity"] = int(ship.get("cargo_capacity", 100)) + 30
+    naval_events.push_front("%s upgraded: %s level %d." % [String(ship.get("name","Ship")), stat, level + 1])
+    if naval_events.size() > 8:
+        naval_events.pop_back()
+    return {"ok":true,"stat":stat,"level":level + 1,"cost":cost}
+
+func get_ship_upgrade_status(ship_id: int) -> String:
+    if ship_id < 0 or ship_id >= world.ships.size():
+        return "Invalid ship."
+    var ship: Dictionary = world.ships[ship_id]
+    return "Hull Lv%d • Cannons Lv%d • Cargo Lv%d" % [
+        int(ship.get("hull_level",0)),
+        int(ship.get("cannons_level",0)),
+        int(ship.get("cargo_level",0))
+    ]
+
 func set_ship_route(ship_id: int, target_region: int) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size():
         return {"ok":false,"reason":"invalid_ship"}
