@@ -462,7 +462,7 @@ func _apply_army_troop_losses(army_id:int,losses:Dictionary)->int:
 	# would double-count mixed troop-type casualties.
 	army["soldiers"]=max(0,int(army["soldiers"])-applied)
 	army["morale"]=max(0,int(army["morale"])-min(30,int(applied/3)))
-	if int(army["soldiers"])<=0: armies.remove_at(army_id)
+	if int(army["soldiers"])<=0: _remove_army_at(army_id)
 	return applied
 
 func apply_manual_victory(settlement_id:int,attacker_losses:int,defender_losses:int)->Dictionary:
@@ -483,7 +483,19 @@ func _apply_army_losses(army_id:int,losses:int)->void:
 	army["soldiers"]=remaining
 	for kind in army["troops"].keys(): army["troops"][kind]=int(round(int(army["troops"][kind])*ratio))
 	army["morale"]=max(0,int(army["morale"])-min(30,losses/3))
-	if remaining<=0: armies.remove_at(army_id)
+	if remaining<=0: _remove_army_at(army_id)
+
+func _remove_army_at(index:int)->void:
+	if index<0 or index>=armies.size(): return
+	armies.remove_at(index)
+	for i in range(armies.size()):
+		armies[i]["id"]=i
+	for sid in sieges.keys():
+		var siege:Dictionary=sieges[sid]
+		var stored:=int(siege.get("army_id",-1))
+		if stored==index: siege["army_id"]=-1
+		elif stored>index: siege["army_id"]=stored-1
+		sieges[sid]=siege
 
 func issue_ship_move(ship_id:int,target_region:int)->Dictionary:
 	if ship_id<0 or ship_id>=ships.size() or target_region<0 or target_region>=regions.size(): return {"ok":false,"reason":"invalid_target"}
