@@ -308,9 +308,15 @@ func _build_interaction_ui() -> void:
 	enter.size = Vector2(220, 54)
 	enter.pressed.connect(_enter_nearest_settlement)
 	layer.add_child(enter)
+	var leave := Button.new()
+	leave.text = "LEAVE SETTLEMENT"
+	leave.position = Vector2(28, 225)
+	leave.size = Vector2(220, 54)
+	leave.pressed.connect(_leave_settlement)
+	layer.add_child(leave)
 	var inv := Button.new()
 	inv.text = "INVENTORY"
-	inv.position = Vector2(28, 165)
+	inv.position = Vector2(28, 285)
 	inv.size = Vector2(180, 54)
 	inv.pressed.connect(_toggle_inventory)
 	layer.add_child(inv)
@@ -426,7 +432,7 @@ func _toggle_inventory() -> void:
 	if inventory_open:
 		var eq:=world_state.player_equipment
 		var inv:=world_state.player_inventory
-		inventory_label.text="INVENTORY\n\nFood: %d\nWood: %d\nIron: %d\n\nEQUIPMENT\nWeapon: %s\nArmor: %s\nShield: %s\nHorse: %s\n\nGold: %d" % [int(inv.get("food",0)),int(inv.get("wood",0)),int(inv.get("iron",0)),String(eq.get("weapon","none")),String(eq.get("armor","none")),String(eq.get("shield","none")),String(eq.get("horse","none")),world_state.gold]
+		inventory_label.text="INVENTORY • LOOT & EQUIPMENT\n\nFood: %d\nWood: %d\nIron: %d\n\nEQUIPMENT\nWeapon: %s\nArmor: %s\nShield: %s\nHorse: %s\n\nGold: %d" % [int(inv.get("food",0)),int(inv.get("wood",0)),int(inv.get("iron",0)),String(eq.get("weapon","none")),String(eq.get("armor","none")),String(eq.get("shield","none")),String(eq.get("horse","none")),world_state.gold]
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
@@ -548,6 +554,9 @@ func _damage_troop(target: Node3D, damage: int = ATTACK_DAMAGE) -> void:
 				var dead_type := String(troops[i].get("troop_type", "levy"))
 				var dead_count := int(troops[i].get("represented_count", 1))
 				battle_casualties[dead_team] = int(battle_casualties.get(dead_team, 0)) + dead_count
+				if dead_team == "ENEMY" and world_state:
+					world_state.player_inventory["iron"] = int(world_state.player_inventory.get("iron",0)) + randi_range(0,2)
+					world_state.player_inventory["wood"] = int(world_state.player_inventory.get("wood",0)) + (1 if randi_range(1,100) <= 35 else 0)
 				var type_map: Dictionary = battle_casualty_types.get(dead_team, {})
 				type_map[dead_type] = int(type_map.get(dead_type, 0)) + dead_count
 				battle_casualty_types[dead_team] = type_map
