@@ -133,6 +133,43 @@ func naval_battle(attacker_id: int, defender_id: int) -> Dictionary:
         message += " • ship disabled"
     return {"ok":true,"winner":winner,"loser":loser,"crew_loss":crew_loss,"hull_damage":hull_damage,"loot":loot,"disabled":disabled,"message":message}
 
+
+func acquire_player_ship() -> Dictionary:
+    if world == null:
+        return {"ok":false,"reason":"world_unavailable"}
+    var cost := 300
+    if int(world.gold) < cost:
+        return {"ok":false,"reason":"not_enough_gold","cost":cost}
+    var region := int(world.player_region_id)
+    var ship_id := world.ships.size()
+    world.gold -= cost
+    world.ships.append({
+        "id":ship_id,
+        "name":"Free Company Galley %d" % (ship_id + 1),
+        "owner":"free_company",
+        "region":region,
+        "crew":20,
+        "cargo":{"food":10,"wood":5,"iron":2},
+        "moving":false,
+        "target_region":region,
+        "hull":100,
+        "cannons":2,
+        "disabled":false
+    })
+    naval_events.push_front("The Free Company acquired a new galley.")
+    if naval_events.size() > 8:
+        naval_events.pop_back()
+    return {"ok":true,"ship_id":ship_id,"cost":cost}
+
+func get_player_ship_ids() -> Array[int]:
+    var ids: Array[int] = []
+    if world == null:
+        return ids
+    for i in range(world.ships.size()):
+        if String(world.ships[i].get("owner","")) == "free_company":
+            ids.append(i)
+    return ids
+
 func set_ship_route(ship_id: int, target_region: int) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size():
         return {"ok":false,"reason":"invalid_ship"}
