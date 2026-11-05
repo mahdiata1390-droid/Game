@@ -126,17 +126,59 @@ func _simulate_trade_contracts(day: int) -> void:
 		if bool(trade_contracts[i].get("complete",false)): trade_contracts.remove_at(i)
 
 func _simulate_naval_missions(day: int) -> void:
-	for mission in naval_missions:
-		if bool(mission.get("complete",false)): continue
-		mission["days_left"] = int(mission.get("days_left",1)) - 1
-		if int(mission["days_left"]) <= 0:
-			var reward := int(mission.get("reward",0))
-			world.gold += reward
-			mission["complete"] = true
-			naval_events.push_front("Naval mission completed: %d gold earned." % reward)
-			if naval_events.size() > 8: naval_events.pop_back()
-	for i in range(naval_missions.size() - 1, -1, -1):
-		if bool(naval_missions[i].get("complete",false)): naval_missions.remove_at(i)
+    for mission in naval_missions:
+        if bool(mission.get("complete",false)): continue
+        var ship_id := int(mission.get("ship_id",-1))
+        if ship_id < 0 or ship_id >= world.ships.size():
+            mission["complete"] = true
+            mission["failed"] = true
+            naval_events.push_front("Naval mission failed: assigned ship is unavailable.")
+            if naval_events.size() > 8: naval_events.pop_back()
+            continue
+        var ship: Dictionary = world.ships[ship_id]
+        var destination := int(mission.get("destination_region",-1))
+        if destination < 0 or destination >= world.regions.size():
+            mission["complete"] = true
+            mission["failed"] = true
+            continue
+        if int(ship.get("region",-1)) == destination:
+            var reward := int(mission.get("reward",0))
+            world.gold += reward
+            mission["complete"] = true
+            naval_events.push_front("Naval mission completed at %s: %d gold earned." % [String(world.regions[destination].get("name","Region")), reward])
+            if naval_events.size() > 8: naval_events.pop_back()
+            continue
+        mission["days_left"] = max(1, int(mission.get("days_left",1)) - 1)
+        set_ship_route(ship_id, destination)
+    for i in range(naval_missions.size() - 1, -1, -1):
+        if bool(naval_missions[i].get("complete",false)): naval_missions.remove_at(i)
+
+func create_naval_mission(resource: String, amount: int, destination_region: int) -> Dictionary:
+    if world == null or not ["food","wood","iron"].has(resource) or amount <= 0:
+        return {"ok":false,"reason":"invalid_mission"}
+    if destination_region < 0 or destination_region >= world.regions.size():
+        return {"ok":false,"reason":"invalid_region"}
+    var player_ships := get_player_ship_ids()
+    if player_ships.is_empty(): return {"ok":false,"reason":"no_ship"}
+    var ship_id := int(player_ships[0])
+    var ship: Dictionary = world.ships[ship_id]
+    if bool(ship.get("disabled",false)) or int(ship.get("crew",0)) <= 0:
+        return {"ok":false,"reason":"ship_unavailable"}
+    if int(ship.get("region",0)) == destination_region:
+        return {"ok":false,"reason":"already_at_destination"}
+    var stock := int(world.production_stock.get(resource,0))
+    var moved := min(amount, stock)
+    if moved <= 0: return {"ok":false,"reason":"no_stock"}
+    world.production_stock[resource] = stock - moved
+    var reward := moved * (4 if resource == "food" else (7 if resource == "wood" else 11))
+    var id := 0
+    for existing in naval_missions:
+        id = max(id, int(existing.get("id",-1)) + 1)
+    naval_missions.append({"id":id,"ship_id":ship_id,"resource":resource,"amount":moved,"destination_region":destination_region,"days_left":1,"reward":reward,"complete":false})
+    set_ship_route(ship_id, destination_region)
+    naval_events.push_front("Naval mission launched: %s × %d → %s." % [resource,moved,String(world.regions[destination_region].get("name","Region"))])
+    if naval_events.size() > 8: naval_events.pop_back()
+    return {"ok":true,"mission_id":id,"ship_id":ship_id,"amount":moved,"reward":reward}
 
 func get_trade_status() -> String:
 	if trade_contracts.is_empty(): return "No active trade contracts."
