@@ -24,6 +24,8 @@ func _bind() -> void:
         last_day = int(world.day)
 
 func _process(_delta: float) -> void:
+    if world and world.simulation_paused:
+        return
     if world == null:
         _bind()
         return
