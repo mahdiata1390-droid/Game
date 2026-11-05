@@ -338,6 +338,33 @@ func get_succession_status() -> String:
         ("Regency possible" if bool(succession_state.get("regency",false)) else "Direct succession")
     ]
 
+
+func transfer_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
+    if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
+        return {"ok":false,"reason":"invalid_request"}
+    if String(world.ships[ship_id].get("owner","")) != "free_company":
+        return {"ok":false,"reason":"not_player_ship"}
+    if not ["food","wood","iron"].has(resource):
+        return {"ok":false,"reason":"invalid_resource"}
+    var ship: Dictionary = world.ships[ship_id]
+    var cargo: Dictionary = ship.get("cargo", {})
+    var current := 0
+    for key in cargo.keys():
+        current += int(cargo[key])
+    var capacity := int(ship.get("cargo_capacity",100))
+    var available := max(0, capacity - current)
+    var moved := min(amount, available)
+    if moved <= 0:
+        return {"ok":false,"reason":"cargo_full"}
+    var stock := int(world.production_stock.get(resource,0))
+    moved = min(moved, stock)
+    if moved <= 0:
+        return {"ok":false,"reason":"no_stock"}
+    world.production_stock[resource] = stock - moved
+    cargo[resource] = int(cargo.get(resource,0)) + moved
+    ship["cargo"] = cargo
+    return {"ok":true,"resource":resource,"amount":moved,"capacity":capacity}
+
 func repair_ship(ship_id: int) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size():
         return {"ok":false,"reason":"invalid_ship"}
@@ -353,4 +380,4 @@ func repair_ship(ship_id: int) -> Dictionary:
     ship["hull"] = max_hull
     ship["disabled"] = false
     ship["moving"] = false
-    return {"ok":true,"cost":cost,"hull":100}
+    return {"ok":true,"cost":cost,"hull":max_hull}
