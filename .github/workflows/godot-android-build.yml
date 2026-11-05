@@ -95,3 +95,5 @@ jobs:
         with:
           name: MedievalSandbox-Android
           path: godot/build/MedievalSandbox.apk
+
+# Build verification trigger: final gameplay integration.
