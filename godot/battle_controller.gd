@@ -122,13 +122,13 @@ func _begin_siege() -> void:
 func _show_siege_panel()->void:
 	_close_siege_panel()
 	var layer:=_ensure_layer()
-	siege_panel=Panel.new(); siege_panel.position=Vector2(300,120); siege_panel.size=Vector2(640,360); layer.add_child(siege_panel)
+	siege_panel=Panel.new(); siege_panel.position=Vector2(300,90); siege_panel.size=Vector2(640,470); layer.add_child(siege_panel)
 	var title:=Label.new(); title.text="SIEGE • "+String(world_state.settlements[battle_settlement_id]["name"]); title.position=Vector2(25,20); title.add_theme_font_size_override("font_size",26); siege_panel.add_child(title)
 	var s:=world_state.settlements[battle_settlement_id]; var data:=world_state.sieges.get(battle_settlement_id,{})
 	var info:=Label.new(); info.text="Wall: %d\nGarrison: %d\nSiege progress: %d%%\nPhase: %s\nGate: %d HP\nWall integrity: %d HP\nBreach: %s" % [int(s.get("wall_level",1)),int(s["garrison"]),int(data.get("progress",0)),String(data.get("phase","approach")),int(data.get("gate_hp",120)),int(data.get("wall_hp",int(s.get("wall_level",1))*100)),("YES" if bool(data.get("breach",false)) else "NO")]; info.position=Vector2(25,75); info.add_theme_font_size_override("font_size",18); siege_panel.add_child(info)
-	var assault:=Button.new(); assault.text="ASSAULT THE WALLS"; assault.position=Vector2(25,190); assault.size=Vector2(275,60); assault.pressed.connect(_assault_siege); siege_panel.add_child(assault)
-	var wait:=Button.new(); wait.text="WAIT • +1 DAY"; wait.position=Vector2(325,190); wait.size=Vector2(275,60); wait.pressed.connect(_wait_siege); siege_panel.add_child(wait)
-	var end:=Button.new(); end.text="END SIEGE"; end.position=Vector2(220,285); end.size=Vector2(200,45); end.pressed.connect(_end_siege); siege_panel.add_child(end)
+	var assault:=Button.new(); assault.text="ASSAULT THE WALLS"; assault.position=Vector2(25,285); assault.size=Vector2(275,60); assault.pressed.connect(_assault_siege); siege_panel.add_child(assault)
+	var wait:=Button.new(); wait.text="WAIT • +1 DAY"; wait.position=Vector2(325,285); wait.size=Vector2(275,60); wait.pressed.connect(_wait_siege); siege_panel.add_child(wait)
+	var end:=Button.new(); end.text="END SIEGE"; end.position=Vector2(220,385); end.size=Vector2(200,45); end.pressed.connect(_end_siege); siege_panel.add_child(end)
 
 func _assault_siege()->void:
 	var result:=world_state.assault_siege(battle_settlement_id)
@@ -143,7 +143,11 @@ func _assault_siege()->void:
 		_show_siege_panel()
 
 func _wait_siege()->void:
-	world_state.advance_day(); _show_siege_panel()
+	world_state.advance_day()
+	var data:Dictionary=world_state.sieges.get(battle_settlement_id,{})
+	if main_scene.has_method("update_siege_visual") and not data.is_empty():
+		main_scene.update_siege_visual(int(data.get("progress",0)),bool(data.get("gate_breached",false)),int(data.get("gate_hp",120)),int(data.get("wall_hp",500)))
+	_show_siege_panel()
 
 func _end_siege()->void:
 	if main_scene.has_method("clear_siege_visual"): main_scene.clear_siege_visual()
