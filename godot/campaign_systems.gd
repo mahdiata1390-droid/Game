@@ -6,6 +6,7 @@ var naval_events: Array[String] = []
 var family_events: Array[String] = []
 var last_day := -1
 var naval_initialized := false
+var succession_state: Dictionary = {"active":false,"heir":"","claim":0,"support":0,"regency":false}
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -160,15 +161,28 @@ func _advance_family_month() -> void:
 
 func _advance_family_year() -> void:
     var age := int(world.family.get("age",18))
+    var heir_name := String(world.family.get("heir_name","Unnamed Heir"))
+    if age >= 45 and heir_name != "Unnamed Heir" and not bool(succession_state.get("active",false)):
+        succession_state["active"] = true
+        succession_state["heir"] = heir_name
+        succession_state["claim"] = clamp(40 + int(world.family.get("heir_age",0)), 40, 90)
+        succession_state["support"] = 50
+        succession_state["regency"] = age < 60
+        family_events.push_front("%s is now formally recognized as heir to the Free Company." % heir_name)
     if age < 60:
         return
-    var heir_name := String(world.family.get("heir_name","Unnamed Heir"))
     if heir_name == "Unnamed Heir":
+        return
+    var support := int(succession_state.get("support",50))
+    var claim := int(succession_state.get("claim",50))
+    if support + claim < 100:
+        family_events.push_front("Succession delayed: the heir lacks enough support.")
         return
     world.family["generation"] = int(world.family.get("generation",1)) + 1
     world.family["age"] = 18
     world.family["heir_age"] = 0
     world.family["heir_name"] = "Unnamed Heir"
+    succession_state = {"active":false,"heir":"","claim":0,"support":0,"regency":false}
     family_events.push_front("Succession completed: the next generation now leads the Free Company.")
     if family_events.size() > 8:
         family_events.pop_back()
@@ -190,3 +204,33 @@ func get_recent_events() -> String:
     for e in family_events:
         out += "• " + e + "\n"
     return out
+
+func appoint_heir(member_name: String) -> Dictionary:
+    for member in world.family_members:
+        if String(member.get("name","")) == member_name:
+            world.family["heir_name"] = member_name
+            world.family["heir_age"] = int(member.get("age",0))
+            succession_state["active"] = true
+            succession_state["heir"] = member_name
+            succession_state["claim"] = clamp(35 + int(member.get("age",0)), 35, 90)
+            succession_state["support"] = int(member.get("loyalty",50))
+            succession_state["regency"] = int(world.family.get("age",18)) < 60
+            family_events.push_front("%s was appointed as heir." % member_name)
+            return {"ok":true,"heir":member_name}
+    return {"ok":false,"reason":"member_not_found"}
+
+func change_heir_support(amount: int) -> Dictionary:
+    if not bool(succession_state.get("active",false)):
+        return {"ok":false,"reason":"no_heir"}
+    succession_state["support"] = clamp(int(succession_state.get("support",50)) + amount, 0, 100)
+    return {"ok":true,"support":int(succession_state["support"])}
+
+func get_succession_status() -> String:
+    if not bool(succession_state.get("active",false)):
+        return "No active succession claim."
+    return "Heir: %s • Claim %d • Support %d • %s" % [
+        String(succession_state.get("heir","Unknown")),
+        int(succession_state.get("claim",0)),
+        int(succession_state.get("support",0)),
+        ("Regency possible" if bool(succession_state.get("regency",false)) else "Direct succession")
+    ]
