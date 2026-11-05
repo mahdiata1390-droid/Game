@@ -311,6 +311,9 @@ func _simulate_world_events()->void:
 func resolve_ai_battle(settlement_id:int,attacker:Dictionary,defender:Dictionary,attacker_owner:String)->Dictionary:
 	var attack_score:=float(attacker.get("soldiers",1))*(0.72+_battle_quality(attacker.get("troops",{})))*(0.75+float(attacker.get("morale",70))/200.0)
 	var defend_score:=float(defender.get("soldiers",1))*(0.72+_battle_quality(defender.get("troops",{})))*(0.75+float(defender.get("morale",65))/200.0)
+	var attacker_id:=int(attacker.get("army_id",-1))
+	if attacker_id>=0 and attacker_id<armies.size():
+		attack_score*=_army_tactical_bonus(armies[attacker_id])
 	var won:=attack_score>=defend_score
 	var attacker_losses:=clamp(int(defender.get("soldiers",1)*(0.20 if won else 0.48)),1,int(attacker.get("soldiers",1)))
 	var defender_losses:=clamp(int(attacker.get("soldiers",1)*(0.52 if won else 0.20)),1,int(defender.get("soldiers",1)))
@@ -333,11 +336,18 @@ func get_player_battle_force()->Dictionary:
 	for army in armies:
 		if int(army["region"])==player_region_id and String(army["owner"])==player_faction:
 			soldiers=int(army["soldiers"]); troops=army.get("troops",troops); break
-	return {"soldiers":soldiers,"morale":78,"troops":troops}
+	var formation:="line"
+	var order:="hold"
+	for army in armies:
+		if int(army["region"])==player_region_id and String(army["owner"])==player_faction:
+			formation=String(army.get("formation","line")); order=String(army.get("order","hold")); break
+	return {"soldiers":soldiers,"morale":78,"troops":troops,"formation":formation,"order":order}
 
 func resolve_auto_battle(settlement_id:int,attacker:Dictionary,defender:Dictionary)->Dictionary:
 	var attack_count:=max(1,int(attacker.get("soldiers",1))); var defend_count:=max(1,int(defender.get("soldiers",1))); var attack_morale:=float(attacker.get("morale",70)); var defend_morale:=float(defender.get("morale",65))
-	var attack_score:=float(attack_count)*(0.72+_battle_quality(attacker.get("troops",{})))*(0.75+attack_morale/200.0)*(1.0+get_player_combat_bonus()); var defend_score:=float(defend_count)*(0.72+_battle_quality(defender.get("troops",{})))*(0.75+defend_morale/200.0)
+	var attack_score:=float(attack_count)*(0.72+_battle_quality(attacker.get("troops",{})))*(0.75+attack_morale/200.0)*(1.0+get_player_combat_bonus())
+	if player_army_tactical_bonus() > 0.0: attack_score*=(1.0+player_army_tactical_bonus())
+	var defend_score:=float(defend_count)*(0.72+_battle_quality(defender.get("troops",{})))*(0.75+defend_morale/200.0)
 	var attacker_won:=attack_score>=defend_score; var ratio:=clamp(max(attack_score,defend_score)/max(1.0,min(attack_score,defend_score)),1.0,3.0); var attacker_losses:int; var defender_losses:int; var rounds:Array[String]=[]
 	if attacker_won:
 		attacker_losses=clamp(int(defend_count*(0.18+0.10/ratio)),1,attack_count); defender_losses=clamp(int(attack_count*(0.55+0.12*ratio)),1,defend_count); rounds=["Attackers gained the first advantage.","Defensive lines began to collapse.","The garrison withdrew after sustained pressure."]
@@ -356,6 +366,24 @@ func resolve_auto_battle(settlement_id:int,attacker:Dictionary,defender:Dictiona
 		captured=capture_settlement(settlement_id)
 	add_player_xp(max(10,defender_losses))
 	return {"attacker_won":attacker_won,"attacker_losses":attacker_losses,"defender_losses":defender_losses,"rounds":rounds,"captured":captured,"settlement":String(settlements[settlement_id]["name"])}
+
+func player_army_tactical_bonus()->float:
+	for army in armies:
+		if String(army["owner"])==player_faction and int(army["region"])==player_region_id:
+			return _army_tactical_bonus(army)-1.0
+	return 0.0
+
+func _army_tactical_bonus(army:Dictionary)->float:
+	var bonus:=1.0
+	match String(army.get("formation","line")):
+		"shield_wall": bonus+=0.08
+		"wedge": bonus+=0.10
+		"skirmish": bonus+=0.06
+	match String(army.get("order","hold")):
+		"attack": bonus+=0.08
+		"defend": bonus+=0.06
+		"raid": bonus+=0.05
+	return bonus
 
 func _battle_quality(troops:Dictionary)->float:
 	var total:=0; var weighted:=0.0
