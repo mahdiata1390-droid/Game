@@ -16,6 +16,9 @@ var ship_upgrade_controls: Array[Button] = []
 var cargo_controls: Array[Button] = []
 var naval_encounter_controls: Array[Button] = []
 var cargo_trade_controls: Array[Button] = []
+var cargo_unload_controls: Array[Button] = []
+var technology_controls: Array[Button] = []
+var creature_controls: Array[Button] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -89,7 +92,7 @@ func _setup() -> void:
 
     var close := Button.new()
     close.text = "CLOSE"
-    close.position = Vector2(330, 715)
+    close.position = Vector2(330, 748)
     close.size = Vector2(160, 45)
     close.pressed.connect(_toggle_panel)
     panel.add_child(close)
@@ -117,6 +120,9 @@ func _refresh() -> void:
     _rebuild_cargo_controls()
     _rebuild_naval_encounter_controls()
     _rebuild_cargo_trade_controls()
+    _rebuild_cargo_unload_controls()
+    _rebuild_technology_controls()
+    _rebuild_creature_controls()
     match selected_tab:
         "overview":
             content.text = _overview()
@@ -360,6 +366,24 @@ func _naval_encounter_action(mode: String) -> void:
     else:
         content.text = "NAVAL ENCOUNTER\n\nAction failed: " + String(result.get("reason","unknown"))
 
+func _rebuild_cargo_unload_controls() -> void:
+    _clear_controls(cargo_unload_controls)
+    if selected_tab != "navy" or panel == null:
+        return
+    var ids: Array[int] = campaign.get_player_ship_ids()
+    var resources := ["food", "wood", "iron"]
+    for i in range(min(ids.size(), 2)):
+        var ship_id := ids[i]
+        for j in range(resources.size()):
+            var resource := resources[j]
+            var b := Button.new()
+            b.text = "UNLOAD %s • SHIP %d" % [resource.to_upper(), ship_id + 1]
+            b.position = Vector2(28 + j * 250, 704 + i * 24)
+            b.size = Vector2(230, 22)
+            b.pressed.connect(_unload_cargo.bind(ship_id, resource))
+            panel.add_child(b)
+            cargo_unload_controls.append(b)
+
 func _rebuild_cargo_trade_controls() -> void:
     _clear_controls(cargo_trade_controls)
     if selected_tab != "navy" or panel == null:
@@ -372,7 +396,7 @@ func _rebuild_cargo_trade_controls() -> void:
             var resource := resources[j]
             var b := Button.new()
             b.text = "SELL %s • SHIP %d" % [resource.to_upper(), ship_id + 1]
-            b.position = Vector2(28 + j * 250, 670 + i * 25)
+            b.position = Vector2(28 + j * 250, 672 + i * 24)
             b.size = Vector2(230, 24)
             b.pressed.connect(_sell_cargo.bind(ship_id, resource))
             panel.add_child(b)
@@ -387,6 +411,51 @@ func _unload_cargo(ship_id: int, resource: String) -> void:
     var result: Dictionary = campaign.unload_cargo(ship_id, resource, 10)
     _refresh()
     content.text = "CARGO UNLOAD\n\n" + (str(result) if result.get("ok",false) else "Unload failed: " + String(result.get("reason","unknown")))
+
+func _rebuild_technology_controls() -> void:
+    _clear_controls(technology_controls)
+    if selected_tab != "tech" or panel == null:
+        return
+    var names := ["agriculture","smithing","commerce","engineering","navigation","medicine","warfare","mysticism"]
+    for i in range(names.size()):
+        var name := names[i]
+        var b := Button.new()
+        b.text = "RESEARCH " + name.to_upper()
+        b.position = Vector2(28 + (i % 2) * 360, 500 + (i / 2) * 32)
+        b.size = Vector2(330, 28)
+        b.pressed.connect(_unlock_technology.bind(name))
+        panel.add_child(b)
+        technology_controls.append(b)
+
+func _unlock_technology(name: String) -> void:
+    var ok := systems.unlock_technology(name)
+    _refresh()
+    content.text = "TECHNOLOGY
+
+" + (("Unlocked " + name + ".") if ok else "Research failed: no points or technology already at maximum.")
+
+func _rebuild_creature_controls() -> void:
+    _clear_controls(creature_controls)
+    if selected_tab != "creatures" or panel == null:
+        return
+    for i in range(systems.creatures.size()):
+        var creature: Dictionary = systems.creatures[i]
+        if not bool(creature.get("alive", false)):
+            continue
+        var b := Button.new()
+        b.text = "ENCOUNTER " + String(creature.get("kind","CREATURE")).to_upper()
+        b.position = Vector2(28 + (i % 2) * 360, 500 + (i / 2) * 34)
+        b.size = Vector2(330, 30)
+        b.pressed.connect(_encounter_creature.bind(i))
+        panel.add_child(b)
+        creature_controls.append(b)
+
+func _encounter_creature(creature_id: int) -> void:
+    var result: Dictionary = systems.encounter_creature(creature_id)
+    _refresh()
+    content.text = "CREATURE ENCOUNTER
+
+" + (str(result) if result.get("ok",false) else "Encounter failed: " + String(result.get("reason","unknown")))
 
 func _rebuild_family_controls() -> void:
     _clear_controls(family_controls)
