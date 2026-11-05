@@ -35,7 +35,7 @@ func _check_for_encounter() -> void:
 		var s: Dictionary = world_state.settlements[i]
 		if int(s["region"]) != world_state.player_region_id:
 			continue
-		if String(s["owner"]) == world_state.player_faction and world_state.player_faction != "Free Company":
+		if String(s["owner"]) == world_state.player_faction:
 			continue
 		_show_battle_prompt(i)
 		return
@@ -165,6 +165,7 @@ func _start_manual(use_first_person: bool) -> void:
 	prompt = null
 	battle_active = true
 	first_person = use_first_person
+	main_scene.set("camera_first_person", first_person)
 	mode_label = Label.new()
 	mode_label.text = "MANUAL BATTLE • %s" % ("FIRST PERSON" if first_person else "THIRD PERSON")
 	mode_label.position = Vector2(28, 140)
@@ -183,9 +184,10 @@ func _set_camera_mode(use_first: bool) -> void:
 	var camera := main_scene.get("camera") as Camera3D
 	if not camera:
 		return
+	main_scene.set("camera_first_person", use_first)
 	if use_first:
 		camera.position = Vector3(0, 1.55, 0.15)
-		camera.rotation_degrees = Vector3(0, 0, 0)
+		camera.rotation_degrees = Vector3(0, 180, 0)
 	else:
 		camera.position = Vector3(0, 4.2, 7.5)
 		camera.rotation_degrees = Vector3(-12, 180, 0)
