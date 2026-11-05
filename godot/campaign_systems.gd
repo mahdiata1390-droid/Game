@@ -252,24 +252,38 @@ func _advance_family_year() -> void:
         succession_state["active"] = true
         succession_state["heir"] = heir_name
         succession_state["claim"] = clamp(40 + int(world.family.get("heir_age",0)), 40, 90)
-        succession_state["support"] = 50
+        succession_state["support"] = int(succession_state.get("support",50))
         succession_state["regency"] = age < 60
         family_events.push_front("%s is now formally recognized as heir to the Free Company." % heir_name)
-    if age < 60:
-        return
-    if heir_name == "Unnamed Heir":
+    if age < 60 or heir_name == "Unnamed Heir":
         return
     var support := int(succession_state.get("support",50))
     var claim := int(succession_state.get("claim",50))
     if support + claim < 100:
         family_events.push_front("Succession delayed: the heir lacks enough support.")
         return
-    world.family["generation"] = int(world.family.get("generation",1)) + 1
+    _complete_succession(heir_name)
+
+func _complete_succession(heir_name: String) -> void:
+    var old_generation := int(world.family.get("generation",1))
+    world.family["generation"] = old_generation + 1
     world.family["age"] = 18
     world.family["heir_age"] = 0
     world.family["heir_name"] = "Unnamed Heir"
+    for member in world.family_members:
+        if String(member.get("name","")) == heir_name:
+            member["title"] = "House Leader"
+            member["loyalty"] = clamp(int(member.get("loyalty",70)) + 10, 0, 100)
+        else:
+            member["loyalty"] = clamp(int(member.get("loyalty",50)) - 2, 0, 100)
+    for settlement in world.settlements:
+        if String(settlement.get("owner","")) == "free_company":
+            settlement["prosperity"] = max(0, int(settlement.get("prosperity",50)) - 2)
+    for army in world.armies:
+        if String(army.get("owner","")) == "free_company":
+            army["morale"] = clamp(int(army.get("morale",50)) - 4, 0, 100)
     succession_state = {"active":false,"heir":"","claim":0,"support":0,"regency":false}
-    family_events.push_front("Succession completed: the next generation now leads the Free Company.")
+    family_events.push_front("Succession completed: %s now leads the Free Company. The realm enters a new generation." % heir_name)
     if family_events.size() > 8:
         family_events.pop_back()
 
