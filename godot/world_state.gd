@@ -97,7 +97,7 @@ func travel_to_settlement(settlement_id:int)->Dictionary:
 
 func advance_day()->void:
 	day+=1
-	time_of_day=fmod(time_of_day+24.0,24.0)
+	time_of_day=fmod(time_of_day+6.0,24.0)
 	var weather_roll:=randi_range(0,99)
 	weather="rain" if weather_roll<18 else ("storm" if weather_roll<24 else ("snow" if weather_roll<34 else ("clear" if weather_roll<82 else "fog")))
 	player_inventory["food"]=max(0,int(player_inventory.get("food",0))-1)
@@ -343,8 +343,18 @@ func resolve_auto_battle(settlement_id:int,attacker:Dictionary,defender:Dictiona
 		attacker_losses=clamp(int(defend_count*(0.18+0.10/ratio)),1,attack_count); defender_losses=clamp(int(attack_count*(0.55+0.12*ratio)),1,defend_count); rounds=["Attackers gained the first advantage.","Defensive lines began to collapse.","The garrison withdrew after sustained pressure."]
 	else:
 		attacker_losses=clamp(int(defend_count*(0.52+0.12*ratio)),1,attack_count); defender_losses=clamp(int(attack_count*(0.20+0.08/ratio)),1,defend_count); rounds=["Defenders held the first assault.","The attackers lost momentum.","The assault was broken and the attackers retreated."]
+	var player_army_id:=-1
+	for army in armies:
+		if String(army["owner"])==player_faction and int(army["region"])==player_region_id:
+			player_army_id=int(army["id"])
+			break
+	if player_army_id>=0:
+		_apply_army_losses(player_army_id,attacker_losses)
+	settlements[settlement_id]["garrison"]=max(0,int(settlements[settlement_id]["garrison"])-defender_losses)
 	var captured:=false
-	if attacker_won: captured=capture_settlement(settlement_id)
+	if attacker_won and int(settlements[settlement_id]["garrison"])<=0:
+		captured=capture_settlement(settlement_id)
+	add_player_xp(max(10,defender_losses))
 	return {"attacker_won":attacker_won,"attacker_losses":attacker_losses,"defender_losses":defender_losses,"rounds":rounds,"captured":captured,"settlement":String(settlements[settlement_id]["name"])}
 
 func _battle_quality(troops:Dictionary)->float:
