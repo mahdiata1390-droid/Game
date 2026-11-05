@@ -15,6 +15,7 @@ var naval_route_controls: Array[Button] = []
 var ship_upgrade_controls: Array[Button] = []
 var cargo_controls: Array[Button] = []
 var naval_encounter_controls: Array[Button] = []
+var cargo_trade_controls: Array[Button] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -115,6 +116,7 @@ func _refresh() -> void:
     _rebuild_ship_upgrade_controls()
     _rebuild_cargo_controls()
     _rebuild_naval_encounter_controls()
+    _rebuild_cargo_trade_controls()
     match selected_tab:
         "overview":
             content.text = _overview()
@@ -357,6 +359,34 @@ func _naval_encounter_action(mode: String) -> void:
         content.text = "NAVAL ENCOUNTER\n\n" + String(result.get("message","Encounter resolved."))
     else:
         content.text = "NAVAL ENCOUNTER\n\nAction failed: " + String(result.get("reason","unknown"))
+
+func _rebuild_cargo_trade_controls() -> void:
+    _clear_controls(cargo_trade_controls)
+    if selected_tab != "navy" or panel == null:
+        return
+    var ids: Array[int] = campaign.get_player_ship_ids()
+    var resources := ["food", "wood", "iron"]
+    for i in range(min(ids.size(), 2)):
+        var ship_id := ids[i]
+        for j in range(resources.size()):
+            var resource := resources[j]
+            var b := Button.new()
+            b.text = "SELL %s • SHIP %d" % [resource.to_upper(), ship_id + 1]
+            b.position = Vector2(28 + j * 250, 670 + i * 25)
+            b.size = Vector2(230, 24)
+            b.pressed.connect(_sell_cargo.bind(ship_id, resource))
+            panel.add_child(b)
+            cargo_trade_controls.append(b)
+
+func _sell_cargo(ship_id: int, resource: String) -> void:
+    var result: Dictionary = campaign.sell_cargo(ship_id, resource, 10)
+    _refresh()
+    content.text = "CARGO TRADE\n\n" + (str(result) if result.get("ok",false) else "Sale failed: " + String(result.get("reason","unknown")))
+
+func _unload_cargo(ship_id: int, resource: String) -> void:
+    var result: Dictionary = campaign.unload_cargo(ship_id, resource, 10)
+    _refresh()
+    content.text = "CARGO UNLOAD\n\n" + (str(result) if result.get("ok",false) else "Unload failed: " + String(result.get("reason","unknown")))
 
 func _rebuild_family_controls() -> void:
     _clear_controls(family_controls)
