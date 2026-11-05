@@ -2,6 +2,7 @@ extends Node
 
 var world: Node
 var systems: Node
+var campaign: Node
 var layer: CanvasLayer
 var open_button: Button
 var panel: Panel
@@ -18,6 +19,7 @@ func _setup() -> void:
         return
     world = scene.get_node_or_null("WorldState")
     systems = get_node_or_null("/root/FinalGameSystems")
+    campaign = get_node_or_null("/root/CampaignSystems")
     if world == null or systems == null:
         return
     layer = CanvasLayer.new()
@@ -79,7 +81,7 @@ func _select_tab(tab: String) -> void:
     _refresh()
 
 func _refresh() -> void:
-    if world == null or systems == null or content == null:
+    if world == null or systems == null or campaign == null or content == null:
         return
     match selected_tab:
         "overview":
@@ -136,16 +138,21 @@ func _family() -> String:
         ]
     if world.family_members.is_empty():
         lines += "No household members yet."
+    lines += "\n\nSUCCESSION ENGINE\n" + campaign.get_family_status()
     return lines
 
 func _navy() -> String:
-    var out := "NAVY & SEA\n\n"
+    var out := "NAVAL COMMAND & SEA WAR\n\n"
     for ship in world.ships:
-        out += "• %s — owner %s — region %d — crew %d\n" % [
+        var region_id := int(ship.get("region",0))
+        var region_name := String(world.regions[region_id]["name"]) if region_id >= 0 and region_id < world.regions.size() else "Unknown"
+        out += "• %s — owner %s — region %s — crew %d — hull %d\n" % [
             String(ship.get("name","Ship")),String(ship.get("owner","unknown")),
-            int(ship.get("region",0)),int(ship.get("crew",0))
+            region_name,int(ship.get("crew",0)),int(ship.get("hull",50))
         ]
-    out += "\nShips carry cargo and can move between coastal regions.\nNaval engagements use crew, cargo value and combat power to produce persistent casualties and loot."
+    out += "\nShips move through adjacent regions and can fight hostile fleets.\n"
+    out += "Victories cause persistent crew losses and cargo seizure.\n\n"
+    out += campaign.get_recent_events()
     return out
 
 func _creatures() -> String:
