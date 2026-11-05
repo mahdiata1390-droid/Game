@@ -8,6 +8,7 @@ var open_button: Button
 var panel: Panel
 var content: Label
 var selected_tab := "overview"
+var government_controls: Array[Button] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -62,6 +63,23 @@ func _setup() -> void:
     content.add_theme_font_size_override("font_size", 18)
     panel.add_child(content)
 
+    var actions := [
+        ["TAX -1", "_political_tax", -1],
+        ["TAX +1", "_political_tax", 1],
+        ["CONSCRIPTION -1", "_political_conscription", -1],
+        ["CONSCRIPTION +1", "_political_conscription", 1],
+        ["PEACE VALORIA", "_political_peace", 0],
+        ["WAR VALORIA", "_political_war", 0]
+    ]
+    for i in range(actions.size()):
+        var action_button := Button.new()
+        action_button.text = String(actions[i][0])
+        action_button.position = Vector2(28 + (i % 3) * 250, 510 + (i / 3) * 36)
+        action_button.size = Vector2(230, 30)
+        action_button.pressed.connect(Callable(self, String(actions[i][1])).bind(int(actions[i][2])))
+        panel.add_child(action_button)
+        government_controls.append(action_button)
+
     var close := Button.new()
     close.text = "CLOSE"
     close.position = Vector2(330, 545)
@@ -83,6 +101,8 @@ func _select_tab(tab: String) -> void:
 func _refresh() -> void:
     if world == null or systems == null or campaign == null or content == null:
         return
+    for b in government_controls:
+        b.visible = selected_tab == "government"
     match selected_tab:
         "overview":
             content.text = _overview()
@@ -122,8 +142,8 @@ func _technology() -> String:
 
 func _government() -> String:
     var laws: Dictionary = systems.laws
-    return "GOVERNMENT & POLITICS\n\nTax: %d\nConscription: %d\nTrade duty: %d\n\nFaction relations and wars change over time.\nLow prosperity plus heavy taxation can trigger rebellions.\nTrade routes feed faction treasuries and affect the wider economy." % [
-        int(laws["tax"]),int(laws["conscription"]),int(laws["trade_duty"])
+    return "GOVERNMENT & POLITICS\n\nInfluence: %d\nTax: %d\nConscription: %d\nTrade duty: %d\n\nUse political influence to change laws or negotiate war and peace.\nLow prosperity plus heavy taxation can trigger rebellions.\n\n%s" % [
+        int(systems.get_political_influence()), int(laws["tax"]),int(laws["conscription"]),int(laws["trade_duty"]), systems.get_political_status()
     ]
 
 func _family() -> String:
@@ -190,3 +210,23 @@ func _save_world() -> void:
 func _load_world() -> void:
     var ok: bool = world.load_game()
     content.text = "WORLD LOAD\n\n" + ("Save loaded successfully." if ok else "No valid save was found.")
+
+func _political_tax(delta: int) -> void:
+    var result: Dictionary = systems.change_law_with_influence("tax", int(systems.laws["tax"]) + delta)
+    content.text = "POLITICAL ACTION\n\n" + (str(result) if result.get("ok",false) else "Action failed: " + String(result.get("reason","unknown")))
+    _refresh()
+
+func _political_conscription(delta: int) -> void:
+    var result: Dictionary = systems.change_law_with_influence("conscription", int(systems.laws["conscription"]) + delta)
+    content.text = "POLITICAL ACTION\n\n" + (str(result) if result.get("ok",false) else "Action failed: " + String(result.get("reason","unknown")))
+    _refresh()
+
+func _political_peace(_unused: int) -> void:
+    var result: Dictionary = systems.negotiate_peace("river_kingdom")
+    content.text = "DIPLOMACY\n\n" + (str(result) if result.get("ok",false) else "Action failed: " + String(result.get("reason","unknown")))
+    _refresh()
+
+func _political_war(_unused: int) -> void:
+    var result: Dictionary = systems.declare_war("river_kingdom")
+    content.text = "DIPLOMACY\n\n" + (str(result) if result.get("ok",false) else "Action failed: " + String(result.get("reason","unknown")))
+    _refresh()
