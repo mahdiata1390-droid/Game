@@ -41,7 +41,7 @@ func _setup() -> void:
 
     panel = Panel.new()
     panel.position = Vector2(230, 55)
-    panel.size = Vector2(820, 610)
+    panel.size = Vector2(820, 710)
     panel.visible = false
     layer.add_child(panel)
 
@@ -86,7 +86,7 @@ func _setup() -> void:
 
     var close := Button.new()
     close.text = "CLOSE"
-    close.position = Vector2(330, 575)
+    close.position = Vector2(330, 665)
     close.size = Vector2(160, 45)
     close.pressed.connect(_toggle_panel)
     panel.add_child(close)
