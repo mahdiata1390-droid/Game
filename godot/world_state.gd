@@ -408,7 +408,7 @@ func capture_settlement(settlement_id:int)->bool:
 	var new_garrison := int(s["garrison"]); s["garrison_troops"]={"levy":int(new_garrison*0.55),"spearman":int(new_garrison*0.20),"archer":int(new_garrison*0.20),"horseman":max(0,new_garrison-int(new_garrison*0.95))}
 	return transfer_region(region_id,player_faction)
 
-func apply_manual_battle_result(settlement_id:int,attacker_losses:int,defender_losses:int,attacker_types:Dictionary,defender_types:Dictionary)->Dictionary:
+func apply_manual_battle_result(settlement_id:int,attacker_losses:int,defender_losses:int,attacker_types:Dictionary,defender_types:Dictionary,allow_capture:bool=true)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size():
 		return {"captured":false,"attacker_losses":0,"defender_losses":0,"settlement":"Unknown"}
 	var player_army_id := -1
@@ -443,7 +443,7 @@ func apply_manual_battle_result(settlement_id:int,attacker_losses:int,defender_l
 	settlement["garrison_troops"] = garrison_troops
 	settlement["garrison"] = max(0, _sum_troop_counts(garrison_troops))
 	var captured := false
-	if settlement["garrison"] <= 0:
+	if allow_capture and settlement["garrison"] <= 0:
 		captured = capture_settlement(settlement_id)
 	add_player_xp(max(10, applied_defender))
 	return {"captured":captured,"attacker_losses":max(0,applied_attacker),"defender_losses":max(0,applied_defender),"settlement":String(settlement["name"])}
