@@ -46,6 +46,8 @@ var inventory_panel: Panel
 var inventory_label: Label
 var inventory_open := false
 var status_hold := 0.0
+var pause_panel: Panel
+var game_paused := false
 
 func _ready() -> void:
 	world_state = WorldState.new()
@@ -303,6 +305,91 @@ func _build_ui() -> void:
 	attack.pressed.connect(_player_attack)
 	layer.add_child(attack)
 
+	# Mobile controls: large, thumb-friendly buttons for movement and pause.
+	var pad := Control.new()
+	pad.name = "TouchMovementPad"
+	pad.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(pad)
+	var up := _make_touch_button(pad, "▲", Vector2(105, 505), "forward")
+	var down := _make_touch_button(pad, "▼", Vector2(105, 615), "back")
+	var left := _make_touch_button(pad, "◀", Vector2(25, 560), "left")
+	var right := _make_touch_button(pad, "▶", Vector2(185, 560), "right")
+	for b in [up, down, left, right]:
+		b.mouse_filter = Control.MOUSE_FILTER_STOP
+	var pause := Button.new()
+	pause.text = "Ⅱ"
+	pause.position = Vector2(1170, 24)
+	pause.size = Vector2(70, 52)
+	pause.add_theme_font_size_override("font_size", 22)
+	pause.pressed.connect(_toggle_pause)
+	layer.add_child(pause)
+
+func _make_touch_button(parent: Control, label: String, pos: Vector2, direction: String) -> Button:
+	var b := Button.new()
+	b.text = label
+	b.position = pos
+	b.size = Vector2(70, 70)
+	b.add_theme_font_size_override("font_size", 24)
+	b.button_down.connect(func():
+		match direction:
+			"forward": touch_forward = true
+			"back": touch_back = true
+			"left": touch_left = true
+			"right": touch_right = true
+	)
+	b.button_up.connect(func():
+		match direction:
+			"forward": touch_forward = false
+			"back": touch_back = false
+			"left": touch_left = false
+			"right": touch_right = false
+	)
+	parent.add_child(b)
+	return b
+
+func _toggle_pause() -> void:
+	game_paused = not game_paused
+	if game_paused:
+		if is_instance_valid(pause_panel):
+			pause_panel.queue_free()
+		pause_panel = Panel.new()
+		pause_panel.position = Vector2(360, 145)
+		pause_panel.size = Vector2(560, 380)
+		add_child(pause_panel)
+		var title := Label.new()
+		title.text = "GAME PAUSED"
+		title.position = Vector2(28, 24)
+		title.add_theme_font_size_override("font_size", 28)
+		pause_panel.add_child(title)
+		var info := Label.new()
+		info.text = "Day %d • Gold %d\nProgress is safe while paused." % [world_state.day, world_state.gold]
+		info.position = Vector2(28, 72)
+		info.add_theme_font_size_override("font_size", 18)
+		pause_panel.add_child(info)
+		var resume := Button.new()
+		resume.text = "RESUME"
+		resume.position = Vector2(28, 150)
+		resume.size = Vector2(220, 52)
+		resume.pressed.connect(_toggle_pause)
+		pause_panel.add_child(resume)
+		var save := Button.new()
+		save.text = "SAVE GAME"
+		save.position = Vector2(28, 220)
+		save.size = Vector2(220, 52)
+		save.pressed.connect(_pause_save)
+		pause_panel.add_child(save)
+	else:
+		if is_instance_valid(pause_panel):
+			pause_panel.queue_free()
+		pause_panel = null
+
+func _pause_save() -> void:
+	if world_state.save_game():
+		_show_status("GAME SAVED", 2.5)
+	else:
+		_show_status("SAVE FAILED", 2.5)
+
 func _build_interaction_ui() -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "GameplayInteractionUI"
@@ -454,6 +541,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(player):
 		return
+	if game_paused:
+		return
 	if interior_active and Input.is_action_just_pressed("ui_cancel"):
 		_leave_settlement()
 	battle_time += delta
@@ -466,6 +555,12 @@ func _physics_process(delta: float) -> void:
 
 func _update_player(_delta: float) -> void:
 	var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	if touch_forward: input_vec.y -= 1.0
+	if touch_back: input_vec.y += 1.0
+	if touch_left: input_vec.x -= 1.0
+	if touch_right: input_vec.x += 1.0
+	if input_vec.length() > 1.0:
+		input_vec = input_vec.normalized()
 	var direction := Vector3(input_vec.x, 0, input_vec.y)
 	if direction.length() > 1.0:
 		direction = direction.normalized()
