@@ -32,6 +32,7 @@ var family_members:Array[Dictionary] = []
 var player_buildings:Dictionary = {}
 var production_stock:Dictionary = {"food":30,"wood":10,"iron":5}
 var faction_ai_state:Dictionary = {}
+var simulation_paused: bool = false
 
 
 func initialize_continent() -> void:
@@ -98,6 +99,8 @@ func travel_to_settlement(settlement_id:int)->Dictionary:
 	return {"ok":true,"days":travel_days,"settlement":String(settlement["name"])}
 
 func advance_day()->void:
+	if simulation_paused:
+		return
 	day+=1
 	time_of_day=fmod(time_of_day+6.0,24.0)
 	var weather_roll:=randi_range(0,99)
