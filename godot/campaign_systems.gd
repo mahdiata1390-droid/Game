@@ -276,14 +276,23 @@ func set_ship_route(ship_id: int, target_region: int) -> Dictionary:
     return {"ok":true}
 
 func recruit_ship_crew(ship_id: int, amount: int) -> Dictionary:
-    if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
-        return {"ok":false,"reason":"invalid_request"}
-    var cost := amount * 4
-    if int(world.gold) < cost:
-        return {"ok":false,"reason":"not_enough_gold"}
-    world.gold -= cost
-    world.ships[ship_id]["crew"] = int(world.ships[ship_id].get("crew",0)) + amount
-    return {"ok":true,"crew":int(world.ships[ship_id]["crew"])}
+	if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
+		return {"ok":false,"reason":"invalid_request"}
+	var ship: Dictionary = world.ships[ship_id]
+	if String(ship.get("owner","")) != "free_company":
+		return {"ok":false,"reason":"not_player_ship"}
+	var current_crew := int(ship.get("crew",0))
+	var max_crew := max(20, int(ship.get("max_crew",60)))
+	if current_crew >= max_crew:
+		return {"ok":false,"reason":"crew_full","max_crew":max_crew}
+	var moved := min(amount, max_crew - current_crew)
+	var cost := moved * 4
+	if int(world.gold) < cost:
+		return {"ok":false,"reason":"not_enough_gold","cost":cost}
+	world.gold -= cost
+	ship["crew"] = current_crew + moved
+	ship["max_crew"] = max_crew
+	return {"ok":true,"crew":int(ship["crew"]),"max_crew":max_crew,"cost":cost}
 
 func _advance_family_month() -> void:
     world.family["age"] = int(world.family.get("age",18)) + 1
@@ -379,6 +388,26 @@ func change_heir_support(amount: int) -> Dictionary:
         return {"ok":false,"reason":"no_heir"}
     succession_state["support"] = clamp(int(succession_state.get("support",50)) + amount, 0, 100)
     return {"ok":true,"support":int(succession_state["support"])}
+
+func get_save_state() -> Dictionary:
+	return {
+		"naval_events": naval_events.duplicate(),
+		"family_events": family_events.duplicate(),
+		"succession_state": succession_state.duplicate(true),
+		"pending_naval_encounter": pending_naval_encounter.duplicate(true)
+	}
+
+func load_save_state(state: Dictionary) -> void:
+	naval_events.clear()
+	family_events.clear()
+	for event in state.get("naval_events", []):
+		naval_events.append(String(event))
+	for event in state.get("family_events", []):
+		family_events.append(String(event))
+	if state.has("succession_state") and state["succession_state"] is Dictionary:
+		succession_state = state["succession_state"].duplicate(true)
+	if state.has("pending_naval_encounter") and state["pending_naval_encounter"] is Dictionary:
+		pending_naval_encounter = state["pending_naval_encounter"].duplicate(true)
 
 func get_succession_status() -> String:
     if not bool(succession_state.get("active",false)):
