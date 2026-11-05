@@ -454,9 +454,11 @@ func _apply_army_troop_losses(army_id:int,losses:Dictionary)->int:
 		var available := int(army["troops"].get(kind,0))
 		var actual := min(requested,available)
 		army["troops"][kind]=available-actual
-		applied+=actual
+		applied += actual
+	# Apply the accumulated losses exactly once; applying inside the loop
+	# would double-count mixed troop-type casualties.
 	army["soldiers"]=max(0,int(army["soldiers"])-applied)
-	army["morale"]=max(0,int(army["morale"])-min(30,applied/3))
+	army["morale"]=max(0,int(army["morale"])-min(30,int(applied/3)))
 	if int(army["soldiers"])<=0: armies.remove_at(army_id)
 	return applied
 
@@ -525,7 +527,7 @@ func save_game()->bool:
 	var final_node := get_node_or_null("/root/FinalGameSystems")
 	if final_node and final_node.has_method("get_save_state"):
 		final_state = final_node.get_save_state()
-	var data={"day":day,"gold":gold,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state,"campaign_state":campaign_state,"final_state":final_state}
+	var data={"save_version":2,"day":day,"gold":gold,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state,"campaign_state":campaign_state,"final_state":final_state}
 	var file:=FileAccess.open(save_path,FileAccess.WRITE)
 	if file==null: return false
 	file.store_string(JSON.stringify(data)); file.close(); return true
@@ -536,6 +538,7 @@ func load_game()->bool:
 	if file==null: return false
 	var parsed=JSON.parse_string(file.get_as_text()); file.close()
 	if typeof(parsed)!=TYPE_DICTIONARY: return false
+	if int(parsed.get("save_version",1)) > 2: return false
 	for key in ["day","gold","player_region_id","player_mode","player_level","player_xp","player_inventory","family","weather","time_of_day","regions","factions","settlements","armies","diplomacy","caravans","ships","sieges","player_equipment","family_members","player_buildings","production_stock","faction_ai_state"]:
 		if parsed.has(key): set(key,parsed[key])
 	var campaign_node := get_node_or_null("/root/CampaignSystems")
