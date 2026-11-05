@@ -4,6 +4,7 @@ run/main_scene="res://main.tscn"
 
 [autoload]
 BattleController="*res://battle_controller.gd"
+FinalGameSystems="*res://final_game_systems.gd"
 
 [display]
 window/size/viewport_width=1280
