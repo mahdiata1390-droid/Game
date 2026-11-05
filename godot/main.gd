@@ -1017,7 +1017,7 @@ func _build_world_map_ui() -> void:
 	map_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	map_canvas.set_script(load("res://world_map_visual.gd"))
 	world_map_panel.add_child(map_canvas)
-	map_canvas.set_world(world_state)
+	map_canvas.call("set_world", world_state)
 
 	world_map_label = Label.new()
 	world_map_label.position = Vector2(575, 58)
