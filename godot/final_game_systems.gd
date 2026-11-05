@@ -60,6 +60,8 @@ func resolve_rebellion(index: int, support: bool) -> Dictionary:
 	return {"ok":true,"message":"Rebellion pressure changed at " + settlement_name}
 
 func _process(_delta: float) -> void:
+    if world and world.simulation_paused:
+        return
     if not initialized:
         var scene := get_tree().current_scene
         if scene:
