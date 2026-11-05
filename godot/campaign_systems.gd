@@ -417,6 +417,65 @@ func transfer_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
     ship["cargo"] = cargo
     return {"ok":true,"resource":resource,"amount":moved,"capacity":capacity}
 
+
+func unload_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
+    if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
+        return {"ok":false,"reason":"invalid_request"}
+    if String(world.ships[ship_id].get("owner","")) != "free_company":
+        return {"ok":false,"reason":"not_player_ship"}
+    if not ["food","wood","iron"].has(resource):
+        return {"ok":false,"reason":"invalid_resource"}
+    var ship: Dictionary = world.ships[ship_id]
+    var cargo: Dictionary = ship.get("cargo", {})
+    var moved := min(amount, int(cargo.get(resource,0)))
+    if moved <= 0:
+        return {"ok":false,"reason":"no_cargo"}
+    cargo[resource] = int(cargo.get(resource,0)) - moved
+    ship["cargo"] = cargo
+    world.production_stock[resource] = int(world.production_stock.get(resource,0)) + moved
+    return {"ok":true,"resource":resource,"amount":moved}
+
+func sell_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
+    if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
+        return {"ok":false,"reason":"invalid_request"}
+    if String(world.ships[ship_id].get("owner","")) != "free_company":
+        return {"ok":false,"reason":"not_player_ship"}
+    if not ["food","wood","iron"].has(resource):
+        return {"ok":false,"reason":"invalid_resource"}
+    var ship: Dictionary = world.ships[ship_id]
+    var region_id := int(ship.get("region",0))
+    var settlement: Dictionary = {}
+    for candidate in world.settlements:
+        if int(candidate.get("region",-1)) == region_id:
+            settlement = candidate
+            break
+    if settlement.is_empty():
+        return {"ok":false,"reason":"no_settlement_here"}
+    var cargo: Dictionary = ship.get("cargo", {})
+    var moved := min(amount, int(cargo.get(resource,0)))
+    if moved <= 0:
+        return {"ok":false,"reason":"no_cargo"}
+    var stockpile: Dictionary = settlement.get("stockpile",{})
+    var stock := int(stockpile.get(resource,0))
+    var base_price := 3
+    match resource:
+        "wood":
+            base_price = 5
+        "iron":
+            base_price = 8
+    var scarcity_bonus := clamp(40 - stock, -10, 30)
+    var unit_price := max(1, int(round(float(base_price) * (1.0 + float(scarcity_bonus) / 100.0) * (1.0 + float(world.production_stock.get(resource,0)) / 200.0)))
+    var duty := clamp(int(float(unit_price * moved) * 0.05), 0, unit_price * moved)
+    var gross := unit_price * moved
+    var payout := max(1, gross - duty)
+    cargo[resource] = int(cargo.get(resource,0)) - moved
+    ship["cargo"] = cargo
+    stockpile[resource] = stock + moved
+    settlement["stockpile"] = stockpile
+    world.gold += payout
+    return {"ok":true,"settlement":String(settlement.get("name","Settlement")),"resource":resource,"amount":moved,"unit_price":unit_price,"gross":gross,"duty":duty,"payout":payout}
+
+
 func repair_ship(ship_id: int) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size():
         return {"ok":false,"reason":"invalid_ship"}
