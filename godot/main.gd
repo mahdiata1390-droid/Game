@@ -30,7 +30,7 @@ var battle_casualties := {"ALLY": 0, "ENEMY": 0}
 var battle_casualty_types := {"ALLY": {}, "ENEMY": {}}
 var battle_attacker_force: Dictionary = {}
 var battle_defender_force: Dictionary = {}
-var world_state: WorldState
+var world_state: Node
 var world_map_panel: Control
 var world_map_label: Label
 var map_open := false
