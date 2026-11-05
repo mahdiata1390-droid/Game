@@ -34,6 +34,13 @@ var travel_buttons: Array[Node] = []
 var map_canvas: ColorRect
 var army_command_panel: Panel
 var camera_first_person := false
+var settlement_interior: Node3D
+var interior_active := false
+var current_settlement_id := -1
+var interior_npcs: Array[Node3D] = []
+var inventory_panel: Panel
+var inventory_label: Label
+var inventory_open := false
 
 func _ready() -> void:
 	world_state = WorldState.new()
@@ -44,6 +51,7 @@ func _ready() -> void:
 	_build_player()
 	_build_warband()
 	_build_ui()
+	_build_interaction_ui()
 	_spawn_extra_banners()
 	_spawn_continent_world()
 	_build_world_map_ui()
@@ -290,6 +298,136 @@ func _build_ui() -> void:
 	attack.pressed.connect(_player_attack)
 	layer.add_child(attack)
 
+func _build_interaction_ui() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "GameplayInteractionUI"
+	add_child(layer)
+	var enter := Button.new()
+	enter.text = "ENTER SETTLEMENT"
+	enter.position = Vector2(28, 105)
+	enter.size = Vector2(220, 54)
+	enter.pressed.connect(_enter_nearest_settlement)
+	layer.add_child(enter)
+	var inv := Button.new()
+	inv.text = "INVENTORY"
+	inv.position = Vector2(28, 165)
+	inv.size = Vector2(180, 54)
+	inv.pressed.connect(_toggle_inventory)
+	layer.add_child(inv)
+	inventory_panel = Panel.new()
+	inventory_panel.position = Vector2(300, 120)
+	inventory_panel.size = Vector2(520, 430)
+	inventory_panel.visible = false
+	layer.add_child(inventory_panel)
+	inventory_label = Label.new()
+	inventory_label.position = Vector2(25, 25)
+	inventory_label.size = Vector2(470, 330)
+	inventory_label.add_theme_font_size_override("font_size", 22)
+	inventory_panel.add_child(inventory_label)
+	var close := Button.new()
+	close.text = "CLOSE"
+	close.position = Vector2(180, 360)
+	close.size = Vector2(160, 48)
+	close.pressed.connect(_toggle_inventory)
+	inventory_panel.add_child(close)
+
+func _nearest_settlement_id() -> int:
+	if not world_state or not is_instance_valid(player):
+		return -1
+	var best := -1
+	var best_dist := 16.0
+	for s in world_state.settlements:
+		var region := int(s.get("region", -1))
+		if region != world_state.player_region_id:
+			continue
+		var p := Vector3(float(s["position"].x), 0, float(s["position"].y if s["position"] is Vector2 else s["position"].z))
+		var d := player.global_position.distance_to(p)
+		if d < best_dist:
+			best_dist = d
+			best = int(s["id"])
+	return best
+
+func _enter_nearest_settlement() -> void:
+	var id := _nearest_settlement_id()
+	if id < 0:
+		status_label.text = "No settlement nearby. Travel there from WORLD MAP."
+		return
+	_enter_settlement(id)
+
+func _enter_settlement(settlement_id: int) -> void:
+	if interior_active:
+		return
+	if settlement_id < 0 or settlement_id >= world_state.settlements.size():
+		return
+	current_settlement_id = settlement_id
+	interior_active = true
+	var s:Dictionary = world_state.settlements[settlement_id]
+	if is_instance_valid(player):
+		player.visible = false
+	settlement_interior = Node3D.new()
+	settlement_interior.name = "SettlementInterior_%s" % String(s["name"])
+	add_child(settlement_interior)
+	_create_interior_environment(settlement_interior, String(s["type"]))
+	_spawn_interior_npcs(settlement_interior, settlement_id)
+	status_label.text = "%s • INTERIOR • Talk to the people, visit the market, or leave." % String(s["name"])
+
+func _create_interior_environment(root: Node3D, kind: String) -> void:
+	var floor_color := Color(0.25,0.19,0.13)
+	var wall_color := Color(0.40,0.34,0.27)
+	_mesh_box(Vector3(24,0.25,18),Vector3(0,-0.12,0),floor_color,root)
+	_mesh_box(Vector3(24,4,0.35),Vector3(0,2,-9),wall_color,root)
+	_mesh_box(Vector3(24,4,0.35),Vector3(0,2,9),wall_color,root)
+	_mesh_box(Vector3(0.35,4,18),Vector3(-12,2,0),wall_color,root)
+	_mesh_box(Vector3(0.35,4,18),Vector3(12,2,0),wall_color,root)
+	for i in range(5):
+		var stall := Node3D.new()
+		stall.position=Vector3(-9+i*4.5,0,-5.5)
+		root.add_child(stall)
+		_mesh_box(Vector3(3.4,1.2,1.5),Vector3(0,0.6,0),Color(0.31,0.20,0.11),stall)
+		_mesh_box(Vector3(3.8,0.18,1.9),Vector3(0,1.35,0),Color(0.12,0.08,0.05),stall)
+	_mesh_box(Vector3(5,2.2,1),Vector3(0,1.1,6.5),Color(0.20,0.13,0.08),root)
+	var title:=Label3D.new()
+	title.text="%s • %s" % [String(world_state.settlements[current_settlement_id]["name"]),kind.to_upper()]
+	title.position=Vector3(0,3.5,7.5)
+	title.font_size=48
+	root.add_child(title)
+
+func _spawn_interior_npcs(root: Node3D, settlement_id: int) -> void:
+	interior_npcs.clear()
+	for i in range(8):
+		var npc:=Node3D.new()
+		npc.name="Civilian_%d"%i
+		npc.position=Vector3(-8+(i%4)*5.0,0.0,-1.5+(i/4)*5.0)
+		root.add_child(npc)
+		_mesh_box(Vector3(0.55,0.9,0.38),Vector3(0,0.95,0),Color(0.28+float(i%3)*0.05,0.18+float(i%2)*0.05,0.12),npc)
+		_mesh_sphere(0.25,Vector3(0,1.65,0),Color(0.68,0.48,0.32),npc)
+		var role:=Label3D.new()
+		role.text=["Merchant","Farmer","Smith","Guard"][i%4]
+		role.position=Vector3(0,2.1,0)
+		role.font_size=28
+		npc.add_child(role)
+		interior_npcs.append(npc)
+
+func _leave_settlement() -> void:
+	if not interior_active:
+		return
+	if is_instance_valid(settlement_interior):
+		settlement_interior.queue_free()
+	settlement_interior=null
+	interior_npcs.clear()
+	interior_active=false
+	if is_instance_valid(player):
+		player.visible=true
+	status_label.text="Outside settlement."
+
+func _toggle_inventory() -> void:
+	inventory_open=not inventory_open
+	inventory_panel.visible=inventory_open
+	if inventory_open:
+		var eq:=world_state.player_equipment
+		var inv:=world_state.player_inventory
+		inventory_label.text="INVENTORY\n\nFood: %d\nWood: %d\nIron: %d\n\nEQUIPMENT\nWeapon: %s\nArmor: %s\nShield: %s\nHorse: %s\n\nGold: %d" % [int(inv.get("food",0)),int(inv.get("wood",0)),int(inv.get("iron",0)),String(eq.get("weapon","none")),String(eq.get("armor","none")),String(eq.get("shield","none")),String(eq.get("horse","none")),world_state.gold]
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		if event.pressed and event.position.x > get_viewport().size.x * 0.5:
@@ -305,6 +443,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(player):
 		return
+	if interior_active and Input.is_action_just_pressed("ui_cancel"):
+		_leave_settlement()
 	battle_time += delta
 	attack_cooldown = max(0.0, attack_cooldown - delta)
 	_update_player(delta)
