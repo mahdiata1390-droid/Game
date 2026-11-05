@@ -415,6 +415,69 @@ func _damage_troop(target: Node3D, damage: int = ATTACK_DAMAGE) -> void:
 				troops.remove_at(i)
 				return
 
+var siege_visual_root: Node3D
+var siege_wall_segments: Array[Node3D] = []
+var siege_gate: Node3D
+var siege_gate_hp := 120
+var siege_wall_hp := 500
+
+func create_siege_visual(settlement_name: String, wall_level: int) -> void:
+	clear_siege_visual()
+	siege_visual_root=Node3D.new()
+	siege_visual_root.name="ActiveSiege_%s"%settlement_name
+	add_child(siege_visual_root)
+	var wall_color:=Color(0.30,0.30,0.31)
+	var timber:=Color(0.18,0.12,0.08)
+	var stone:=Color(0.42,0.42,0.40)
+	var wall_len:=18.0+float(wall_level)*2.0
+	for side in [-1.0,1.0]:
+		for i in range(5):
+			var seg:=Node3D.new()
+			seg.position=Vector3(-wall_len/2.0+i*(wall_len/4.0),0,side*8.0)
+			siege_visual_root.add_child(seg)
+			_mesh_box(Vector3(wall_len/4.4,3.2,1.1),Vector3(0,1.6,0),wall_color,seg)
+			_mesh_box(Vector3(wall_len/4.8,0.18,1.35),Vector3(0,3.25,0),stone,seg)
+			siege_wall_segments.append(seg)
+	for side in [-1.0,1.0]:
+		var tower:=Node3D.new()
+		tower.position=Vector3(side*wall_len/2.0,0,8.0)
+		siege_visual_root.add_child(tower)
+		_mesh_box(Vector3(2.6,5.0,2.6),Vector3(0,2.5,0),wall_color,tower)
+		_mesh_box(Vector3(3.0,0.35,3.0),Vector3(0,5.1,0),timber,tower)
+		_create_war_banner(tower.position+Vector3(0,5.1,0),world_state.player_faction if world_state else "Free Company")
+	siege_gate=Node3D.new()
+	siege_gate.position=Vector3(0,0,8.0)
+	siege_visual_root.add_child(siege_gate)
+	_mesh_box(Vector3(4.0,3.0,0.9),Vector3(0,1.5,0),timber,siege_gate)
+	_mesh_box(Vector3(0.18,3.3,1.0),Vector3(-2.05,1.65,0),stone,siege_gate)
+	_mesh_box(Vector3(0.18,3.3,1.0),Vector3(2.05,1.65,0),stone,siege_gate)
+	siege_gate_hp=120
+	siege_wall_hp=max(100,wall_level*100)
+
+func update_siege_visual(progress:int, gate_breached:bool, gate_hp:int=120, wall_hp:int=500) -> void:
+	if not is_instance_valid(siege_visual_root): return
+	siege_gate_hp=gate_hp
+	siege_wall_hp=wall_hp
+	if is_instance_valid(siege_gate):
+		if gate_breached or gate_hp<=0:
+			siege_gate.rotation_degrees.y=-55
+			siege_gate.position.x=3.0
+		else:
+			siege_gate.rotation_degrees.y=clamp(float(120-gate_hp)*0.35,0.0,30.0)
+	for i in range(siege_wall_segments.size()):
+		var seg:=siege_wall_segments[i]
+		if not is_instance_valid(seg): continue
+		var damage_ratio:=clamp(float(siege_wall_hp)/500.0,0.15,1.0)
+		seg.scale.y=damage_ratio
+		if progress>=60 and i%2==0:
+			seg.rotation_degrees.z=3.0 if i%4==0 else -3.0
+
+func clear_siege_visual() -> void:
+	if is_instance_valid(siege_visual_root): siege_visual_root.queue_free()
+	siege_visual_root=null
+	siege_wall_segments.clear()
+	siege_gate=null
+
 func _create_banner(parent: Node3D, position: Vector3, team_color: Color) -> void:
 	# Battlefield banners use the same authored heraldic language as settlement flags.
 	_mesh_cylinder(0.055, 2.8, position + Vector3(0, 1.4, 0), Color(0.18, 0.14, 0.10), parent)
