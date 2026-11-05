@@ -12,6 +12,7 @@ var government_controls: Array[Button] = []
 var navy_controls: Array[Button] = []
 var family_controls: Array[Button] = []
 var naval_route_controls: Array[Button] = []
+var ship_upgrade_controls: Array[Button] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -109,6 +110,7 @@ func _refresh() -> void:
     _rebuild_navy_controls()
     _rebuild_family_controls()
     _rebuild_naval_route_controls()
+    _rebuild_ship_upgrade_controls()
     match selected_tab:
         "overview":
             content.text = _overview()
@@ -261,6 +263,30 @@ func _route_ship(ship_id: int, target_region: int) -> void:
     var result: Dictionary = campaign.set_ship_route(ship_id, target_region)
     _refresh()
     content.text = "NAVAL ROUTE\n\n" + (str(result) if result.get("ok",false) else "Route failed: " + String(result.get("reason","unknown")))
+
+
+func _rebuild_ship_upgrade_controls() -> void:
+    _clear_controls(ship_upgrade_controls)
+    if selected_tab != "navy" or panel == null:
+        return
+    var ids: Array[int] = campaign.get_player_ship_ids()
+    for i in range(min(ids.size(), 2)):
+        var ship_id := ids[i]
+        var base_y := 620 + i * 34
+        for j in range(3):
+            var stats := ["hull", "cannons", "cargo"]
+            var b := Button.new()
+            b.text = "SHIP %d UPGRADE %s" % [ship_id + 1, String(stats[j]).to_upper()]
+            b.position = Vector2(28 + j * 250, base_y)
+            b.size = Vector2(230, 30)
+            b.pressed.connect(_upgrade_ship.bind(ship_id, String(stats[j])))
+            panel.add_child(b)
+            ship_upgrade_controls.append(b)
+
+func _upgrade_ship(ship_id: int, stat: String) -> void:
+    var result: Dictionary = campaign.upgrade_ship(ship_id, stat)
+    _refresh()
+    content.text = "SHIP UPGRADE\n\n" + (str(result) if result.get("ok",false) else "Upgrade failed: " + String(result.get("reason","unknown")))
 
 func _rebuild_family_controls() -> void:
     _clear_controls(family_controls)
