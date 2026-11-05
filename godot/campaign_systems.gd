@@ -7,6 +7,7 @@ var family_events: Array[String] = []
 var last_day := -1
 var naval_initialized := false
 var succession_state: Dictionary = {"active":false,"heir":"","claim":0,"support":0,"regency":false}
+var pending_naval_encounter: Dictionary = {}
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -59,6 +60,8 @@ func _move_ships() -> void:
             ship["moving"] = false
 
 func _resolve_naval_encounters() -> void:
+    if not pending_naval_encounter.is_empty():
+        return
     for i in range(world.ships.size()):
         var a: Dictionary = world.ships[i]
         for j in range(i + 1, world.ships.size()):
@@ -75,6 +78,14 @@ func _resolve_naval_encounters() -> void:
                 continue
             if randi_range(1,100) > 35:
                 continue
+            var a_player := String(a.get("owner","")) == "free_company"
+            var b_player := String(b.get("owner","")) == "free_company"
+            if a_player or b_player:
+                pending_naval_encounter = {"player_ship": i if a_player else j, "enemy_ship": j if a_player else i, "region": int(a.get("region",0)), "day": int(world.day)}
+                naval_events.push_front("Naval encounter detected: choose ENGAGE, AUTO, or RETREAT.")
+                if naval_events.size() > 8:
+                    naval_events.pop_back()
+                return
             var result := naval_battle(i, j)
             if result.get("ok", false):
                 naval_events.push_front(String(result["message"]))
@@ -96,7 +107,7 @@ func _ship_power(ship: Dictionary) -> float:
             cargo_value += int(value)
     return float(crew) * 2.0 + float(cargo_value) * 0.15 + float(ship.get("hull", 50)) * 0.6 + float(ship.get("cannons", 0)) * 12.0
 
-func naval_battle(attacker_id: int, defender_id: int) -> Dictionary:
+func naval_battle(attacker_id: int, defender_id: int, player_engaged: bool = false) -> Dictionary:
     if attacker_id < 0 or defender_id < 0 or attacker_id >= world.ships.size() or defender_id >= world.ships.size():
         return {"ok":false,"reason":"invalid_ship"}
     var a: Dictionary = world.ships[attacker_id]
@@ -105,6 +116,11 @@ func naval_battle(attacker_id: int, defender_id: int) -> Dictionary:
     var dp := _ship_power(b)
     var a_roll := ap * randf_range(0.80, 1.20)
     var d_roll := dp * randf_range(0.80, 1.20)
+    if player_engaged:
+        if String(a.get("owner","")) == "free_company":
+            a_roll *= 1.10
+        if String(b.get("owner","")) == "free_company":
+            d_roll *= 1.10
     var winner := attacker_id if a_roll >= d_roll else defender_id
     var loser := defender_id if winner == attacker_id else attacker_id
     var winning: Dictionary = world.ships[winner]
@@ -133,6 +149,42 @@ func naval_battle(attacker_id: int, defender_id: int) -> Dictionary:
         message += " • ship disabled"
     return {"ok":true,"winner":winner,"loser":loser,"crew_loss":crew_loss,"hull_damage":hull_damage,"loot":loot,"disabled":disabled,"message":message}
 
+
+func has_pending_naval_encounter() -> bool:
+    return not pending_naval_encounter.is_empty()
+
+func get_pending_naval_encounter() -> Dictionary:
+    return pending_naval_encounter.duplicate(true)
+
+func resolve_pending_naval_encounter(mode: String) -> Dictionary:
+    if pending_naval_encounter.is_empty():
+        return {"ok":false,"reason":"no_pending_encounter"}
+    var player_id := int(pending_naval_encounter.get("player_ship",-1))
+    var enemy_id := int(pending_naval_encounter.get("enemy_ship",-1))
+    if player_id < 0 or enemy_id < 0 or player_id >= world.ships.size() or enemy_id >= world.ships.size():
+        pending_naval_encounter.clear()
+        return {"ok":false,"reason":"invalid_encounter"}
+    if mode == "retreat":
+        var region := int(world.ships[player_id].get("region",0))
+        var neighbors: Array[int] = world.get_region_neighbors(region)
+        if neighbors.is_empty():
+            return {"ok":false,"reason":"no_retreat_route"}
+        var target := neighbors[0]
+        world.ships[player_id]["target_region"] = target
+        world.ships[player_id]["moving"] = true
+        pending_naval_encounter.clear()
+        var message := "%s retreated toward %s." % [String(world.ships[player_id].get("name","Ship")), String(world.regions[target].get("name","Region"))]
+        naval_events.push_front(message)
+        if naval_events.size() > 8:
+            naval_events.pop_back()
+        return {"ok":true,"mode":"retreat","message":message}
+    var result := naval_battle(player_id, enemy_id, mode == "engage")
+    if result.get("ok",false):
+        pending_naval_encounter.clear()
+        naval_events.push_front(String(result.get("message","Naval battle resolved.")))
+        if naval_events.size() > 8:
+            naval_events.pop_back()
+    return result
 
 func acquire_player_ship() -> Dictionary:
     if world == null:
