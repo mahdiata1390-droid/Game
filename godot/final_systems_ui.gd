@@ -14,6 +14,7 @@ var family_controls: Array[Button] = []
 var naval_route_controls: Array[Button] = []
 var ship_upgrade_controls: Array[Button] = []
 var cargo_controls: Array[Button] = []
+var naval_encounter_controls: Array[Button] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -63,7 +64,7 @@ func _setup() -> void:
 
     content = Label.new()
     content.position = Vector2(28, 120)
-    content.size = Vector2(760, 385)
+    content.size = Vector2(760, 330)
     content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     content.add_theme_font_size_override("font_size", 18)
     panel.add_child(content)
@@ -113,6 +114,7 @@ func _refresh() -> void:
     _rebuild_naval_route_controls()
     _rebuild_ship_upgrade_controls()
     _rebuild_cargo_controls()
+    _rebuild_naval_encounter_controls()
     match selected_tab:
         "overview":
             content.text = _overview()
@@ -182,7 +184,16 @@ func _navy() -> String:
             region_name,int(ship.get("crew",0)),int(ship.get("hull",50))
         ]
     out += "\nShips move through adjacent regions and can fight hostile fleets.\n"
-    out += "Victories cause persistent crew losses and cargo seizure.\n\n"
+    out += "Player encounters pause the simulation until you choose an action.\n"
+    if campaign.has_pending_naval_encounter():
+        var encounter: Dictionary = campaign.get_pending_naval_encounter()
+        var player_id := int(encounter.get("player_ship",-1))
+        var enemy_id := int(encounter.get("enemy_ship",-1))
+        if player_id >= 0 and enemy_id >= 0 and player_id < world.ships.size() and enemy_id < world.ships.size():
+            out += "\n⚔ NAVAL ENCOUNTER PENDING\n"
+            out += "%s vs %s\n" % [String(world.ships[player_id].get("name","Your Ship")), String(world.ships[enemy_id].get("name","Enemy Ship"))]
+            out += "Choose an action below.\n"
+    out += "\nVictories cause persistent crew losses and cargo seizure.\n\n"
     out += campaign.get_recent_events()
     return out
 
@@ -199,7 +210,7 @@ func _rebuild_navy_controls() -> void:
         return
     var buy := Button.new()
     buy.text = "BUY GALLEY • 300G"
-    buy.position = Vector2(28, 510)
+    buy.position = Vector2(28, 435)
     buy.size = Vector2(230, 32)
     buy.pressed.connect(_buy_ship)
     panel.add_child(buy)
@@ -209,7 +220,7 @@ func _rebuild_navy_controls() -> void:
         var ship_id := ids[k]
         var repair := Button.new()
         repair.text = "REPAIR SHIP %d" % (ship_id + 1)
-        repair.position = Vector2(270 + k * 245, 510)
+        repair.position = Vector2(270 + k * 245, 435)
         repair.size = Vector2(220, 32)
         repair.pressed.connect(_repair_ship.bind(ship_id))
         panel.add_child(repair)
@@ -241,7 +252,7 @@ func _rebuild_naval_route_controls() -> void:
         var neighbors: Array[int] = world.get_region_neighbors(region_id)
         var crew := Button.new()
         crew.text = "CREW +5 • SHIP %d" % (ship_id + 1)
-        crew.position = Vector2(28, 548 + i * 30)
+        crew.position = Vector2(28, 472 + i * 30)
         crew.size = Vector2(230, 30)
         crew.pressed.connect(_recruit_crew.bind(ship_id))
         panel.add_child(crew)
@@ -250,7 +261,7 @@ func _rebuild_naval_route_controls() -> void:
             var target := int(neighbors[n])
             var route := Button.new()
             route.text = "SHIP %d → %s" % [ship_id + 1, String(world.regions[target].get("name","Region"))]
-            route.position = Vector2(270 + n * 245, 548 + i * 30)
+            route.position = Vector2(270 + n * 245, 472 + i * 30)
             route.size = Vector2(220, 30)
             route.pressed.connect(_route_ship.bind(ship_id, target))
             panel.add_child(route)
@@ -274,7 +285,7 @@ func _rebuild_ship_upgrade_controls() -> void:
     var ids: Array[int] = campaign.get_player_ship_ids()
     for i in range(min(ids.size(), 2)):
         var ship_id := ids[i]
-        var base_y := 608 + i * 30
+        var base_y := 536 + i * 30
         for j in range(3):
             var stats := ["hull", "cannons", "cargo"]
             var b := Button.new()
@@ -302,7 +313,7 @@ func _rebuild_cargo_controls() -> void:
             var resources := ["food", "wood", "iron"]
             var b := Button.new()
             b.text = "LOAD %s +10 • SHIP %d" % [String(resources[j]).to_upper(), ship_id + 1]
-            b.position = Vector2(28 + j * 250, 672 + i * 30)
+            b.position = Vector2(28 + j * 250, 610 + i * 30)
             b.size = Vector2(230, 28)
             b.pressed.connect(_load_cargo.bind(ship_id, String(resources[j])))
             panel.add_child(b)
@@ -312,6 +323,40 @@ func _load_cargo(ship_id: int, resource: String) -> void:
     var result: Dictionary = campaign.transfer_cargo(ship_id, resource, 10)
     _refresh()
     content.text = "FLEET CARGO\n\n" + (str(result) if result.get("ok",false) else "Cargo load failed: " + String(result.get("reason","unknown")))
+
+func _rebuild_naval_encounter_controls() -> void:
+    _clear_controls(naval_encounter_controls)
+    if selected_tab != "navy" or panel == null or not campaign.has_pending_naval_encounter():
+        return
+    var engage := Button.new()
+    engage.text = "ENGAGE"
+    engage.position = Vector2(28, 400)
+    engage.size = Vector2(230, 30)
+    engage.pressed.connect(_naval_encounter_action.bind("engage"))
+    panel.add_child(engage)
+    naval_encounter_controls.append(engage)
+    var auto := Button.new()
+    auto.text = "AUTO BATTLE"
+    auto.position = Vector2(270, 400)
+    auto.size = Vector2(230, 30)
+    auto.pressed.connect(_naval_encounter_action.bind("auto"))
+    panel.add_child(auto)
+    naval_encounter_controls.append(auto)
+    var retreat := Button.new()
+    retreat.text = "RETREAT"
+    retreat.position = Vector2(512, 400)
+    retreat.size = Vector2(230, 30)
+    retreat.pressed.connect(_naval_encounter_action.bind("retreat"))
+    panel.add_child(retreat)
+    naval_encounter_controls.append(retreat)
+
+func _naval_encounter_action(mode: String) -> void:
+    var result: Dictionary = campaign.resolve_pending_naval_encounter(mode)
+    _refresh()
+    if result.get("ok", false):
+        content.text = "NAVAL ENCOUNTER\n\n" + String(result.get("message","Encounter resolved."))
+    else:
+        content.text = "NAVAL ENCOUNTER\n\nAction failed: " + String(result.get("reason","unknown"))
 
 func _rebuild_family_controls() -> void:
     _clear_controls(family_controls)
