@@ -208,7 +208,8 @@ func acquire_player_ship() -> Dictionary:
         "max_hull":100,
         "cannons":2,
         "cargo_capacity":100,
-        "disabled":false
+        "disabled":false,
+        "max_crew":60
     })
     naval_events.push_front("The Free Company acquired a new galley.")
     if naval_events.size() > 8:
