@@ -61,7 +61,9 @@ func initialize_continent() -> void:
 	diplomacy["north_kingdom|river_kingdom"]="peace"; diplomacy["river_kingdom|eastern_tribes"]="war"; diplomacy["western_clans|river_kingdom"]="war"; diplomacy["southern_sultanate|river_kingdom"]="peace"
 
 func _add_settlement(name:String,kind:String,region_id:int,position:Vector2,owner:String,population:int)->void:
-	settlements.append({"id":settlements.size(),"name":name,"type":kind,"region":region_id,"position":position,"owner":owner,"population":population,"prosperity":50,"garrison":40 if kind=="village" else 100,"wall_level":1 if kind=="village" else (3 if kind=="town" else (5 if kind=="castle" else 2)),"buildings":{"farm":1,"workshop":1,"market":1,"barracks":1},"stockpile":{"food":80,"wood":30,"iron":15},"tax_rate":0.10,"siege":false})
+	var garrison_count := 40 if kind=="village" else 100
+	var garrison_troops := {"levy":int(garrison_count*0.55),"spearman":int(garrison_count*0.20),"archer":int(garrison_count*0.20),"horseman":max(0,garrison_count-int(garrison_count*0.55)-int(garrison_count*0.20)-int(garrison_count*0.20))}
+	settlements.append({"id":settlements.size(),"name":name,"type":kind,"region":region_id,"position":position,"owner":owner,"population":population,"prosperity":50,"garrison":garrison_count,"garrison_troops":garrison_troops,"wall_level":1 if kind=="village" else (3 if kind=="town" else (5 if kind=="castle" else 2)),"buildings":{"farm":1,"workshop":1,"market":1,"barracks":1},"stockpile":{"food":80,"wood":30,"iron":15},"tax_rate":0.10,"siege":false})
 
 func _add_army(name:String,owner:String,region_id:int,soldiers:int)->void:
 	armies.append({"id":armies.size(),"name":name,"owner":owner,"region":region_id,"soldiers":soldiers,"morale":75,"food":100,"moving":false,"target_region":region_id,"formation":"line","order":"hold","commander":"Captain","equipment":{"weapons":1,"armor":1,"mounts":0},"troops":{"levy":soldiers,"spearman":0,"archer":0,"horseman":0}})
@@ -329,7 +331,15 @@ func resolve_ai_battle(settlement_id:int,attacker:Dictionary,defender:Dictionary
 func get_settlement_defender(settlement_id:int)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size(): return {}
 	var s:Dictionary=settlements[settlement_id]
-	return {"owner":String(s["owner"]),"soldiers":int(s["garrison"]),"morale":65+int(s["prosperity"])/5}
+	var garrison := int(s.get("garrison", 0))
+	var troops:Dictionary = s.get("garrison_troops", {})
+	if troops.is_empty() or int(troops.values().reduce(func(a,b): return a + int(b), 0)) != garrison:
+		var levy := int(garrison * 0.55)
+		var spearman := int(garrison * 0.20)
+		var archer := int(garrison * 0.20)
+		troops = {"levy":levy,"spearman":spearman,"archer":archer,"horseman":max(0,garrison-levy-spearman-archer)}
+		s["garrison_troops"] = troops
+	return {"owner":String(s["owner"]),"soldiers":garrison,"morale":65+int(s["prosperity"])/5,"troops":troops.duplicate(true)}
 
 func get_player_battle_force()->Dictionary:
 	var soldiers:=80; var troops={"levy":50,"spearman":15,"archer":10,"horseman":5}
@@ -341,7 +351,7 @@ func get_player_battle_force()->Dictionary:
 	for army in armies:
 		if int(army["region"])==player_region_id and String(army["owner"])==player_faction:
 			formation=String(army.get("formation","line")); order=String(army.get("order","hold")); break
-	return {"soldiers":soldiers,"morale":78,"troops":troops,"formation":formation,"order":order}
+	return {"owner":player_faction,"soldiers":soldiers,"morale":78,"troops":troops,"formation":formation,"order":order}
 
 func resolve_auto_battle(settlement_id:int,attacker:Dictionary,defender:Dictionary)->Dictionary:
 	var attack_count:=max(1,int(attacker.get("soldiers",1))); var defend_count:=max(1,int(defender.get("soldiers",1))); var attack_morale:=float(attacker.get("morale",70)); var defend_morale:=float(defender.get("morale",65))
@@ -397,7 +407,63 @@ func capture_settlement(settlement_id:int)->bool:
 	var s:Dictionary=settlements[settlement_id]; var region_id:=int(s["region"]); var old_owner:=String(s["owner"])
 	if old_owner==player_faction: return false
 	s["owner"]=player_faction; s["garrison"]=max(20,int(s["garrison"])/3)
+	var new_garrison := int(s["garrison"]); s["garrison_troops"]={"levy":int(new_garrison*0.55),"spearman":int(new_garrison*0.20),"archer":int(new_garrison*0.20),"horseman":max(0,new_garrison-int(new_garrison*0.95))}
 	return transfer_region(region_id,player_faction)
+
+func apply_manual_battle_result(settlement_id:int,attacker_losses:int,defender_losses:int,attacker_types:Dictionary,defender_types:Dictionary)->Dictionary:
+	if settlement_id<0 or settlement_id>=settlements.size():
+		return {"captured":false,"attacker_losses":0,"defender_losses":0,"settlement":"Unknown"}
+	var player_army_id := -1
+	for army in armies:
+		if String(army["owner"])==player_faction and int(army["region"])==player_region_id:
+			player_army_id=int(army["id"])
+			break
+	var applied_attacker := 0
+	if player_army_id>=0:
+		applied_attacker = _apply_army_troop_losses(player_army_id, attacker_types)
+		if applied_attacker < attacker_losses:
+			_apply_army_losses(player_army_id, attacker_losses-applied_attacker)
+			applied_attacker = attacker_losses
+	var settlement:Dictionary = settlements[settlement_id]
+	var garrison_troops:Dictionary = settlement.get("garrison_troops", {})
+	var applied_defender := 0
+	for kind in defender_types.keys():
+		var loss := max(0, int(defender_types[kind]))
+		var available := int(garrison_troops.get(kind, 0))
+		var actual := min(loss, available)
+		garrison_troops[kind] = available-actual
+		applied_defender += actual
+	if applied_defender < defender_losses:
+		var fallback := defender_losses-applied_defender
+		for kind in garrison_troops.keys():
+			if fallback<=0: break
+			var available := int(garrison_troops[kind])
+			var actual := min(available,fallback)
+			garrison_troops[kind]=available-actual
+			fallback-=actual
+			applied_defender += actual
+	settlement["garrison_troops"] = garrison_troops
+	settlement["garrison"] = max(0, int(garrison_troops.values().reduce(func(a,b): return a + int(b), 0)))
+	var captured := false
+	if settlement["garrison"] <= 0:
+		captured = capture_settlement(settlement_id)
+	add_player_xp(max(10, applied_defender))
+	return {"captured":captured,"attacker_losses":max(0,applied_attacker),"defender_losses":max(0,applied_defender),"settlement":String(settlement["name"])}
+
+func _apply_army_troop_losses(army_id:int,losses:Dictionary)->int:
+	if army_id<0 or army_id>=armies.size(): return 0
+	var army:Dictionary=armies[army_id]
+	var applied := 0
+	for kind in losses.keys():
+		var requested := max(0,int(losses[kind]))
+		var available := int(army["troops"].get(kind,0))
+		var actual := min(requested,available)
+		army["troops"][kind]=available-actual
+		applied+=actual
+	army["soldiers"]=max(0,int(army["soldiers"])-applied)
+	army["morale"]=max(0,int(army["morale"])-min(30,applied/3))
+	if int(army["soldiers"])<=0: armies.remove_at(army_id)
+	return applied
 
 func apply_manual_victory(settlement_id:int,attacker_losses:int,defender_losses:int)->Dictionary:
 	var player_army_id:=-1
