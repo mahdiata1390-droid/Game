@@ -82,7 +82,7 @@ func _setup() -> void:
 
     var close := Button.new()
     close.text = "CLOSE"
-    close.position = Vector2(330, 545)
+    close.position = Vector2(330, 575)
     close.size = Vector2(160, 45)
     close.pressed.connect(_toggle_panel)
     panel.add_child(close)
