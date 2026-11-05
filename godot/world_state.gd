@@ -328,12 +328,18 @@ func resolve_ai_battle(settlement_id:int,attacker:Dictionary,defender:Dictionary
 	return {"type":"ai_battle","attacker":attacker_owner,"settlement":String(settlements[settlement_id]["name"]),"attacker_won":won,"attacker_losses":attacker_losses,"defender_losses":defender_losses,"captured":captured}
 
 # Shared battle engine. Manual and auto battles use the same army-quality model.
+func _sum_troop_counts(troops:Dictionary)->int:
+	var total := 0
+	for value in troops.values():
+		total += int(value)
+	return total
+
 func get_settlement_defender(settlement_id:int)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size(): return {}
 	var s:Dictionary=settlements[settlement_id]
 	var garrison := int(s.get("garrison", 0))
 	var troops:Dictionary = s.get("garrison_troops", {})
-	if troops.is_empty() or int(troops.values().reduce(func(a,b): return a + int(b), 0)) != garrison:
+	if troops.is_empty() or _sum_troop_counts(troops) != garrison:
 		var levy := int(garrison * 0.55)
 		var spearman := int(garrison * 0.20)
 		var archer := int(garrison * 0.20)
@@ -443,7 +449,7 @@ func apply_manual_battle_result(settlement_id:int,attacker_losses:int,defender_l
 			fallback-=actual
 			applied_defender += actual
 	settlement["garrison_troops"] = garrison_troops
-	settlement["garrison"] = max(0, int(garrison_troops.values().reduce(func(a,b): return a + int(b), 0)))
+	settlement["garrison"] = max(0, _sum_troop_counts(garrison_troops))
 	var captured := false
 	if settlement["garrison"] <= 0:
 		captured = capture_settlement(settlement_id)
