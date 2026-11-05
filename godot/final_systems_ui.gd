@@ -159,6 +159,7 @@ func _family() -> String:
     if world.family_members.is_empty():
         lines += "No household members yet."
     lines += "\n\nSUCCESSION ENGINE\n" + campaign.get_family_status()
+    lines += "\n" + campaign.get_succession_status()
     return lines
 
 func _navy() -> String:
@@ -229,4 +230,9 @@ func _political_peace(_unused: int) -> void:
 func _political_war(_unused: int) -> void:
     var result: Dictionary = systems.declare_war("river_kingdom")
     content.text = "DIPLOMACY\n\n" + (str(result) if result.get("ok",false) else "Action failed: " + String(result.get("reason","unknown")))
+    _refresh()
+
+func _appoint_heir(member_name: String) -> void:
+    var result: Dictionary = campaign.appoint_heir(member_name)
+    content.text = "SUCCESSION\n\n" + (str(result) if result.get("ok",false) else "Action failed: " + String(result.get("reason","unknown")))
     _refresh()
