@@ -1,6 +1,187 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource path="res://main.gd" type="Script" id="1"]
 
+[sub_resource type="Environment" id="Environment_fallback"]
+background_mode = 1
+background_color = Color(0.06, 0.09, 0.12, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.55, 0.58, 0.62, 1)
+ambient_light_energy = 0.8
+tonemap_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="Mat_grass"]
+albedo_color = Color(0.16, 0.25, 0.12, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_stone"]
+albedo_color = Color(0.30, 0.32, 0.34, 1)
+roughness = 0.92
+
+[sub_resource type="StandardMaterial3D" id="Mat_roof"]
+albedo_color = Color(0.24, 0.10, 0.055, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="Mat_wood"]
+albedo_color = Color(0.28, 0.14, 0.055, 1)
+roughness = 0.9
+
+[sub_resource type="PlaneMesh" id="GroundMesh"]
+size = Vector2(120, 120)
+material = SubResource("Mat_grass")
+
+[sub_resource type="BoxShape3D" id="GroundShape"]
+size = Vector3(120, 0.2, 120)
+
+[sub_resource type="BoxMesh" id="WallMesh"]
+size = Vector3(8, 5, 1.2)
+material = SubResource("Mat_stone")
+
+[sub_resource type="BoxMesh" id="TowerMesh"]
+size = Vector3(3, 7, 3)
+material = SubResource("Mat_stone")
+
+[sub_resource type="CylinderMesh" id="RoofMesh"]
+top_radius = 0.0
+bottom_radius = 2.2
+height = 2.8
+material = SubResource("Mat_roof")
+
+[sub_resource type="BoxMesh" id="HouseMesh"]
+size = Vector3(5, 3.2, 4.5)
+material = SubResource("Mat_wood")
+
+[sub_resource type="BoxMesh" id="RoadMesh"]
+size = Vector3(3.5, 0.03, 55)
+material = SubResource("Mat_stone")
+
 [node name="MedievalSandbox" type="Node3D"]
 script = ExtResource("1")
+
+[node name="FallbackWorld" type="Node3D" parent="."]
+
+[node name="Environment" type="WorldEnvironment" parent="FallbackWorld"]
+environment = SubResource("Environment_fallback")
+
+[node name="Sun" type="DirectionalLight3D" parent="FallbackWorld"]
+rotation_degrees = Vector3(-52, -28, 0)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="Camera" type="Camera3D" parent="FallbackWorld"]
+transform = Transform3D(1, 0, 0, 0, 0.91, 0.414, 0, -0.414, 0.91, 0, 12, 22)
+current = true
+fov = 58.0
+
+[node name="Ground" type="MeshInstance3D" parent="FallbackWorld"]
+mesh = SubResource("GroundMesh")
+
+[node name="GroundBody" type="StaticBody3D" parent="FallbackWorld"]
+[node name="Collision" type="CollisionShape3D" parent="FallbackWorld/GroundBody"]
+shape = SubResource("GroundShape")
+
+[node name="MainRoad" type="MeshInstance3D" parent="FallbackWorld"]
+position = Vector3(0, 0.03, 0)
+mesh = SubResource("RoadMesh")
+
+[node name="Castle" type="Node3D" parent="FallbackWorld"]
+position = Vector3(0, 0, -12)
+
+[node name="NorthWall" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(0, 2.5, -7)
+mesh = SubResource("WallMesh")
+
+[node name="SouthWall" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(0, 2.5, 7)
+mesh = SubResource("WallMesh")
+
+[node name="WestWall" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(-7, 2.5, 0)
+rotation_degrees = Vector3(0, 90, 0)
+mesh = SubResource("WallMesh")
+
+[node name="EastWall" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(7, 2.5, 0)
+rotation_degrees = Vector3(0, 90, 0)
+mesh = SubResource("WallMesh")
+
+[node name="TowerNW" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(-7, 3.5, -7)
+mesh = SubResource("TowerMesh")
+
+[node name="TowerNE" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(7, 3.5, -7)
+mesh = SubResource("TowerMesh")
+
+[node name="TowerSW" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(-7, 3.5, 7)
+mesh = SubResource("TowerMesh")
+
+[node name="TowerSE" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(7, 3.5, 7)
+mesh = SubResource("TowerMesh")
+
+[node name="TowerRoofNW" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(-7, 8.4, -7)
+mesh = SubResource("RoofMesh")
+
+[node name="TowerRoofNE" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(7, 8.4, -7)
+mesh = SubResource("RoofMesh")
+
+[node name="TowerRoofSW" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(-7, 8.4, 7)
+mesh = SubResource("RoofMesh")
+
+[node name="TowerRoofSE" type="MeshInstance3D" parent="FallbackWorld/Castle"]
+position = Vector3(7, 8.4, 7)
+mesh = SubResource("RoofMesh")
+
+[node name="Village" type="Node3D" parent="FallbackWorld"]
+position = Vector3(17, 0, -4)
+
+[node name="House1" type="MeshInstance3D" parent="FallbackWorld/Village"]
+position = Vector3(-6, 1.6, 0)
+mesh = SubResource("HouseMesh")
+
+[node name="House2" type="MeshInstance3D" parent="FallbackWorld/Village"]
+position = Vector3(1, 1.6, -5)
+mesh = SubResource("HouseMesh")
+
+[node name="House3" type="MeshInstance3D" parent="FallbackWorld/Village"]
+position = Vector3(7, 1.6, 3)
+mesh = SubResource("HouseMesh")
+
+[node name="HouseRoof1" type="MeshInstance3D" parent="FallbackWorld/Village"]
+position = Vector3(-6, 4.2, 0)
+mesh = SubResource("RoofMesh")
+scale = Vector3(1.15, 0.9, 1.15)
+
+[node name="HouseRoof2" type="MeshInstance3D" parent="FallbackWorld/Village"]
+position = Vector3(1, 4.2, -5)
+mesh = SubResource("RoofMesh")
+scale = Vector3(1.15, 0.9, 1.15)
+
+[node name="HouseRoof3" type="MeshInstance3D" parent="FallbackWorld/Village"]
+position = Vector3(7, 4.2, 3)
+mesh = SubResource("RoofMesh")
+scale = Vector3(1.15, 0.9, 1.15)
+
+[node name="BootStatus" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="Label" type="Label" parent="BootStatus"]
+offset_left = 28.0
+offset_top = 22.0
+offset_right = 650.0
+offset_bottom = 70.0
+text = "MEDIEVAL SANDBOX  •  BOOTING WORLD"
+theme_override_font_sizes/font_size = 24
+
+[node name="Hint" type="Label" parent="BootStatus"]
+offset_left = 30.0
+offset_top = 62.0
+offset_right = 800.0
+offset_bottom = 105.0
+text = "Fallback world active — gameplay systems loading"
+theme_override_font_sizes/font_size = 16
