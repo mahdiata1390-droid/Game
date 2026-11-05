@@ -165,6 +165,10 @@ func _start_manual(use_first_person: bool) -> void:
 	prompt = null
 	battle_active = true
 	first_person = use_first_person
+	var attacker := world_state.get_player_battle_force()
+	var defender := world_state.get_settlement_defender(battle_settlement_id)
+	if main_scene.has_method("prepare_battle"):
+		main_scene.prepare_battle(attacker, defender)
 	main_scene.set("camera_first_person", first_person)
 	mode_label = Label.new()
 	mode_label.text = "MANUAL BATTLE • %s" % ("FIRST PERSON" if first_person else "THIRD PERSON")
@@ -206,25 +210,27 @@ func _start_auto() -> void:
 func _finish_manual() -> void:
 	# The live troop combat in main.gd is the manual simulation. This commits
 	# the outcome to the same world-state conquest path used by auto battle.
-	var enemies_left := 0
-	if main_scene.has_method("get_enemy_count"):
-		enemies_left = int(main_scene.get_enemy_count())
-	else:
-		var troops = main_scene.get("troops")
-		if troops is Array:
-			for data in troops:
-				if String(data.get("team","")) == "ENEMY":
-					enemies_left += 1
-	var won := enemies_left == 0
-	var attacker_losses := 8 if won else 20
-	var defender_losses := 24 if won else 10
+	var casualties := {"attacker": 0, "defender": 0, "attacker_types": {}, "defender_types": {}}
+	if main_scene.has_method("get_battle_casualties"):
+		casualties = main_scene.get_battle_casualties()
+	var remaining := {"attacker": 0, "defender": 0}
+	if main_scene.has_method("get_battle_remaining"):
+		remaining = main_scene.get_battle_remaining()
+	var won := int(remaining.get("defender", 0)) <= 0 and int(remaining.get("attacker", 0)) > 0
+	var attacker_losses := int(casualties.get("attacker", 0))
+	var defender_losses := int(casualties.get("defender", 0))
 	var result: Dictionary
+	if main_scene.has_method("get_battle_remaining") and int(remaining.get("attacker", 0)) <= 0:
+		won = false
 	if won:
-		result = world_state.apply_manual_victory(battle_settlement_id, attacker_losses, defender_losses)
+		result = world_state.apply_manual_battle_result(battle_settlement_id, attacker_losses, defender_losses, casualties.get("attacker_types", {}), casualties.get("defender_types", {}))
 		result["attacker_won"] = true
 		result["rounds"] = ["Your troops broke the enemy line.","The remaining defenders abandoned the position.","The settlement was secured."]
 	else:
-		result = {"attacker_won":false,"captured":false,"attacker_losses":attacker_losses,"defender_losses":defender_losses,"rounds":["Your forces could not clear the defenders.","The battle was halted before a decisive breakthrough.","The settlement remains in enemy hands."],"settlement":String(world_state.settlements[battle_settlement_id]["name"])}
+		result = world_state.apply_manual_battle_result(battle_settlement_id, attacker_losses, defender_losses, casualties.get("attacker_types", {}), casualties.get("defender_types", {}))
+		result["attacker_won"] = false
+		result["captured"] = false
+		result["rounds"] = ["Your forces could not clear the defenders.","The battle was halted before a decisive breakthrough.","The settlement remains in enemy hands."]
 	battle_active = false
 	_set_camera_mode(false)
 	_show_result(result)
