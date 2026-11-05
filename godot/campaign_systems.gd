@@ -153,7 +153,9 @@ func acquire_player_ship() -> Dictionary:
         "moving":false,
         "target_region":region,
         "hull":100,
+        "max_hull":100,
         "cannons":2,
+        "cargo_capacity":100,
         "disabled":false
     })
     naval_events.push_front("The Free Company acquired a new galley.")
@@ -188,7 +190,8 @@ func upgrade_ship(ship_id: int, stat: String) -> Dictionary:
     ship[level_key] = level + 1
     match stat:
         "hull":
-            ship["hull"] = min(100 + (level + 1) * 10, 130)
+            ship["max_hull"] = 100 + (level + 1) * 10
+            ship["hull"] = int(ship["max_hull"])
         "cannons":
             ship["cannons"] = int(ship.get("cannons", 0)) + 2
         "cargo":
@@ -339,14 +342,15 @@ func repair_ship(ship_id: int) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size():
         return {"ok":false,"reason":"invalid_ship"}
     var ship: Dictionary = world.ships[ship_id]
-    var missing := 100 - int(ship.get("hull",50))
+    var max_hull := int(ship.get("max_hull",100))
+    var missing := max_hull - int(ship.get("hull",50))
     if missing <= 0:
         return {"ok":false,"reason":"already_repaired"}
     var cost := max(5, missing * 2)
     if int(world.gold) < cost:
         return {"ok":false,"reason":"not_enough_gold","cost":cost}
     world.gold -= cost
-    ship["hull"] = 100
+    ship["hull"] = max_hull
     ship["disabled"] = false
     ship["moving"] = false
     return {"ok":true,"cost":cost,"hull":100}
