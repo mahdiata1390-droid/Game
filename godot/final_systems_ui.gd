@@ -11,6 +11,7 @@ var selected_tab := "overview"
 var government_controls: Array[Button] = []
 var navy_controls: Array[Button] = []
 var family_controls: Array[Button] = []
+var naval_route_controls: Array[Button] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -107,6 +108,7 @@ func _refresh() -> void:
         b.visible = selected_tab == "government"
     _rebuild_navy_controls()
     _rebuild_family_controls()
+    _rebuild_naval_route_controls()
     match selected_tab:
         "overview":
             content.text = _overview()
@@ -221,6 +223,44 @@ func _repair_ship(ship_id: int) -> void:
     var result: Dictionary = campaign.repair_ship(ship_id)
     _refresh()
     content.text = "SHIP REPAIR\n\n" + (str(result) if result.get("ok",false) else "Repair failed: " + String(result.get("reason","unknown")))
+
+
+func _rebuild_naval_route_controls() -> void:
+    _clear_controls(naval_route_controls)
+    if selected_tab != "navy" or panel == null:
+        return
+    var ids: Array[int] = campaign.get_player_ship_ids()
+    for i in range(min(ids.size(), 2)):
+        var ship_id := ids[i]
+        var ship: Dictionary = world.ships[ship_id]
+        var region_id := int(ship.get("region",0))
+        var neighbors: Array[int] = world.get_region_neighbors(region_id)
+        var crew := Button.new()
+        crew.text = "CREW +5 • SHIP %d" % (ship_id + 1)
+        crew.position = Vector2(28, 548 + i * 36)
+        crew.size = Vector2(230, 30)
+        crew.pressed.connect(_recruit_crew.bind(ship_id))
+        panel.add_child(crew)
+        naval_route_controls.append(crew)
+        for n in range(min(neighbors.size(), 2)):
+            var target := int(neighbors[n])
+            var route := Button.new()
+            route.text = "SHIP %d → %s" % [ship_id + 1, String(world.regions[target].get("name","Region"))]
+            route.position = Vector2(270 + n * 245, 548 + i * 36)
+            route.size = Vector2(220, 30)
+            route.pressed.connect(_route_ship.bind(ship_id, target))
+            panel.add_child(route)
+            naval_route_controls.append(route)
+
+func _recruit_crew(ship_id: int) -> void:
+    var result: Dictionary = campaign.recruit_ship_crew(ship_id, 5)
+    _refresh()
+    content.text = "CREW RECRUITMENT\n\n" + (str(result) if result.get("ok",false) else "Recruitment failed: " + String(result.get("reason","unknown")))
+
+func _route_ship(ship_id: int, target_region: int) -> void:
+    var result: Dictionary = campaign.set_ship_route(ship_id, target_region)
+    _refresh()
+    content.text = "NAVAL ROUTE\n\n" + (str(result) if result.get("ok",false) else "Route failed: " + String(result.get("reason","unknown")))
 
 func _rebuild_family_controls() -> void:
     _clear_controls(family_controls)
