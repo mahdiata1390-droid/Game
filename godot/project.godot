@@ -6,6 +6,7 @@ run/main_scene="res://main.tscn"
 BattleController="*res://battle_controller.gd"
 FinalGameSystems="*res://final_game_systems.gd"
 FinalSystemsUI="*res://final_systems_ui.gd"
+CampaignSystems="*res://campaign_systems.gd"
 
 [display]
 window/size/viewport_width=1280
