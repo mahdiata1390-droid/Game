@@ -86,7 +86,7 @@ func _setup() -> void:
 
     var close := Button.new()
     close.text = "CLOSE"
-    close.position = Vector2(330, 665)
+    close.position = Vector2(330, 675)
     close.size = Vector2(160, 45)
     close.pressed.connect(_toggle_panel)
     panel.add_child(close)
@@ -239,7 +239,7 @@ func _rebuild_naval_route_controls() -> void:
         var neighbors: Array[int] = world.get_region_neighbors(region_id)
         var crew := Button.new()
         crew.text = "CREW +5 • SHIP %d" % (ship_id + 1)
-        crew.position = Vector2(28, 548 + i * 36)
+        crew.position = Vector2(28, 548 + i * 30)
         crew.size = Vector2(230, 30)
         crew.pressed.connect(_recruit_crew.bind(ship_id))
         panel.add_child(crew)
@@ -248,7 +248,7 @@ func _rebuild_naval_route_controls() -> void:
             var target := int(neighbors[n])
             var route := Button.new()
             route.text = "SHIP %d → %s" % [ship_id + 1, String(world.regions[target].get("name","Region"))]
-            route.position = Vector2(270 + n * 245, 548 + i * 36)
+            route.position = Vector2(270 + n * 245, 548 + i * 30)
             route.size = Vector2(220, 30)
             route.pressed.connect(_route_ship.bind(ship_id, target))
             panel.add_child(route)
@@ -272,7 +272,7 @@ func _rebuild_ship_upgrade_controls() -> void:
     var ids: Array[int] = campaign.get_player_ship_ids()
     for i in range(min(ids.size(), 2)):
         var ship_id := ids[i]
-        var base_y := 620 + i * 34
+        var base_y := 608 + i * 30
         for j in range(3):
             var stats := ["hull", "cannons", "cargo"]
             var b := Button.new()
