@@ -152,34 +152,22 @@ func _refresh_ui() -> void:
 func _create_naval_mission() -> void:
     if campaign == null or world == null:
         return
-    var player_ships: Array = campaign.get_player_ship_ids() if campaign.has_method("get_player_ship_ids") else []
-    if player_ships.is_empty():
-        status_label.text = "Acquire a player ship first."
+    if not campaign.has_method("create_naval_mission"):
+        status_label.text = "Naval mission system unavailable."
         return
-    if mission_target < 0 or mission_target >= world.regions.size():
-        status_label.text = "Choose a valid destination."
-        return
-    var ship_id := int(player_ships[0])
-    var stock := int(world.production_stock.get(mission_resource, 0))
-    var amount := min(mission_amount, stock)
-    if amount <= 0:
-        status_label.text = "Not enough %s stock." % mission_resource
-        return
-    world.production_stock[mission_resource] = stock - amount
-    var reward := amount * (4 if mission_resource == "food" else (7 if mission_resource == "wood" else 11))
-    var mission := {
-        "id": campaign.naval_missions.size(),
-        "ship_id": ship_id,
-        "resource": mission_resource,
-        "amount": amount,
-        "destination_region": mission_target,
-        "days_left": 3,
-        "reward": reward,
-        "complete": false
-    }
-    campaign.naval_missions.append(mission)
-    campaign.naval_events.push_front("Naval mission launched: %s × %d → %s." % [mission_resource, amount, String(world.regions[mission_target].get("name", "Region"))])
-    if campaign.naval_events.size() > 8:
-        campaign.naval_events.pop_back()
-    status_label.text = "Mission launched • reward %dG" % reward
+    var result: Dictionary = campaign.create_naval_mission(mission_resource, mission_amount, mission_target)
+    if bool(result.get("ok",false)):
+        status_label.text = "Mission launched • reward %dG" % int(result.get("reward",0))
+    else:
+        match String(result.get("reason","unknown")):
+            "no_ship":
+                status_label.text = "Acquire a player ship first."
+            "ship_unavailable":
+                status_label.text = "Your ship needs crew and a working hull."
+            "no_stock":
+                status_label.text = "Not enough %s stock." % mission_resource
+            "already_at_destination":
+                status_label.text = "Ship is already in that region."
+            _:
+                status_label.text = "Mission could not be created."
     _refresh_ui()
