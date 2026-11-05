@@ -38,6 +38,9 @@ func _daily_tick(day: int) -> void:
 
 func _move_ships() -> void:
     for ship in world.ships:
+        if bool(ship.get("disabled", false)) or int(ship.get("crew", 0)) <= 0:
+            ship["moving"] = false
+            continue
         if not bool(ship.get("moving", false)):
             continue
         var target := int(ship.get("target_region", ship.get("region", 0)))
@@ -61,6 +64,10 @@ func _resolve_naval_encounters() -> void:
         for j in range(i + 1, world.ships.size()):
             var b: Dictionary = world.ships[j]
             if int(a.get("region", -1)) != int(b.get("region", -2)):
+                continue
+            if bool(a.get("disabled", false)) or bool(b.get("disabled", false)):
+                continue
+            if int(a.get("crew",0)) <= 0 or int(b.get("crew",0)) <= 0:
                 continue
             if String(a.get("owner","")) == String(b.get("owner","")):
                 continue
@@ -104,7 +111,9 @@ func naval_battle(attacker_id: int, defender_id: int) -> Dictionary:
     var losing: Dictionary = world.ships[loser]
     var loss_ratio := clamp(0.20 + abs(a_roll-d_roll) / max(1.0, max(a_roll,d_roll)) * 0.35, 0.20, 0.65)
     var crew_loss := max(1, int(round(float(losing.get("crew",1)) * loss_ratio)))
+    var hull_damage := max(5, int(round(12.0 + loss_ratio * 35.0)))
     losing["crew"] = max(0, int(losing.get("crew",0)) - crew_loss)
+    losing["hull"] = max(0, int(losing.get("hull",50)) - hull_damage)
     var loot := 0
     var cargo: Dictionary = losing.get("cargo", {})
     for key in cargo.keys():
@@ -116,11 +125,13 @@ func naval_battle(attacker_id: int, defender_id: int) -> Dictionary:
     winner_cargo["loot"] = int(winner_cargo.get("loot",0)) + loot
     winning["cargo"] = winner_cargo
     losing["cargo"] = cargo
-    var sunk := int(losing.get("crew",0)) == 0
-    var message := "%s defeated %s at sea • %d crew lost • %d cargo seized" % [String(winning.get("name","Ship")),String(losing.get("name","Ship")),crew_loss,loot]
-    if sunk:
+    var disabled := int(losing.get("crew",0)) == 0 or int(losing.get("hull",50)) <= 0
+    losing["disabled"] = disabled
+    losing["moving"] = false
+    var message := "%s defeated %s at sea • %d crew lost • %d hull damage • %d cargo seized" % [String(winning.get("name","Ship")),String(losing.get("name","Ship")),crew_loss,hull_damage,loot]
+    if disabled:
         message += " • ship disabled"
-    return {"ok":true,"winner":winner,"loser":loser,"crew_loss":crew_loss,"loot":loot,"sunk":sunk,"message":message}
+    return {"ok":true,"winner":winner,"loser":loser,"crew_loss":crew_loss,"hull_damage":hull_damage,"loot":loot,"disabled":disabled,"message":message}
 
 func set_ship_route(ship_id: int, target_region: int) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size():
@@ -234,3 +245,19 @@ func get_succession_status() -> String:
         int(succession_state.get("support",0)),
         ("Regency possible" if bool(succession_state.get("regency",false)) else "Direct succession")
     ]
+
+func repair_ship(ship_id: int) -> Dictionary:
+    if ship_id < 0 or ship_id >= world.ships.size():
+        return {"ok":false,"reason":"invalid_ship"}
+    var ship: Dictionary = world.ships[ship_id]
+    var missing := 100 - int(ship.get("hull",50))
+    if missing <= 0:
+        return {"ok":false,"reason":"already_repaired"}
+    var cost := max(5, missing * 2)
+    if int(world.gold) < cost:
+        return {"ok":false,"reason":"not_enough_gold","cost":cost}
+    world.gold -= cost
+    ship["hull"] = 100
+    ship["disabled"] = false
+    ship["moving"] = false
+    return {"ok":true,"cost":cost,"hull":100}
