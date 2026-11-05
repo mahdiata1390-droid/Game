@@ -579,7 +579,7 @@ func _update_player(_delta: float) -> void:
 	player.rotation.y = deg_to_rad(yaw)
 	if camera_first_person:
 		camera.position = Vector3(0, 1.55, 0.10)
-		camera.rotation_degrees = Vector3(pitch, 180, 0)
+		camera.rotation_degrees = Vector3(pitch, 0, 0)
 	else:
 		camera.position = Vector3(0, 4.2, 7.5)
 		camera.rotation_degrees = Vector3(pitch, 180, 0)
