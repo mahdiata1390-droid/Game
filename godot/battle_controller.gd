@@ -235,11 +235,11 @@ func _finish_manual() -> void:
 	if main_scene.has_method("get_battle_remaining") and int(remaining.get("attacker", 0)) <= 0:
 		won = false
 	if won:
-		result = world_state.apply_manual_battle_result(battle_settlement_id, attacker_losses, defender_losses, casualties.get("attacker_types", {}), casualties.get("defender_types", {}))
+		result = world_state.apply_manual_battle_result(battle_settlement_id, attacker_losses, defender_losses, casualties.get("attacker_types", {}), casualties.get("defender_types", {})), true
 		result["attacker_won"] = true
 		result["rounds"] = ["Your troops broke the enemy line.","The remaining defenders abandoned the position.","The settlement was secured."]
 	else:
-		result = world_state.apply_manual_battle_result(battle_settlement_id, attacker_losses, defender_losses, casualties.get("attacker_types", {}), casualties.get("defender_types", {}))
+		result = world_state.apply_manual_battle_result(battle_settlement_id, attacker_losses, defender_losses, casualties.get("attacker_types", {}), casualties.get("defender_types", {})), false
 		result["attacker_won"] = false
 		result["captured"] = false
 		result["rounds"] = ["Your forces could not clear the defenders.","The battle was halted before a decisive breakthrough.","The settlement remains in enemy hands."]
