@@ -528,7 +528,15 @@ func create_caravan(origin_id:int,destination_id:int)->Dictionary:
 	return result
 
 func save_game()->bool:
-	var data={"day":day,"gold":gold,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state}
+	var campaign_state:Dictionary = {}
+	var campaign_node := get_node_or_null("/root/CampaignSystems")
+	if campaign_node and campaign_node.has_method("get_save_state"):
+		campaign_state = campaign_node.get_save_state()
+	var final_state:Dictionary = {}
+	var final_node := get_node_or_null("/root/FinalGameSystems")
+	if final_node and final_node.has_method("get_save_state"):
+		final_state = final_node.get_save_state()
+	var data={"day":day,"gold":gold,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state,"campaign_state":campaign_state,"final_state":final_state}
 	var file:=FileAccess.open(save_path,FileAccess.WRITE)
 	if file==null: return false
 	file.store_string(JSON.stringify(data)); file.close(); return true
@@ -541,6 +549,12 @@ func load_game()->bool:
 	if typeof(parsed)!=TYPE_DICTIONARY: return false
 	for key in ["day","gold","player_region_id","player_mode","player_level","player_xp","player_inventory","family","weather","time_of_day","regions","factions","settlements","armies","diplomacy","caravans","ships","sieges","player_equipment","family_members","player_buildings","production_stock","faction_ai_state"]:
 		if parsed.has(key): set(key,parsed[key])
+	var campaign_node := get_node_or_null("/root/CampaignSystems")
+	if campaign_node and campaign_node.has_method("load_save_state") and parsed.has("campaign_state"):
+		campaign_node.load_save_state(parsed["campaign_state"])
+	var final_node := get_node_or_null("/root/FinalGameSystems")
+	if final_node and final_node.has_method("load_save_state") and parsed.has("final_state"):
+		final_node.load_save_state(parsed["final_state"])
 	return true
 
 func upgrade_settlement_building(settlement_id:int,building:String)->Dictionary:
