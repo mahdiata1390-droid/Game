@@ -85,8 +85,8 @@ func _resolve_naval_encounters() -> void:
                 continue
             if randi_range(1,100) > 35:
                 continue
-            var a_player := String(a.get("owner","")) == "free_company"
-            var b_player := String(b.get("owner","")) == "free_company"
+            var a_player := String(a.get("owner","")) == "Free Company"
+            var b_player := String(b.get("owner","")) == "Free Company"
             if a_player or b_player:
                 pending_naval_encounter = {"player_ship": i if a_player else j, "enemy_ship": j if a_player else i, "region": int(a.get("region",0)), "day": int(world.day)}
                 naval_events.push_front("Naval encounter detected: choose ENGAGE, AUTO, or RETREAT.")
@@ -213,9 +213,9 @@ func naval_battle(attacker_id: int, defender_id: int, player_engaged: bool = fal
     var a_roll := ap * randf_range(0.80, 1.20)
     var d_roll := dp * randf_range(0.80, 1.20)
     if player_engaged:
-        if String(a.get("owner","")) == "free_company":
+        if String(a.get("owner","")) == "Free Company":
             a_roll *= 1.10
-        if String(b.get("owner","")) == "free_company":
+        if String(b.get("owner","")) == "Free Company":
             d_roll *= 1.10
     var winner := attacker_id if a_roll >= d_roll else defender_id
     var loser := defender_id if winner == attacker_id else attacker_id
@@ -294,7 +294,7 @@ func acquire_player_ship() -> Dictionary:
     world.ships.append({
         "id":ship_id,
         "name":"Free Company Galley %d" % (ship_id + 1),
-        "owner":"free_company",
+        "owner":"Free Company",
         "region":region,
         "crew":20,
         "cargo":{"food":10,"wood":5,"iron":2},
@@ -317,7 +317,7 @@ func get_player_ship_ids() -> Array[int]:
     if world == null:
         return ids
     for i in range(world.ships.size()):
-        if String(world.ships[i].get("owner","")) == "free_company":
+        if String(world.ships[i].get("owner","")) == "Free Company":
             ids.append(i)
     return ids
 
@@ -326,7 +326,7 @@ func upgrade_ship(ship_id: int, stat: String) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size():
         return {"ok":false,"reason":"invalid_ship"}
     var ship: Dictionary = world.ships[ship_id]
-    if String(ship.get("owner","")) != "free_company":
+    if String(ship.get("owner","")) != "Free Company":
         return {"ok":false,"reason":"not_player_ship"}
     var level_key := stat + "_level"
     var level := int(ship.get(level_key, 0))
@@ -376,7 +376,7 @@ func recruit_ship_crew(ship_id: int, amount: int) -> Dictionary:
 	if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
 		return {"ok":false,"reason":"invalid_request"}
 	var ship: Dictionary = world.ships[ship_id]
-	if String(ship.get("owner","")) != "free_company":
+	if String(ship.get("owner","")) != "Free Company":
 		return {"ok":false,"reason":"not_player_ship"}
 	var current_crew := int(ship.get("crew",0))
 	var max_crew := max(20, int(ship.get("max_crew",60)))
@@ -441,10 +441,10 @@ func _complete_succession(heir_name: String) -> void:
         else:
             member["loyalty"] = clamp(int(member.get("loyalty",50)) - 2, 0, 100)
     for settlement in world.settlements:
-        if String(settlement.get("owner","")) == "free_company":
+        if String(settlement.get("owner","")) == "Free Company":
             settlement["prosperity"] = max(0, int(settlement.get("prosperity",50)) - 2)
     for army in world.armies:
-        if String(army.get("owner","")) == "free_company":
+        if String(army.get("owner","")) == "Free Company":
             army["morale"] = clamp(int(army.get("morale",50)) - 4, 0, 100)
     succession_state = {"active":false,"heir":"","claim":0,"support":0,"regency":false}
     family_events.push_front("Succession completed: %s now leads the Free Company. The realm enters a new generation." % heir_name)
@@ -531,7 +531,7 @@ func get_succession_status() -> String:
 func transfer_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
         return {"ok":false,"reason":"invalid_request"}
-    if String(world.ships[ship_id].get("owner","")) != "free_company":
+    if String(world.ships[ship_id].get("owner","")) != "Free Company":
         return {"ok":false,"reason":"not_player_ship"}
     if not ["food","wood","iron"].has(resource):
         return {"ok":false,"reason":"invalid_resource"}
@@ -558,7 +558,7 @@ func transfer_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
 func unload_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
         return {"ok":false,"reason":"invalid_request"}
-    if String(world.ships[ship_id].get("owner","")) != "free_company":
+    if String(world.ships[ship_id].get("owner","")) != "Free Company":
         return {"ok":false,"reason":"not_player_ship"}
     if not ["food","wood","iron"].has(resource):
         return {"ok":false,"reason":"invalid_resource"}
@@ -575,7 +575,7 @@ func unload_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
 func sell_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
     if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
         return {"ok":false,"reason":"invalid_request"}
-    if String(world.ships[ship_id].get("owner","")) != "free_company":
+    if String(world.ships[ship_id].get("owner","")) != "Free Company":
         return {"ok":false,"reason":"not_player_ship"}
     if not ["food","wood","iron"].has(resource):
         return {"ok":false,"reason":"invalid_resource"}
