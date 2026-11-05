@@ -951,6 +951,11 @@ func _show_status(message: String, duration: float = 2.0) -> void:
 		status_hold = duration
 
 func _process(delta: float) -> void:
+	if Input.is_action_just_pressed("ui_cancel"):
+		if interior_active:
+			_leave_settlement()
+		else:
+			_toggle_pause()
 	if world_state and status_label:
 		status_hold = max(0.0, status_hold - delta)
 		if status_hold <= 0.0:
