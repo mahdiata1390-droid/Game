@@ -871,7 +871,7 @@ func _open_army_command(army_id: int) -> void:
 	var army: Dictionary = world_state.armies[army_id]
 	army_command_panel = Panel.new()
 	army_command_panel.position = Vector2(565, 300)
-	army_command_panel.size = Vector2(390, 190)
+	army_command_panel.size = Vector2(390, 270)
 	world_map_panel.add_child(army_command_panel)
 	var info := Label.new()
 	info.text = "%s\nTroops: %d • Morale: %d • Food: %d\nRegion: %s" % [army["name"], army["soldiers"], army["morale"], army["food"], world_state.regions[int(army["region"])]["name"]]
@@ -890,7 +890,7 @@ func _open_army_command(army_id: int) -> void:
 
 	var close := Button.new()
 	close.text = "CLOSE"
-	close.position = Vector2(280, 145)
+	close.position = Vector2(280, 220)
 	close.size = Vector2(90, 30)
 	close.pressed.connect(func():
 		if is_instance_valid(army_command_panel):
@@ -903,7 +903,7 @@ func _open_army_command(army_id: int) -> void:
 		var region_id := neighbors[j]
 		var move := Button.new()
 		move.text = "MOVE → %s" % String(world_state.regions[region_id]["name"])
-		move.position = Vector2(16 + (j % 2) * 178, 82 + (j / 2) * 31)
+		move.position = Vector2(16 + (j % 2) * 178, 160 + (j / 2) * 31)
 		move.size = Vector2(168, 27)
 		move.add_theme_font_size_override("font_size", 11)
 		move.pressed.connect(_issue_player_army_move.bind(army_id, region_id))
