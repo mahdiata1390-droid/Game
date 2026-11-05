@@ -9,6 +9,8 @@ var panel: Panel
 var content: Label
 var selected_tab := "overview"
 var government_controls: Array[Button] = []
+var navy_controls: Array[Button] = []
+var family_controls: Array[Button] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -103,6 +105,8 @@ func _refresh() -> void:
         return
     for b in government_controls:
         b.visible = selected_tab == "government"
+    _rebuild_navy_controls()
+    _rebuild_family_controls()
     match selected_tab:
         "overview":
             content.text = _overview()
@@ -175,6 +179,66 @@ func _navy() -> String:
     out += "Victories cause persistent crew losses and cargo seizure.\n\n"
     out += campaign.get_recent_events()
     return out
+
+
+func _clear_controls(list: Array[Button]) -> void:
+    for b in list:
+        if is_instance_valid(b):
+            b.queue_free()
+    list.clear()
+
+func _rebuild_navy_controls() -> void:
+    _clear_controls(navy_controls)
+    if selected_tab != "navy" or panel == null:
+        return
+    var buy := Button.new()
+    buy.text = "BUY GALLEY • 300G"
+    buy.position = Vector2(28, 510)
+    buy.size = Vector2(230, 32)
+    buy.pressed.connect(_buy_ship)
+    panel.add_child(buy)
+    navy_controls.append(buy)
+    var ids: Array[int] = campaign.get_player_ship_ids()
+    for k in range(min(ids.size(), 2)):
+        var ship_id := ids[k]
+        var repair := Button.new()
+        repair.text = "REPAIR SHIP %d" % (ship_id + 1)
+        repair.position = Vector2(270 + k * 245, 510)
+        repair.size = Vector2(220, 32)
+        repair.pressed.connect(_repair_ship.bind(ship_id))
+        panel.add_child(repair)
+        navy_controls.append(repair)
+
+func _buy_ship() -> void:
+    var result: Dictionary = campaign.acquire_player_ship()
+    _refresh()
+    if not result.get("ok", false):
+        content.text = "NAVAL PURCHASE FAILED\n\n" + String(result.get("reason","unknown"))
+    else:
+        content.text = "NAVAL PURCHASE\n\nNew Free Company galley acquired."
+
+func _repair_ship(ship_id: int) -> void:
+    var result: Dictionary = campaign.repair_ship(ship_id)
+    _refresh()
+    content.text = "SHIP REPAIR\n\n" + (str(result) if result.get("ok",false) else "Repair failed: " + String(result.get("reason","unknown")))
+
+func _rebuild_family_controls() -> void:
+    _clear_controls(family_controls)
+    if selected_tab != "family" or panel == null:
+        return
+    var candidates: Array = []
+    for member in world.family_members:
+        if String(member.get("role","")) != "spouse":
+            candidates.append(member)
+    for i in range(min(candidates.size(), 2)):
+        var member: Dictionary = candidates[i]
+        var b := Button.new()
+        b.text = "APPOINT %s" % String(member.get("name","HEIR")).to_upper()
+        b.position = Vector2(28 + i * 360, 510)
+        b.size = Vector2(330, 32)
+        b.pressed.connect(_appoint_heir.bind(String(member.get("name",""))))
+        panel.add_child(b)
+        family_controls.append(b)
 
 func _creatures() -> String:
     var out := "RARE CREATURES & WILDLIFE\n\n"
