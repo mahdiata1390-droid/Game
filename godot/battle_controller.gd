@@ -203,10 +203,10 @@ func _set_camera_mode(use_first: bool) -> void:
 	main_scene.set("camera_first_person", use_first)
 	if use_first:
 		camera.position = Vector3(0, 1.55, 0.15)
-		camera.rotation_degrees = Vector3(0, 180, 0)
+		camera.rotation_degrees = Vector3(0, 0, 0)
 	else:
 		camera.position = Vector3(0, 4.2, 7.5)
-		camera.rotation_degrees = Vector3(-12, 180, 0)
+		camera.rotation_degrees = Vector3(-12, 0, 0)
 
 func _start_auto() -> void:
 	var attacker := world_state.get_player_battle_force()
