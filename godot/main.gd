@@ -350,6 +350,8 @@ func _make_touch_button(parent: Control, label: String, pos: Vector2, direction:
 
 func _toggle_pause() -> void:
 	game_paused = not game_paused
+	if world_state:
+		world_state.simulation_paused = game_paused
 	if game_paused:
 		if is_instance_valid(pause_panel):
 			pause_panel.queue_free()
