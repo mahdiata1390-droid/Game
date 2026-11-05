@@ -35,6 +35,30 @@ func _ready() -> void:
     randomize()
     set_process(true)
 
+func get_world_event_summary() -> String:
+	var out := "WORLD EVENTS\n"
+	if rebellions.is_empty():
+		out += "• No active rebellions.\n"
+	else:
+		for rebellion in rebellions:
+			out += "• %s • strength %d • pressure %d\n" % [String(rebellion.get("settlement","Unknown")),int(rebellion.get("strength",0)),int(rebellion.get("pressure",0))]
+	return out
+
+func resolve_rebellion(index: int, support: bool) -> Dictionary:
+	if index < 0 or index >= rebellions.size():
+		return {"ok":false,"reason":"invalid_rebellion"}
+	var rebellion: Dictionary = rebellions[index]
+	var settlement_name := String(rebellion.get("settlement",""))
+	var delta := 15 if support else -20
+	rebellion["pressure"] = clamp(int(rebellion.get("pressure",50)) + delta,0,100)
+	if int(rebellion["pressure"]) >= 100:
+		return {"ok":false,"reason":"rebellion_escallated","settlement":settlement_name}
+	if int(rebellion["pressure"]) <= 0:
+		rebellions.remove_at(index)
+		renown += 2
+		return {"ok":true,"message":"Rebellion resolved at " + settlement_name}
+	return {"ok":true,"message":"Rebellion pressure changed at " + settlement_name}
+
 func _process(_delta: float) -> void:
     if not initialized:
         var scene := get_tree().current_scene
