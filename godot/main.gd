@@ -50,26 +50,45 @@ var pause_panel: Panel
 var game_paused := false
 
 func _ready() -> void:
-	# Boot the renderable world and player before campaign systems initialize.
-	# If a later gameplay subsystem has a runtime problem, Android still gets a
-	# visible scene instead of a blank/grey viewport.
-	_build_world()
+	# Start the player/camera first. The scene already contains a guaranteed
+	# fallback world, so a later gameplay/content error cannot leave Android
+	# without a controllable camera.
+	call_deferred("_boot_gameplay")
+
+func _set_boot_status(message: String) -> void:
+	var hint := get_node_or_null("BootStatus/Hint") as Label
+	if is_instance_valid(hint):
+		hint.text = message
+
+func _boot_gameplay() -> void:
+	_set_boot_status("Starting player and camera…")
 	_build_player()
+	_set_boot_status("Building terrain and settlements…")
+	_build_world()
+	_set_boot_status("Loading campaign world…")
 	world_state = WorldState.new()
 	world_state.name = "WorldState"
 	add_child(world_state)
 	world_state.initialize_continent()
+	_set_boot_status("Spawning troops and gameplay UI…")
 	_build_warband()
 	_build_ui()
 	_build_interaction_ui()
 	_spawn_extra_banners()
 	_spawn_continent_world()
 	_build_world_map_ui()
+	_set_boot_status("WORLD READY • sandbox systems online")
+	var boot := get_node_or_null("BootStatus") as CanvasLayer
+	if is_instance_valid(boot):
+		await get_tree().create_timer(1.5).timeout
+		boot.queue_free()
 
 func _spawn_extra_banners_once() -> void:
 	_spawn_extra_banners()
 
 func _build_world() -> void:
+	# Keep the core render path intentionally small and deterministic.
+	# Detailed content is added only after a valid player camera exists.
 	var world_env := WorldEnvironment.new()
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
