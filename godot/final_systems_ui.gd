@@ -70,7 +70,7 @@ func _setup() -> void:
 
     content = Label.new()
     content.position = Vector2(28, 120)
-    content.size = Vector2(760, 330)
+    content.size = Vector2(760, 260)
     content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     content.add_theme_font_size_override("font_size", 18)
     panel.add_child(content)
@@ -94,8 +94,8 @@ func _setup() -> void:
 
     var close := Button.new()
     close.text = "CLOSE"
-    close.position = Vector2(330, 748)
-    close.size = Vector2(160, 45)
+    close.position = Vector2(330, 765)
+    close.size = Vector2(160, 38)
     close.pressed.connect(_toggle_panel)
     panel.add_child(close)
 
@@ -434,9 +434,7 @@ func _rebuild_technology_controls() -> void:
 func _unlock_technology(name: String) -> void:
     var ok := systems.unlock_technology(name)
     _refresh()
-    content.text = "TECHNOLOGY
-
-" + (("Unlocked " + name + ".") if ok else "Research failed: no points or technology already at maximum.")
+    content.text = "TECHNOLOGY\n\n" + (("Unlocked " + name + ".") if ok else "Research failed: no points or technology already at maximum.")
 
 func _rebuild_creature_controls() -> void:
     _clear_controls(creature_controls)
@@ -457,9 +455,7 @@ func _rebuild_creature_controls() -> void:
 func _encounter_creature(creature_id: int) -> void:
     var result: Dictionary = systems.encounter_creature(creature_id)
     _refresh()
-    content.text = "CREATURE ENCOUNTER
-
-" + (str(result) if result.get("ok",false) else "Encounter failed: " + String(result.get("reason","unknown")))
+    content.text = "CREATURE ENCOUNTER\n\n" + (str(result) if result.get("ok",false) else "Encounter failed: " + String(result.get("reason","unknown")))
 
 func _rebuild_trade_controls() -> void:
     _clear_controls(trade_controls)
@@ -469,8 +465,8 @@ func _rebuild_trade_controls() -> void:
     for i in range(min(regions.size(), 3)):
         var b := Button.new()
         b.text = "TRADE FOOD → " + String(regions[i].get("name","REGION"))
-        b.position = Vector2(28, 520 + i * 30)
-        b.size = Vector2(330, 28)
+        b.position = Vector2(28 + i * 250, 510)
+        b.size = Vector2(230, 28)
         b.pressed.connect(_create_trade_contract.bind(i))
         panel.add_child(b)
         trade_controls.append(b)
