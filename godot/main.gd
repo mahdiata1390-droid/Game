@@ -26,6 +26,7 @@ var map_open := false
 var travel_buttons: Array[Node] = []
 var map_canvas: ColorRect
 var army_command_panel: Panel
+var camera_first_person := false
 
 func _ready() -> void:
 	world_state = WorldState.new()
@@ -301,7 +302,7 @@ func _physics_process(delta: float) -> void:
 	_update_troops(delta)
 	hp_label.text = "HP: %d / %d" % [player_hp, MAX_HP]
 	if status_label.text == "":
-		status_label.text = "ONE CONTINENT • Day %d • %d settlements • %d armies"
+		status_label.text = "ONE CONTINENT • Day %d • %d settlements • %d armies" % [world_state.day, world_state.settlements.size(), world_state.armies.size()]
 
 func _update_player(_delta: float) -> void:
 	var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
@@ -315,8 +316,12 @@ func _update_player(_delta: float) -> void:
 	player.velocity.y = -1.0
 	player.move_and_slide()
 	player.rotation.y = deg_to_rad(yaw)
-	camera.position = Vector3(0, 4.2, 7.5)
-	camera.rotation_degrees = Vector3(pitch, 180, 0)
+	if camera_first_person:
+		camera.position = Vector3(0, 1.55, 0.10)
+		camera.rotation_degrees = Vector3(pitch, 180, 0)
+	else:
+		camera.position = Vector3(0, 4.2, 7.5)
+		camera.rotation_degrees = Vector3(pitch, 180, 0)
 
 func _animate_troop_visual(troop: Node3D, moving: bool, attacking: bool, phase: float) -> void:
 	if not is_instance_valid(troop):
