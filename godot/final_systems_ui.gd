@@ -19,6 +19,8 @@ var cargo_trade_controls: Array[Button] = []
 var cargo_unload_controls: Array[Button] = []
 var technology_controls: Array[Button] = []
 var creature_controls: Array[Button] = []
+var trade_controls: Array[Button] = []
+var rebellion_controls: Array[Button] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -123,6 +125,8 @@ func _refresh() -> void:
     _rebuild_cargo_unload_controls()
     _rebuild_technology_controls()
     _rebuild_creature_controls()
+    _rebuild_trade_controls()
+    _rebuild_rebellion_controls()
     match selected_tab:
         "overview":
             content.text = _overview()
@@ -456,6 +460,43 @@ func _encounter_creature(creature_id: int) -> void:
     content.text = "CREATURE ENCOUNTER
 
 " + (str(result) if result.get("ok",false) else "Encounter failed: " + String(result.get("reason","unknown")))
+
+func _rebuild_trade_controls() -> void:
+    _clear_controls(trade_controls)
+    if selected_tab != "navy" or panel == null:
+        return
+    var regions := world.regions
+    for i in range(min(regions.size(), 3)):
+        var b := Button.new()
+        b.text = "TRADE FOOD → " + String(regions[i].get("name","REGION"))
+        b.position = Vector2(28, 520 + i * 30)
+        b.size = Vector2(330, 28)
+        b.pressed.connect(_create_trade_contract.bind(i))
+        panel.add_child(b)
+        trade_controls.append(b)
+
+func _create_trade_contract(region_id: int) -> void:
+    var result: Dictionary = campaign.create_trade_contract("food", 10, region_id)
+    _refresh()
+    content.text = "TRADE CONTRACT\n\n" + (str(result) if result.get("ok",false) else "Contract failed: " + String(result.get("reason","unknown")))
+
+func _rebuild_rebellion_controls() -> void:
+    _clear_controls(rebellion_controls)
+    if selected_tab != "government" or panel == null:
+        return
+    for i in range(systems.rebellions.size()):
+        var b := Button.new()
+        b.text = "CALM REBELLION %d" % (i + 1)
+        b.position = Vector2(28 + (i % 2) * 360, 590 + (i / 2) * 30)
+        b.size = Vector2(330, 26)
+        b.pressed.connect(_resolve_rebellion.bind(i))
+        panel.add_child(b)
+        rebellion_controls.append(b)
+
+func _resolve_rebellion(index: int) -> void:
+    var result: Dictionary = systems.resolve_rebellion(index, false)
+    _refresh()
+    content.text = "REBELLION\n\n" + (str(result) if result.get("ok",false) else "Action failed: " + String(result.get("reason","unknown")))
 
 func _rebuild_family_controls() -> void:
     _clear_controls(family_controls)
