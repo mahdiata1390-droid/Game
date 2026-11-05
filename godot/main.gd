@@ -19,6 +19,13 @@ var status_label: Label
 var hp_label: Label
 var attack_cooldown := 0.0
 var battle_time := 0.0
+var battle_in_progress := false
+var battle_initial_attacker := 0
+var battle_initial_defender := 0
+var battle_casualties := {"ALLY": 0, "ENEMY": 0}
+var battle_casualty_types := {"ALLY": {}, "ENEMY": {}}
+var battle_attacker_force: Dictionary = {}
+var battle_defender_force: Dictionary = {}
 var world_state: WorldState
 var world_map_panel: Control
 var world_map_label: Label
@@ -192,10 +199,11 @@ func _build_player() -> void:
 	camera.current = true
 
 func _build_warband() -> void:
+	# Small free-roam skirmish until a real settlement battle is selected.
 	for i in range(6):
-		_spawn_troop("ALLY", "north_kingdom", Vector3(-5 + i * 2.0, 1, 3 + (i % 2) * 1.8))
+		_spawn_troop("ALLY", "north_kingdom", Vector3(-5 + i * 2.0, 1, 3 + (i % 2) * 1.8), "levy", 1)
 	for i in range(8):
-		_spawn_troop("ENEMY", "river_kingdom", Vector3(-7 + i * 2.0, 1, -10 - (i % 2) * 1.8))
+		_spawn_troop("ENEMY", "river_kingdom", Vector3(-7 + i * 2.0, 1, -10 - (i % 2) * 1.8), "levy", 1)
 
 func _faction_troop_palette(faction_id: String) -> Dictionary:
 	match faction_id:
@@ -210,7 +218,7 @@ func _faction_troop_palette(faction_id: String) -> Dictionary:
 		_:
 			return {"armor": Color(0.24,0.20,0.28), "cloth": Color(0.10,0.075,0.13), "metal": Color(0.68,0.72,0.70), "leather": Color(0.20,0.12,0.08), "shield": Color(0.10,0.075,0.13), "style": "clan"}
 
-func _spawn_troop(team: String, faction_id: String, pos: Vector3) -> void:
+func _spawn_troop(team: String, faction_id: String, pos: Vector3, troop_type: String = "levy", represented_count: int = 1) -> void:
 	var troop := CharacterBody3D.new()
 	troop.position = pos
 	troop.name = faction_id + "_Soldier"
@@ -222,7 +230,8 @@ func _spawn_troop(team: String, faction_id: String, pos: Vector3) -> void:
 	shape.radius = 0.38
 	collision.shape = shape
 	troop.add_child(collision)
-	troops.append({"node": troop, "team": team, "faction": faction_id, "hp": 60, "cooldown": 0.0})
+	var stats := _troop_combat_stats(troop_type)
+	troops.append({"node": troop, "team": team, "faction": faction_id, "troop_type": troop_type, "represented_count": max(1, represented_count), "hp": int(stats["hp"]), "max_hp": int(stats["hp"]), "attack_damage": int(stats["damage"]), "cooldown": 0.0})
 
 func _create_soldier_visual(parent: Node3D, faction_id: String) -> void:
 	var p := _faction_troop_palette(faction_id)
@@ -336,6 +345,13 @@ func _animate_troop_visual(troop: Node3D, moving: bool, attacking: bool, phase: 
 		else:
 			sword.rotation_degrees.z = -18.0
 
+func _troop_combat_stats(troop_type: String) -> Dictionary:
+	match troop_type:
+		"spearman": return {"hp": 78, "damage": 15}
+		"archer": return {"hp": 52, "damage": 13}
+		"horseman": return {"hp": 92, "damage": 20}
+		_: return {"hp": 60, "damage": 12}
+
 func _update_troops(delta: float) -> void:
 	for i in range(troops.size() - 1, -1, -1):
 		var data = troops[i]
@@ -356,7 +372,7 @@ func _update_troops(delta: float) -> void:
 				node.move_and_slide()
 				moving = true
 			elif data.cooldown <= 0.0:
-				_damage_troop(target)
+				_damage_troop(target, int(data.get("attack_damage", ATTACK_DAMAGE)))
 				data.cooldown = 0.9
 				attacking = true
 			else:
@@ -383,11 +399,18 @@ func _nearest_enemy(from: Node3D, team: String) -> Node3D:
 			best = node
 	return best
 
-func _damage_troop(target: Node3D) -> void:
+func _damage_troop(target: Node3D, damage: int = ATTACK_DAMAGE) -> void:
 	for i in range(troops.size()):
 		if troops[i].node == target:
-			troops[i].hp = int(troops[i].hp) - ATTACK_DAMAGE
+			troops[i].hp = int(troops[i].hp) - max(1, damage)
 			if int(troops[i].hp) <= 0:
+				var dead_team := String(troops[i].team)
+				var dead_type := String(troops[i].get("troop_type", "levy"))
+				var dead_count := int(troops[i].get("represented_count", 1))
+				battle_casualties[dead_team] = int(battle_casualties.get(dead_team, 0)) + dead_count
+				var type_map: Dictionary = battle_casualty_types.get(dead_team, {})
+				type_map[dead_type] = int(type_map.get(dead_type, 0)) + dead_count
+				battle_casualty_types[dead_team] = type_map
 				target.queue_free()
 				troops.remove_at(i)
 				return
@@ -406,6 +429,65 @@ func _create_war_banner(position: Vector3, faction_id: String) -> void:
 	root.position = position
 	add_child(root)
 	_create_faction_banner(root, faction_id, 1.0)
+
+func _clear_battlefield() -> void:
+	for data in troops:
+		var node: Node3D = data.get("node")
+		if is_instance_valid(node):
+			node.queue_free()
+	troops.clear()
+
+func _spawn_force(force: Dictionary, team: String, faction_id: String, center: Vector3) -> void:
+	var composition: Dictionary = force.get("troops", {})
+	var total := max(1, int(force.get("soldiers", 1)))
+	var visual_cap := 24
+	var remaining_visual := visual_cap
+	var types := ["horseman", "spearman", "archer", "levy"]
+	var spawned := 0
+	for troop_type in types:
+		var actual := int(composition.get(troop_type, 0))
+		if actual <= 0 or remaining_visual <= 0:
+			continue
+		var visual_count := min(remaining_visual, max(1, int(ceil(float(actual) * float(visual_cap) / float(total)))))
+		var represented := max(1, int(ceil(float(actual) / float(visual_count))))
+		for i in range(visual_count):
+			var row := i / 6
+			var col := i % 6
+			var side := -1.0 if team == "ALLY" else 1.0
+			var pos := center + Vector3((col - 2.5) * 1.7, 0, side * (row * 1.9))
+			_spawn_troop(team, faction_id, pos, troop_type, min(represented, actual))
+			actual -= min(represented, actual)
+			spawned += 1
+			remaining_visual -= 1
+			if actual <= 0 or remaining_visual <= 0:
+				break
+	if spawned == 0:
+			_spawn_troop(team, faction_id, center, "levy", total)
+
+func prepare_battle(attacker: Dictionary, defender: Dictionary) -> void:
+	_clear_battlefield()
+	battle_in_progress = true
+	battle_attacker_force = attacker.duplicate(true)
+	battle_defender_force = defender.duplicate(true)
+	battle_initial_attacker = max(0, int(attacker.get("soldiers", 0)))
+	battle_initial_defender = max(0, int(defender.get("soldiers", 0)))
+	battle_casualties = {"ALLY": 0, "ENEMY": 0}
+	battle_casualty_types = {"ALLY": {}, "ENEMY": {}}
+	var attacker_faction := String(attacker.get("owner", world_state.player_faction if world_state else "Free Company"))
+	var defender_faction := String(defender.get("owner", "river_kingdom"))
+	_spawn_force(attacker, "ALLY", attacker_faction, player.global_position + Vector3(0, 0, -2))
+	_spawn_force(defender, "ENEMY", defender_faction, player.global_position + Vector3(0, 0, -13))
+
+func get_battle_casualties() -> Dictionary:
+	return {"attacker": int(battle_casualties.get("ALLY", 0)), "defender": int(battle_casualties.get("ENEMY", 0)), "attacker_types": battle_casualty_types.get("ALLY", {}).duplicate(), "defender_types": battle_casualty_types.get("ENEMY", {}).duplicate()}
+
+func get_battle_remaining() -> Dictionary:
+	var ally := 0
+	var enemy := 0
+	for data in troops:
+		if String(data.get("team", "")) == "ALLY": ally += int(data.get("represented_count", 1))
+		elif String(data.get("team", "")) == "ENEMY": enemy += int(data.get("represented_count", 1))
+	return {"attacker": ally, "defender": enemy}
 
 func _spawn_extra_banners() -> void:
 	_create_war_banner(Vector3(-12, 0, -10), "north_kingdom")
@@ -428,7 +510,10 @@ func _player_attack() -> void:
 			best = d
 			closest = node
 	if closest:
-		_damage_troop(closest)
+		var player_damage := ATTACK_DAMAGE
+		if world_state and world_state.has_method("get_player_combat_bonus"):
+			player_damage = max(ATTACK_DAMAGE, int(round(float(ATTACK_DAMAGE) * float(world_state.get_player_combat_bonus()))))
+		_damage_troop(closest, player_damage)
 		status_label.text = "Hit!"
 	else:
 		status_label.text = "No enemy in range."
