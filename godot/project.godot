@@ -10,6 +10,7 @@ CampaignSystems="*res://campaign_systems.gd"
 CompletionSystems="*res://completion_systems.gd"
 ReleaseContent="*res://release_content.gd"
 ReleaseExpansion="*res://release_expansion.gd"
+ReleasePolish="*res://release_polish.gd"
 
 [display]
 window/size/viewport_width=1280
