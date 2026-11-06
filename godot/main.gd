@@ -50,6 +50,7 @@ var inventory_open := false
 var status_hold := 0.0
 var pause_panel: Panel
 var game_paused := false
+var complete_gameplay: ReleaseCompleteGameplay
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -93,6 +94,7 @@ func _boot_gameplay() -> void:
 	_build_world_inspector()
 	_build_next_systems()
 	_build_world_map_ui()
+	_build_complete_gameplay()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
@@ -202,6 +204,12 @@ func _build_next_systems() -> void:
 	add_child(contracts)
 	contracts.build(self)
 
+
+func _build_complete_gameplay() -> void:
+	complete_gameplay = ReleaseCompleteGameplay.new()
+	complete_gameplay.name = "ReleaseCompleteGameplay"
+	add_child(complete_gameplay)
+	complete_gameplay.build(self)
 
 func _build_world_inspector() -> void:
 	var ui := ReleaseWorldInspector.new()
@@ -1015,6 +1023,9 @@ func _spawn_extra_banners() -> void:
 	_create_war_banner(Vector3(12, 0, 10), "eastern_tribes")
 
 func _player_attack() -> void:
+	if is_instance_valid(complete_gameplay) and complete_gameplay.player_attack():
+		attack_cooldown = 0.45
+		return
 	if interior_active:
 		return
 	if attack_cooldown > 0.0:
