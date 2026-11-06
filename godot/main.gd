@@ -69,6 +69,7 @@ var stages_30_39: ReleaseStages30to39
 var stages_40_49: ReleaseStages40to49
 var final_game_pass: ReleaseFinalGamePass
 var playable_world: ReleasePlayableWorld
+var final_qa: ReleaseFinalQA
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -171,7 +172,16 @@ func _boot_gameplay() -> void:
 	playable_world.name = "PlayableWorld"
 	add_child(playable_world)
 	playable_world.build(self)
-	_set_boot_status("WORLD READY • sandbox systems online")
+	final_qa = ReleaseFinalQA.new()
+	final_qa.name = "FinalQA"
+	add_child(final_qa)
+	final_qa.build(self)
+	var qa_result: Dictionary = final_qa.run_checks()
+	if not bool(qa_result.get("ok", false)):
+		_set_boot_status("WORLD QA FAILED • check debug log")
+		push_error("Final QA failed: %s" % String(qa_result.get("results", [])))
+	else:
+		_set_boot_status("WORLD READY • sandbox systems online")
 	var boot = get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
 		await get_tree().create_timer(1.5).timeout
