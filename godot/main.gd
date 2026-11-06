@@ -693,6 +693,9 @@ func _toggle_pause() -> void:
 
 func _pause_load() -> void:
 	if world_state.load_game():
+		var saved_pos = world_state.get_meta("saved_player_position", null)
+		if saved_pos is Vector3 and is_instance_valid(player):
+			player.global_position = saved_pos
 		_show_status("GAME LOADED", 2.5)
 	else:
 		_show_status("NO SAVE FOUND", 2.5)
@@ -880,8 +883,10 @@ func _update_player(_delta: float) -> void:
 		direction = direction.normalized()
 	var basis := Basis(Vector3.UP, deg_to_rad(yaw))
 	direction = basis * direction
-	player.velocity.x = direction.x * PLAYER_SPEED
-	player.velocity.z = direction.z * PLAYER_SPEED
+	var movement_bonus := float(get_meta("movement_speed_bonus", 0.0))
+	var current_speed := PLAYER_SPEED + movement_bonus
+	player.velocity.x = direction.x * current_speed
+	player.velocity.z = direction.z * current_speed
 	player.velocity.y = -1.0
 	player.move_and_slide()
 	player.rotation.y = deg_to_rad(yaw)
