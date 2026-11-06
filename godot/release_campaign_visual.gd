@@ -49,7 +49,7 @@ func _sync_armies(force: bool) -> void:
 			var to := Vector3(target_pos.x, 0.08, target_pos.y)
 			var pulse := fmod(float(Time.get_ticks_msec()) / 900.0 + float(id), 1.0)
 			destination = from.lerp(to, pulse * 0.35)
-		marker.position = marker.position.lerp(destination, 0.30)
+			marker.position = marker.position.lerp(destination, 0.30)
 		else:
 			marker.position = marker.position.lerp(destination, 0.45)
 		var label := marker.get_node_or_null("ArmyLabel") as Label3D
