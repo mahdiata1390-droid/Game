@@ -78,6 +78,7 @@ func _boot_gameplay() -> void:
 	_spawn_continent_world()
 	_build_visual_content_upgrade()
 	_build_campaign_visuals()
+	_build_siege_layer()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
@@ -96,6 +97,13 @@ func _build_campaign_visuals() -> void:
 	campaign.name = "ReleaseCampaignVisual"
 	add_child(campaign)
 	campaign.build(self)
+
+
+func _build_siege_layer() -> void:
+	var siege_layer := ReleaseSiegeLayer.new()
+	siege_layer.name = "ReleaseSiegeLayer"
+	add_child(siege_layer)
+	siege_layer.build(self)
 
 func _spawn_extra_banners_once() -> void:
 	_spawn_extra_banners()
