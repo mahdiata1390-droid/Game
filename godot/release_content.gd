@@ -295,8 +295,8 @@ func _pcm_tone(freq: float, seconds: float, volume: float, rate := 22050) -> Pac
     data.resize(count*2)
     for i in range(count):
         var t:=float(i)/rate
-        var env:=min(1.0,t*35.0)*min(1.0,(seconds-t)*12.0)
-        var sample:=sin(TAU*freq*t)*volume*env
+        var env: float = min(1.0,t*35.0)*min(1.0,(seconds-t)*12.0)
+        var sample: float = sin(TAU*freq*t)*volume*env
         var v:=clamp(int(sample*32767.0),-32768,32767)
         data[i*2]=v&255
         data[i*2+1]=(v>>8)&255
