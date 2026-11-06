@@ -100,7 +100,7 @@ func _update_clock() -> void:
     if weather_label == null: return
     var h := int(time_of_day)
     var m := int((time_of_day-float(h))*60.0)
-    var w := ["CLEAR","RAIN","WIND"][weather_state]
+    var w: String = String(["CLEAR","RAIN","WIND"][weather_state])
     weather_label.text = "DAY 1 • %02d:%02d • %s" % [h,m,w]
 
 func _watch_battle() -> void:
