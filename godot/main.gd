@@ -1,6 +1,6 @@
 extends Node3D
 
-const PLAYER_SPEED := 5.0
+var PLAYER_SPEED := 5.0
 const TROOP_SPEED := 2.1
 const ATTACK_RANGE := 1.7
 const ATTACK_DAMAGE := 12
