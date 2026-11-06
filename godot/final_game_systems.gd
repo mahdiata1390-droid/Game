@@ -36,28 +36,28 @@ func _ready() -> void:
     set_process(true)
 
 func get_world_event_summary() -> String:
-	var out := "WORLD EVENTS\n"
-	if rebellions.is_empty():
-		out += "• No active rebellions.\n"
-	else:
-		for rebellion in rebellions:
-			out += "• %s • strength %d • pressure %d\n" % [String(rebellion.get("settlement","Unknown")),int(rebellion.get("strength",0)),int(rebellion.get("pressure",0))]
-	return out
+    var out := "WORLD EVENTS\n"
+    if rebellions.is_empty():
+        out += "• No active rebellions.\n"
+    else:
+        for rebellion in rebellions:
+            out += "• %s • strength %d • pressure %d\n" % [String(rebellion.get("settlement","Unknown")),int(rebellion.get("strength",0)),int(rebellion.get("pressure",0))]
+    return out
 
 func resolve_rebellion(index: int, support: bool) -> Dictionary:
-	if index < 0 or index >= rebellions.size():
-		return {"ok":false,"reason":"invalid_rebellion"}
-	var rebellion: Dictionary = rebellions[index]
-	var settlement_name := String(rebellion.get("settlement",""))
-	var delta := 15 if support else -20
-	rebellion["pressure"] = clamp(int(rebellion.get("pressure",50)) + delta,0,100)
-	if int(rebellion["pressure"]) >= 100:
-		return {"ok":false,"reason":"rebellion_escallated","settlement":settlement_name}
-	if int(rebellion["pressure"]) <= 0:
-		rebellions.remove_at(index)
-		renown += 2
-		return {"ok":true,"message":"Rebellion resolved at " + settlement_name}
-	return {"ok":true,"message":"Rebellion pressure changed at " + settlement_name}
+    if index < 0 or index >= rebellions.size():
+        return {"ok":false,"reason":"invalid_rebellion"}
+    var rebellion: Dictionary = rebellions[index]
+    var settlement_name := String(rebellion.get("settlement",""))
+    var delta := 15 if support else -20
+    rebellion["pressure"] = clamp(int(rebellion.get("pressure",50)) + delta,0,100)
+    if int(rebellion["pressure"]) >= 100:
+        return {"ok":false,"reason":"rebellion_escallated","settlement":settlement_name}
+    if int(rebellion["pressure"]) <= 0:
+        rebellions.remove_at(index)
+        renown += 2
+        return {"ok":true,"message":"Rebellion resolved at " + settlement_name}
+    return {"ok":true,"message":"Rebellion pressure changed at " + settlement_name}
 
 func _process(_delta: float) -> void:
     if world and world.simulation_paused:
@@ -287,41 +287,41 @@ func _monthly_family_tick() -> void:
     political_influence = min(100, political_influence + 1)
 
 func get_save_state() -> Dictionary:
-	return {
-		"technology": technology.duplicate(true),
-		"player_stats": player_stats.duplicate(true),
-		"equipment_levels": equipment_levels.duplicate(true),
-		"relationships": relationships.duplicate(true),
-		"npcs": npcs.duplicate(true),
-		"trade_routes": trade_routes.duplicate(true),
-		"wildlife": wildlife.duplicate(true),
-		"creatures": creatures.duplicate(true),
-		"rebellions": rebellions.duplicate(true),
-		"technology_points": technology_points,
-		"renown": renown,
-		"laws": laws.duplicate(true),
-		"player_title": player_title,
-		"player_house": player_house,
-		"political_influence": political_influence,
-		"political_events": political_events.duplicate()
-	}
+    return {
+        "technology": technology.duplicate(true),
+        "player_stats": player_stats.duplicate(true),
+        "equipment_levels": equipment_levels.duplicate(true),
+        "relationships": relationships.duplicate(true),
+        "npcs": npcs.duplicate(true),
+        "trade_routes": trade_routes.duplicate(true),
+        "wildlife": wildlife.duplicate(true),
+        "creatures": creatures.duplicate(true),
+        "rebellions": rebellions.duplicate(true),
+        "technology_points": technology_points,
+        "renown": renown,
+        "laws": laws.duplicate(true),
+        "player_title": player_title,
+        "player_house": player_house,
+        "political_influence": political_influence,
+        "political_events": political_events.duplicate()
+    }
 
 func load_save_state(state: Dictionary) -> void:
-	for key in ["technology","player_stats","equipment_levels","relationships","npcs","trade_routes","wildlife","creatures","rebellions","laws"]:
-		if state.has(key) and state[key] is Dictionary:
-			set(key, state[key].duplicate(true))
-		elif state.has(key) and state[key] is Array:
-			set(key, state[key].duplicate(true))
-	for key in ["technology_points","renown","political_influence"]:
-		if state.has(key):
-			set(key, int(state[key]))
-	if state.has("player_title"): player_title = String(state["player_title"])
-	if state.has("player_house"): player_house = String(state["player_house"])
-	political_events.clear()
-	for event in state.get("political_events", []):
-		political_events.append(String(event))
-	initialized = true
-	last_day = world.day if world else last_day
+    for key in ["technology","player_stats","equipment_levels","relationships","npcs","trade_routes","wildlife","creatures","rebellions","laws"]:
+        if state.has(key) and state[key] is Dictionary:
+            set(key, state[key].duplicate(true))
+        elif state.has(key) and state[key] is Array:
+            set(key, state[key].duplicate(true))
+    for key in ["technology_points","renown","political_influence"]:
+        if state.has(key):
+            set(key, int(state[key]))
+    if state.has("player_title"): player_title = String(state["player_title"])
+    if state.has("player_house"): player_house = String(state["player_house"])
+    political_events.clear()
+    for event in state.get("political_events", []):
+        political_events.append(String(event))
+    initialized = true
+    last_day = world.day if world else last_day
 
 func get_player_combat_bonus() -> float:
     var level_sum := 0
