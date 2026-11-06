@@ -68,7 +68,7 @@ var stages_20_29: ReleaseStages20to29
 var stages_30_39: ReleaseStages30to39
 var stages_40_49: ReleaseStages40to49
 var final_game_pass: ReleaseFinalGamePass
-var playable_world: ReleasePlayableWorld
+var playable_world: Node
 var final_qa: ReleaseFinalQA
 
 func _ready() -> void:
@@ -168,7 +168,7 @@ func _boot_gameplay() -> void:
 	final_game_pass.name = "FinalGamePass"
 	add_child(final_game_pass)
 	final_game_pass.build(self)
-	playable_world = ReleasePlayableWorld.new()
+	playable_world = preload("res://release_playable_world.gd").new()
 	playable_world.name = "PlayableWorld"
 	add_child(playable_world)
 	playable_world.build(self)
