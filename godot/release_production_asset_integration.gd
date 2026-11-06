@@ -273,20 +273,41 @@ func _bind_world_content() -> void:
         var p: Vector2 = settlement.get("position", Vector2.ZERO)
         var center := Vector3(p.x, 0.0, p.y)
         var kind := String(settlement.get("type", "village"))
+        var settlement_scale := 1.0
+        var building_slots := 2
+        var building_radius := 3.2
+        if kind == "town":
+            settlement_scale = 1.12
+            building_slots = 4
+            building_radius = 4.6
+        elif kind == "city":
+            settlement_scale = 1.28
+            building_slots = 6
+            building_radius = 6.2
+        elif kind == "castle":
+            settlement_scale = 1.42
+            building_slots = 7
+            building_radius = 7.0
+
         if i < settlement_nodes.size():
             var house: Node3D = settlement_nodes[i]
             house.position = center
             house.rotation.y = deg_to_rad(float((i * 37) % 360))
-            house.scale = Vector3.ONE * (1.0 if kind == "village" else (1.15 if kind == "town" else (1.3 if kind == "city" else 1.45)))
+            house.scale = Vector3.ONE * settlement_scale
             used[house] = true
-        for slot in range(3):
+
+        # Each settlement gets a deterministic layout based on its type:
+        # villages are compact, towns form a market ring, cities form a larger
+        # civic ring, and castles keep a defensive outer ring.
+        for slot in range(building_slots):
             var bi := i * 3 + slot
             if bi < building_nodes.size():
                 var building: Node3D = building_nodes[bi]
-                var angle := deg_to_rad(float(slot * 120 + i * 17))
-                var radius := 2.8 + float(slot) * 1.1
+                var angle := TAU * float(slot) / float(maxi(building_slots, 1)) + deg_to_rad(float(i * 17))
+                var radius := building_radius + float(slot % 2) * 0.9
                 building.position = center + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
                 building.rotation.y = angle + PI * 0.5
+                building.scale = Vector3.ONE * (0.88 + settlement_scale * 0.08)
                 used[building] = true
         for slot in range(2):
             var ci := i * 2 + slot
@@ -300,20 +321,35 @@ func _bind_world_content() -> void:
                 npc.scale = Vector3.ONE * 0.92
                 used[npc] = true
         if kind == "village" or kind == "town":
-            for slot in range(2):
+            var farm_radius := 7.0 if kind == "village" else 9.5
+            for slot in range(4 if kind == "town" else 2):
                 var fi := i * 2 + slot
                 if fi < crop_nodes.size():
                     var crop: Node3D = crop_nodes[fi]
-                    var angle := deg_to_rad(float(slot * 180 + 45))
-                    crop.position = center + Vector3(cos(angle) * 6.5, 0.0, sin(angle) * 6.5)
-                    crop.scale = Vector3.ONE * 0.72
+                    var angle := TAU * float(slot) / float(maxi(4 if kind == "town" else 2, 1))
+                    crop.position = center + Vector3(cos(angle) * farm_radius, 0.0, sin(angle) * farm_radius)
+                    crop.scale = Vector3.ONE * (0.72 if kind == "village" else 0.8)
                     used[crop] = true
             if not animal_nodes.is_empty():
                 var ai := i % animal_nodes.size()
                 var animal: Node3D = animal_nodes[ai]
-                animal.position = center + Vector3(5.0, 0.0, -4.5)
+                animal.position = center + Vector3(farm_radius * 0.65, 0.0, -farm_radius * 0.65)
                 animal.scale = Vector3.ONE * 0.62
                 used[animal] = true
+
+        # Larger settlements get a broader natural buffer so the world does not
+        # look like every location is sitting inside the same forest ring.
+        if kind == "city" or kind == "castle":
+            var buffer_count := 8 if kind == "city" else 10
+            for b in range(buffer_count):
+                var ni := (i * 9 + b) % max(1, nature_nodes.size())
+                if ni < nature_nodes.size():
+                    var tree: Node3D = nature_nodes[ni]
+                    var buffer_angle := TAU * float(b) / float(buffer_count)
+                    var buffer_radius := 15.0 if kind == "city" else 18.0
+                    tree.position = center + Vector3(cos(buffer_angle) * buffer_radius, 0.0, sin(buffer_angle) * buffer_radius)
+                    tree.scale = Vector3.ONE * (0.82 if kind == "city" else 0.9)
+                    used[tree] = true
     for i in range(nature_nodes.size()):
         var tree: Node3D = nature_nodes[i]
         if used.has(tree):
@@ -321,7 +357,7 @@ func _bind_world_content() -> void:
         var region_id := i % max(1, settlements.size())
         var base: Vector2 = settlements[region_id].get("position", Vector2.ZERO)
         var angle := float(i) * 2.39996
-        var radius := 9.0 + float(i % 8) * 1.8
+        var radius := 10.0 + float(i % 8) * 2.1
         tree.position = Vector3(base.x + cos(angle) * radius, 0.0, base.y + sin(angle) * radius)
         tree.scale = Vector3.ONE * (0.7 + float(i % 4) * 0.07)
     for i in range(creature_nodes.size()):
