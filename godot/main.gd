@@ -53,6 +53,7 @@ var game_paused := false
 var complete_gameplay: ReleaseCompleteGameplay
 var depth_systems: ReleaseDepthSystems
 var vertical_completion: ReleaseVerticalGameplay
+var world_life_mobile: ReleaseWorldLifeMobile
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -99,6 +100,7 @@ func _boot_gameplay() -> void:
 	_build_complete_gameplay()
 	_build_depth_systems()
 	_build_vertical_completion()
+	_build_world_life_mobile()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
@@ -208,6 +210,12 @@ func _build_next_systems() -> void:
 	add_child(contracts)
 	contracts.build(self)
 
+
+func _build_world_life_mobile() -> void:
+	world_life_mobile = ReleaseWorldLifeMobile.new()
+	world_life_mobile.name = "ReleaseWorldLifeMobile"
+	add_child(world_life_mobile)
+	world_life_mobile.build(self)
 
 func _build_vertical_completion() -> void:
 	vertical_completion = ReleaseVerticalGameplay.new()
