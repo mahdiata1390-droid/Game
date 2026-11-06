@@ -85,6 +85,7 @@ func _boot_gameplay() -> void:
 	_build_campaign_command_center()
 	_build_army_settlement_manager()
 	_build_world_event_feed()
+	_build_release_system_panels()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
@@ -134,6 +135,24 @@ func _build_army_settlement_manager() -> void:
 	manager.name = "ReleaseArmyAndSettlementManager"
 	add_child(manager)
 	manager.build(self)
+
+func _build_release_system_panels() -> void:
+	var armory := ReleaseEquipmentArmory.new()
+	armory.name = "ReleaseEquipmentArmory"
+	add_child(armory)
+	armory.build(self)
+	var family_ui := ReleaseFamilySuccession.new()
+	family_ui.name = "ReleaseFamilySuccession"
+	add_child(family_ui)
+	family_ui.build(self)
+	var diplomacy_ui := ReleaseDiplomacyBoard.new()
+	diplomacy_ui.name = "ReleaseDiplomacyBoard"
+	add_child(diplomacy_ui)
+	diplomacy_ui.build(self)
+	var trade_ui := ReleaseCaravanTrade.new()
+	trade_ui.name = "ReleaseCaravanTrade"
+	add_child(trade_ui)
+	trade_ui.build(self)
 
 func _build_world_event_feed() -> void:
 	var feed := ReleaseWorldEventFeed.new()
