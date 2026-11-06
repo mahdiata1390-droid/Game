@@ -21,7 +21,9 @@ func _populate() -> void:
         return
     _clear_previous()
     _populate_environment()
+    _populate_extra_buildings()
     _populate_nature()
+    _populate_animals()
     _populate_characters()
 
 func _clear_previous() -> void:
@@ -63,6 +65,54 @@ func _populate_environment() -> void:
         node.scale = Vector3.ONE * (0.82 + float(i % 4) * 0.08)
         add_child(node)
         spawned.append(node)
+
+
+
+func _populate_extra_buildings() -> void:
+    var models := _models("buildings_extra")
+    if models.is_empty():
+        return
+    var placed := 0
+    for i in range(models.size()):
+        var path: String = models[i]
+        var lower := path.to_lower()
+        if not (lower.ends_with(".glb") or lower.ends_with(".gltf")):
+            continue
+        var node := _load_scene(path)
+        if node == null:
+            continue
+        var angle := float(i) * 1.71
+        var radius := 105.0 + float(i % 7) * 12.0
+        node.position = Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+        node.scale = Vector3.ONE * (0.85 + float(i % 3) * 0.08)
+        add_child(node)
+        spawned.append(node)
+        placed += 1
+        if placed >= 24:
+            break
+
+func _populate_animals() -> void:
+    var models := _models("animals")
+    if models.is_empty():
+        return
+    var placed := 0
+    for i in range(models.size()):
+        var path: String = models[i]
+        var lower := path.to_lower()
+        if not (lower.ends_with(".glb") or lower.ends_with(".gltf")):
+            continue
+        var node := _load_scene(path)
+        if node == null:
+            continue
+        var angle := float(i) * 2.17
+        var radius := 72.0 + float(i % 8) * 5.0
+        node.position = Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+        node.scale = Vector3.ONE * (0.55 + float(i % 4) * 0.08)
+        add_child(node)
+        spawned.append(node)
+        placed += 1
+        if placed >= 20:
+            break
 
 func _populate_nature() -> void:
     var models := _models("nature")
@@ -111,6 +161,8 @@ func get_status() -> Dictionary:
     return {
         "spawned": spawned.size(),
         "environment": registry.get_models("medieval_village").size(),
+        "buildings_extra": registry.get_models("buildings_extra").size(),
         "nature": registry.get_models("nature").size(),
+        "animals": registry.get_models("animals").size(),
         "characters": registry.get_models("characters").size()
     }
