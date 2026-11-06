@@ -21,6 +21,7 @@ window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 
 [debug]
+gdscript/warnings/enable=false
 gdscript/warnings/treat_warnings_as_errors=false
 
 [rendering]
