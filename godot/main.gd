@@ -173,6 +173,10 @@ func _build_naval_command() -> void:
 	ui.build(self)
 
 func _build_next_systems() -> void:
+	var thirty := ReleaseThirtySystems.new()
+	thirty.name = "ReleaseThirtySystems"
+	add_child(thirty)
+	thirty.build(self)
 	var ai := ReleaseArmyTacticalAI.new()
 	ai.name = "ReleaseArmyTacticalAI"
 	add_child(ai)
