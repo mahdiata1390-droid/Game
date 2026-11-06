@@ -596,13 +596,13 @@ func load_game()->bool:
 	var complete_node := get_node_or_null("../ReleaseCompleteGameplay")
 	if complete_node and complete_node.has_method("load_save_state") and parsed.has("complete_gameplay_state"):
 		complete_node.load_save_state(parsed["complete_gameplay_state"])
-\tvar depth_node := get_node_or_null("../ReleaseDepthSystems")
-\tif depth_node and depth_node.has_method("load_state") and parsed.has("depth_systems_state"):
-\t\tdepth_node.load_state(parsed["depth_systems_state"])
-\tvar vertical_node := get_node_or_null("../ReleaseVerticalGameplay")
-\tif vertical_node and vertical_node.has_method("load_save_state") and parsed.has("vertical_completion_state"):
-\t\tvertical_node.load_save_state(parsed["vertical_completion_state"])
-\treturn true
+	var depth_node := get_node_or_null("../ReleaseDepthSystems")
+	if depth_node and depth_node.has_method("load_state") and parsed.has("depth_systems_state"):
+		depth_node.load_state(parsed["depth_systems_state"])
+	var vertical_node := get_node_or_null("../ReleaseVerticalGameplay")
+	if vertical_node and vertical_node.has_method("load_save_state") and parsed.has("vertical_completion_state"):
+		vertical_node.load_save_state(parsed["vertical_completion_state"])
+	return true
 
 func upgrade_settlement_building(settlement_id:int,building:String)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size(): return {"ok":false,"reason":"invalid_settlement"}
