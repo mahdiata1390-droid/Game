@@ -72,6 +72,12 @@ func build(main: Node) -> void:
 	panel.add_child(next)
 	_refresh()
 
+func _toggle() -> void:
+	if is_instance_valid(panel):
+		panel.visible = not panel.visible
+		if panel.visible:
+			_refresh()
+
 func _add_member() -> void:
 	if name_input.text.strip_edges().is_empty():
 		return
