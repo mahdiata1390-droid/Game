@@ -59,6 +59,7 @@ var final_completion: ReleaseFinalCompletion
 var asset_registry: ReleaseAssetRegistry
 var production_asset_integration: ReleaseProductionAssetIntegration
 var combat_system: ReleaseCombatSystem
+var npc_ai_system: ReleaseNpcAiSystem
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -121,6 +122,10 @@ func _boot_gameplay() -> void:
 	combat_system.name = "CombatSystem"
 	add_child(combat_system)
 	combat_system.build(self)
+	npc_ai_system = ReleaseNpcAiSystem.new()
+	npc_ai_system.name = "NpcAiSystem"
+	add_child(npc_ai_system)
+	npc_ai_system.build(self)
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
