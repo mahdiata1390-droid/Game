@@ -602,7 +602,7 @@ func sell_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
     var scarcity_bonus := clamp(40 - stock, -10, 30)
     var unit_price := max(1, int(round(float(base_price) * (1.0 + float(scarcity_bonus) / 100.0) * (1.0 + float(world.production_stock.get(resource,0)) / 200.0))))
     var duty := clamp(int(float(unit_price * moved) * 0.05), 0, unit_price * moved)
-    var gross := unit_price * moved
+    var gross: int = unit_price * moved
     var payout := max(1, gross - duty)
     cargo[resource] = int(cargo.get(resource,0)) - moved
     ship["cargo"] = cargo
