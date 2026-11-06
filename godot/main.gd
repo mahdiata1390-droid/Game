@@ -63,6 +63,7 @@ var npc_ai_system: ReleaseNpcAiSystem
 var siege_stage: ReleaseSiegeStage
 var expansion_stages: ReleaseExpansionStages
 var kingdom_systems: ReleaseKingdomSystems
+var stages_15_19: ReleaseStages15to19
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -141,6 +142,10 @@ func _boot_gameplay() -> void:
 	kingdom_systems.name = "KingdomSystems"
 	add_child(kingdom_systems)
 	kingdom_systems.build(self)
+	stages_15_19 = ReleaseStages15to19.new()
+	stages_15_19.name = "Stages15to19"
+	add_child(stages_15_19)
+	stages_15_19.build(self)
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
