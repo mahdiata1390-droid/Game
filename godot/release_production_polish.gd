@@ -234,7 +234,7 @@ func _on_touch_input(event: InputEvent) -> void:
 	elif event is InputEventScreenDrag and event.index == touch_look_id:
 		if player == null:
 			return
-		var delta := event.relative * 0.0035 * float(settings["touch_sensitivity"])
+		var delta: Vector2 = event.relative * 0.0035 * float(settings["touch_sensitivity"])
 		player.rotate_y(-delta.x)
 		if game.get("camera") != null:
 			var cam: Camera3D = game.get("camera")
