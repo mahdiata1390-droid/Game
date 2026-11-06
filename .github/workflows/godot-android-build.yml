@@ -1,3 +1,4 @@
+# CI diagnostic: isolated script validation enabled
 name: Godot Android Final Candidate
 
 on:
