@@ -109,6 +109,8 @@ func player_strike() -> Dictionary:
 		return {"ok":false,"reason":"invalid_target"}
 	var armor := _armor_value(String(target_data.get("armor","leather_armor")))
 	var damage := max(1,int(stats.damage - armor))
+	if String(stats.get("weapon_type","")) == "bow":
+		return ranged_attack()
 	host._damage_troop(target, damage)
 	state["combat_hits"] = int(state["combat_hits"]) + 1
 	_hit_reaction(target, stats.knockback)
@@ -456,6 +458,35 @@ func _tick_army_movement(army: Dictionary) -> void:
 		army["moving"] = false
 		if String(army.get("order","")) == "attack":
 			army["morale"] = max(0,int(army.get("morale",70))-2)
+			_resolve_ai_region_attack(army,target)
+
+func _resolve_ai_region_attack(army: Dictionary, region_id: int) -> void:
+	var owner := String(army.get("owner",""))
+	if region_id < 0 or region_id >= world.regions.size(): return
+	var target_owner := String(world.regions[region_id].get("owner",""))
+	if not _at_war(owner,target_owner): return
+	var settlement_id := -1
+	for i in range(world.settlements.size()):
+		if int(world.settlements[i].get("region",-1)) == region_id and String(world.settlements[i].get("owner","")) == target_owner:
+			settlement_id = i
+			break
+	if settlement_id < 0: return
+	var settlement: Dictionary = world.settlements[settlement_id]
+	var attack_power := max(1,int(army.get("soldiers",0)) + int(army.get("troops",{}).get("horseman",0))*2)
+	var defense_power := max(1,int(settlement.get("garrison",0)) + int(settlement.get("wall_level",1))*18)
+	var ratio := float(attack_power)/float(defense_power)
+	var attacker_loss := max(1,int(defense_power*(0.05 if ratio >= 1.0 else 0.10)))
+	var defender_loss := max(1,int(attack_power*(0.12 if ratio >= 1.0 else 0.06)))
+	army["soldiers"] = max(0,int(army.get("soldiers",0))-attacker_loss)
+	army["morale"] = max(0,int(army.get("morale",70))-min(20,int(attacker_loss/3)))
+	settlement["garrison"] = max(0,int(settlement.get("garrison",0))-defender_loss)
+	if ratio >= 1.0 and int(settlement["garrison"]) <= 0:
+		settlement["owner"] = owner
+		settlement["garrison"] = max(15,int(army.get("soldiers",0)/8))
+		world.transfer_region(region_id,owner)
+		world.world_events.append("%s captured %s." % [army.get("name","Army"),settlement.get("name","Settlement")])
+	else:
+		army["order"] = "defend" if ratio < 0.8 else "attack"
 
 func _hostile_neighbors(region: int, owner: String) -> Array[int]:
 	var result: Array[int] = []
