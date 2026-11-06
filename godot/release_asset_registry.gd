@@ -33,6 +33,36 @@ const PACKS := {
 		"license": "CC0-1.0",
 		"source": "Quaternius Universal Base Characters",
 		"source_url": "https://quaternius.itch.io/universal-base-characters"
+	},
+	"buildings_extra": {
+		"path": ROOT + "/buildings_extra",
+		"license": "CC0-1.0",
+		"source": "Quaternius Modular Medieval Pack",
+		"source_url": "https://opengameart.org/"
+	},
+	"characters_extra": {
+		"path": ROOT + "/characters_extra",
+		"license": "CC0-1.0",
+		"source": "Quaternius Ultimate Animated Character Pack",
+		"source_url": "https://opengameart.org/"
+	},
+	"animals": {
+		"path": ROOT + "/animals",
+		"license": "CC0-1.0",
+		"source": "Quaternius Farm Animals Pack",
+		"source_url": "https://opengameart.org/"
+	},
+	"crops": {
+		"path": ROOT + "/crops",
+		"license": "CC0-1.0",
+		"source": "Quaternius Nature Crops Pack",
+		"source_url": "https://opengameart.org/"
+	},
+	"creatures": {
+		"path": ROOT + "/creatures",
+		"license": "CC0-1.0",
+		"source": "Quaternius Animated Monster Pack",
+		"source_url": "https://opengameart.org/"
 	}
 }
 
