@@ -4,7 +4,7 @@ class_name ReleaseStages30to39
 # 30-39 governance, economy and large-scale war simulation.
 var game:Node3D
 var world:Node
-var tick:=0.0
+var tick=0.0
 var ministers:Dictionary={}
 var governors:Dictionary={}
 var houses:Dictionary={}
@@ -61,17 +61,17 @@ func _economy_tick()->void:
     for id in economy["trade_routes"].keys():
         var route:Dictionary=economy["trade_routes"][id]
         if not bool(route.get("active",true)): continue
-        var from:=int(route.get("from",-1))
-        var to:=int(route.get("to",-1))
+        var from=int(route.get("from",-1))
+        var to=int(route.get("to",-1))
         if from<0 or to<0 or from>=world.settlements.size() or to>=world.settlements.size(): continue
-        var resource:=String(route.get("resource","food"))
-        var amount:=int(route.get("volume",1))
+        var resource=String(route.get("resource","food"))
+        var amount=int(route.get("volume",1))
         var src:Dictionary=world.settlements[from]
         var dst:Dictionary=world.settlements[to]
         var sr:Dictionary=src.get("resources",{})
         var dr:Dictionary=dst.get("resources",{})
-        var available:=int(sr.get(resource,0))
-        var moved:=mini(amount,available)
+        var available=int(sr.get(resource,0))
+        var moved=mini(amount,available)
         sr[resource]=available-moved
         dr[resource]=int(dr.get(resource,0))+moved
         src["resources"]=sr
@@ -93,10 +93,10 @@ func _war_tick()->void:
         wars[id]=w
 
 func _ui()->void:
-    var layer:=CanvasLayer.new()
+    var layer=CanvasLayer.new()
     layer.name="Stages30to39UI"
     game.add_child(layer)
-    var p:=Panel.new()
+    var p=Panel.new()
     p.position=Vector2(410,410)
     p.size=Vector2(350,72)
     p.modulate.a=0.86
