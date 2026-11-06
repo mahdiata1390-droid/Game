@@ -40,3 +40,7 @@ A CI build artifact is not considered a release until the APK has been checked f
 Final APK size is intentionally not fixed yet. The final size will depend mainly on the number of imported 3D models, textures, animations, music and sound effects. The project will be optimized so visual quality does not translate directly into unnecessary file size.
 
 Current target for the finished Android release is approximately **300–600 MB installed**, with the final downloadable APK/AAB size reported from the actual release build rather than guessed.
+
+
+## Final candidate QA
+The release-candidate branch is validated by the Android CI workflow before an APK is considered releasable.
