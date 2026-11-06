@@ -124,7 +124,7 @@ func _show_siege_panel()->void:
     var layer:=_ensure_layer()
     siege_panel=Panel.new(); siege_panel.position=Vector2(300,90); siege_panel.size=Vector2(640,470); layer.add_child(siege_panel)
     var title:=Label.new(); title.text="SIEGE • "+String(world_state.settlements[battle_settlement_id]["name"]); title.position=Vector2(25,20); title.add_theme_font_size_override("font_size",26); siege_panel.add_child(title)
-    var s:=world_state.settlements[battle_settlement_id]; var data:=world_state.sieges.get(battle_settlement_id,{})
+    var s: Dictionary = world_state.settlements[battle_settlement_id]; var data: Dictionary = world_state.sieges.get(battle_settlement_id,{})
     var info:=Label.new(); info.text="Wall: %d\nGarrison: %d\nSiege progress: %d%%\nPhase: %s\nGate: %d HP\nWall integrity: %d HP\nBreach: %s" % [int(s.get("wall_level",1)),int(s["garrison"]),int(data.get("progress",0)),String(data.get("phase","approach")),int(data.get("gate_hp",120)),int(data.get("wall_hp",int(s.get("wall_level",1))*100)),("YES" if bool(data.get("breach",false)) else "NO")]; info.position=Vector2(25,75); info.add_theme_font_size_override("font_size",18); siege_panel.add_child(info)
     var assault:=Button.new(); assault.text="ASSAULT THE WALLS"; assault.position=Vector2(25,285); assault.size=Vector2(275,60); assault.pressed.connect(_assault_siege); siege_panel.add_child(assault)
     var wait:=Button.new(); wait.text="WAIT • +1 DAY"; wait.position=Vector2(325,285); wait.size=Vector2(275,60); wait.pressed.connect(_wait_siege); siege_panel.add_child(wait)
