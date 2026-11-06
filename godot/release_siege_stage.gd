@@ -7,18 +7,18 @@ class_name ReleaseSiegeStage
 
 var game: Node3D
 var world: Node
-var active := false
-var settlement_id := -1
-var attacker_id := -1
-var phase := "idle"
-var wall_hp := 0
-var gate_hp := 0
-var progress := 0.0
-var attacker_morale := 70.0
-var defender_morale := 70.0
-var supply := 100.0
-var tick := 0.0
-var phase_tick := 0.0
+var active = false
+var settlement_id = -1
+var attacker_id = -1
+var phase = "idle"
+var wall_hp = 0
+var gate_hp = 0
+var progress = 0.0
+var attacker_morale = 70.0
+var defender_morale = 70.0
+var supply = 100.0
+var tick = 0.0
+var phase_tick = 0.0
 var siege_root: Node3D
 var status_label: Label
 
@@ -45,12 +45,12 @@ func _process(delta: float) -> void:
 func start(settlement: int = -1) -> Dictionary:
     if world == null or world.settlements.is_empty():
         return {"ok":false,"reason":"world_not_ready"}
-    var sid := settlement
+    var sid = settlement
     if sid < 0:
         sid = _nearest_hostile_settlement()
     if sid < 0 or sid >= world.settlements.size():
         return {"ok":false,"reason":"no_target"}
-    var army := _player_army_id()
+    var army = _player_army_id()
     if army < 0:
         return {"ok":false,"reason":"no_player_army"}
     if not world.has_method("start_siege"):
@@ -84,7 +84,7 @@ func _advance_siege() -> void:
         return
     var s: Dictionary = world.settlements[settlement_id]
     var army: Dictionary = world.armies[attacker_id] if attacker_id >= 0 and attacker_id < world.armies.size() else {}
-    var soldiers := int(army.get("soldiers",0))
+    var soldiers = int(army.get("soldiers",0))
     if soldiers <= 0:
         _finish(false)
         return
@@ -115,7 +115,7 @@ func _advance_siege() -> void:
             phase_tick = 0.0
             progress = 10.0
     elif phase == "assault":
-        var assault_power := clamp(float(soldiers) / 120.0,0.15,1.8)
+        var assault_power = clamp(float(soldiers) / 120.0,0.15,1.8)
         progress += assault_power * (1.0 + max(0.0,(70.0-defender_morale)/100.0))
         defender_morale = max(0.0,defender_morale - 1.5)
         attacker_morale = max(0.0,attacker_morale - 0.35)
@@ -147,8 +147,8 @@ func _capture_settlement() -> void:
         _finish(false)
         return
     var s: Dictionary = world.settlements[settlement_id]
-    var old_owner := String(s.get("owner",""))
-    var player_faction := String(world.get("player_faction"))
+    var old_owner = String(s.get("owner",""))
+    var player_faction = String(world.get("player_faction"))
     if player_faction != "":
         s["owner"] = player_faction
     s["siege_phase"] = "captured"
@@ -177,7 +177,7 @@ func _spawn_siege_scene() -> void:
     siege_root = Node3D.new()
     siege_root.name = "Stage5SiegeScene"
     game.add_child(siege_root)
-    var center := _settlement_center(world.settlements[settlement_id])
+    var center = _settlement_center(world.settlements[settlement_id])
     siege_root.position = center
     _make_marker(Vector3(0,0,9),Vector3(7,0.5,1.2))
     _make_marker(Vector3(0,0,-9),Vector3(7,0.5,1.2))
@@ -186,12 +186,12 @@ func _spawn_siege_scene() -> void:
     _make_marker(Vector3(0,0,5),Vector3(2.0,1.0,1.0))
 
 func _make_marker(pos:Vector3,size:Vector3) -> void:
-    var n := MeshInstance3D.new()
-    var mesh := BoxMesh.new()
+    var n = MeshInstance3D.new()
+    var mesh = BoxMesh.new()
     mesh.size = size
     n.mesh = mesh
     n.position = pos
-    var mat := StandardMaterial3D.new()
+    var mat = StandardMaterial3D.new()
     mat.albedo_color = Color(0.30,0.22,0.15)
     n.material_override = mat
     siege_root.add_child(n)
@@ -199,7 +199,7 @@ func _make_marker(pos:Vector3,size:Vector3) -> void:
 func _update_visuals() -> void:
     if not is_instance_valid(siege_root):
         return
-    var marker := siege_root.get_node_or_null("Node3D")
+    var marker = siege_root.get_node_or_null("Node3D")
     if marker != null:
         marker.scale.x = 1.0 + progress/100.0
 
@@ -210,35 +210,35 @@ func _settlement_center(s:Dictionary) -> Vector3:
 func _nearest_hostile_settlement() -> int:
     if world.settlements.is_empty():
         return -1
-    var player_faction := String(world.get("player_faction"))
-    var best := -1
-    var best_d := INF
-    var player_pos := Vector3.ZERO
-    var p := game.get("player") as Node3D
+    var player_faction = String(world.get("player_faction"))
+    var best = -1
+    var best_d = INF
+    var player_pos = Vector3.ZERO
+    var p = game.get("player") as Node3D
     if p != null:
         player_pos = p.global_position
     for i in range(world.settlements.size()):
         var s:Dictionary = world.settlements[i]
         if String(s.get("owner","")) == player_faction:
             continue
-        var d := player_pos.distance_to(_settlement_center(s))
+        var d = player_pos.distance_to(_settlement_center(s))
         if d < best_d:
             best_d = d
             best = i
     return best
 
 func _player_army_id() -> int:
-    var faction := String(world.get("player_faction"))
+    var faction = String(world.get("player_faction"))
     for i in range(world.armies.size()):
         if String(world.armies[i].get("owner","")) == faction:
             return i
     return -1
 
 func _create_ui() -> void:
-    var layer := CanvasLayer.new()
+    var layer = CanvasLayer.new()
     layer.name = "Stage5SiegeUI"
     game.add_child(layer)
-    var panel := Panel.new()
+    var panel = Panel.new()
     panel.position = Vector2(18,195)
     panel.size = Vector2(300,116)
     panel.modulate.a = 0.9
@@ -256,7 +256,7 @@ func _update_idle() -> void:
 func _update_ui() -> void:
     if not is_instance_valid(status_label):
         return
-    var name := "Settlement"
+    var name = "Settlement"
     if settlement_id >= 0 and settlement_id < world.settlements.size():
         name = String(world.settlements[settlement_id].get("name","Settlement"))
     status_label.text = "SIEGE  •  %s\n%s  | Progress %d%%\nWall %d  Gate %d  Supply %d%%" % [
@@ -273,8 +273,8 @@ func get_save_state() -> Dictionary:
 func load_save_state(data:Dictionary) -> void:
     if not bool(data.get("active",false)):
         return
-    var sid := int(data.get("settlement_id",-1))
-    var aid := int(data.get("attacker_id",-1))
+    var sid = int(data.get("settlement_id",-1))
+    var aid = int(data.get("attacker_id",-1))
     if sid < 0 or aid < 0 or sid >= world.settlements.size() or aid >= world.armies.size():
         return
     _begin(sid,aid)
