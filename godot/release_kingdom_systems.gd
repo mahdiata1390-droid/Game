@@ -46,7 +46,7 @@ func diplomacy_action(a:String,b:String,action:String) -> Dictionary:
     return {"ok":true,"relation":get_relation(a,b),"action":action}
 
 func _relation_key(a:String,b:String) -> String:
-    return a < b ? a+"|"+b : b+"|"+a
+    return (a+"|"+b) if a < b else (b+"|"+a)
 
 func _diplomacy_tick() -> void:
     var factions := _faction_names()
