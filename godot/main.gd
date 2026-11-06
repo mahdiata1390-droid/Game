@@ -1363,7 +1363,13 @@ func _open_management()->void:
 	var eq_title:=Label.new(); eq_title.text="EQUIPMENT"; eq_title.position=Vector2(22,245); eq_title.add_theme_font_size_override("font_size",18); panel.add_child(eq_title)
 	var equipment=[["weapon","steel_sword",120],["armor","plate_armor",250],["horse","war_horse",300],["shield","steel_shield",100]]
 	for i in range(equipment.size()):
-		var e:=equipment[i]; var eb:=Button.new(); eb.text="%s • %d G"%(String(e[1]).replace("_"," ").capitalize(),int(e[2])); eb.position=Vector2(22+(i%2)*250,280+(i/2)*42); eb.size=Vector2(230,34); eb.pressed.connect(_upgrade_equipment.bind(String(e[0]),String(e[1]),int(e[2]),panel)); panel.add_child(eb)
+		var e: Array = equipment[i]
+		var eb := Button.new()
+		eb.text = "%s • %d G" % [String(e[1]).replace("_", " ").capitalize(), int(e[2])]
+		eb.position = Vector2(22 + (i % 2) * 250, 280 + (i / 2) * 42)
+		eb.size = Vector2(230, 34)
+		eb.pressed.connect(_upgrade_equipment.bind(String(e[0]), String(e[1]), int(e[2]), panel))
+		panel.add_child(eb)
 	var family_label:=Label.new(); family_label.text="FAMILY • Generation %d • Heir: %s" % [world_state.family["generation"],world_state.family["heir_name"]]; family_label.position=Vector2(22,375); panel.add_child(family_label)
 	var guardian:=Button.new(); guardian.text="HIRE HOUSEHOLD GUARDIAN • 75 G"; guardian.position=Vector2(22,410); guardian.size=Vector2(270,36); guardian.pressed.connect(_hire_guardian); panel.add_child(guardian)
 	var close:=Button.new(); close.text="CLOSE"; close.position=Vector2(270,500); close.size=Vector2(120,36); close.pressed.connect(panel.queue_free); panel.add_child(close)
