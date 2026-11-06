@@ -81,10 +81,14 @@ func _build_ui() -> void:
 
 func _set_formation(value: String) -> void:
 	formation = value
+	if is_instance_valid(host):
+		host.battle_command_formation = value
 	_update_status()
 
 func _set_order(value: String) -> void:
 	order = value
+	if is_instance_valid(host):
+		host.battle_command_order = value
 	_update_status()
 
 func _toggle_camera() -> void:
