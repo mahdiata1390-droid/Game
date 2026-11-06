@@ -1,26 +1,42 @@
-# Medieval Sandbox — Godot Prototype
+# Medieval Sandbox — Release Candidate
 
-This is the new Godot 4.7.2 prototype for the offline-first medieval sandbox.
+Offline-first open-world medieval sandbox for Android, built with Godot 4.7.2.
 
-## Why Godot
+## Release target
 
-Unity was removed from the active development path because the current workflow has no local Unity Editor/Android build machine. Godot is open source and supports Android export; the project is also structured so a headless CI runner can build it.
+This branch is the active release-candidate branch. The word **complete** is reserved for the final release build only: all designed gameplay systems, final visual/audio content, mobile controls, save/load, performance checks, Android export, installation and runtime validation must pass before release is announced.
 
-## Current slice
+## Current development
 
-- 3D third-person player
-- Keyboard fallback plus touch-look foundation
-- Runtime village props and forest
-- Friendly and enemy troop squads
-- Basic squad movement and abstract melee combat
-- Player attack button
-- Android-oriented Compatibility renderer
-- No external assets required for the first CI test
+The project now contains a dedicated release-content layer for authored-feeling castles, towns, farms, forests, materials, banners, torches, environmental particles, character detail and generated audio. Existing campaign, battle, economy and sandbox systems remain separate from this visual layer.
 
-This is intentionally a greybox. The goal is to prove the engine + GitHub build pipeline first, then expand the game.
+## Build and validation
 
-## Build
+- Engine: Godot 4.7.2
+- Target: Android
+- Renderer: Compatibility/OpenGL for broad mobile support
+- CI workflow: .github/workflows/godot-android-build.yml
+- Branch for release work: release-candidate
 
-The repository contains a GitHub Actions workflow that attempts a headless Godot Android export. A successful workflow run is the first real proof that the new engine path works.
+A CI build artifact is not considered a release until the APK has been checked for build success, installed successfully, launched, and exercised through the core gameplay loop.
 
-Godot version: 4.7.2 stable.
+## Planned release content
+
+- Detailed castle/city/village variants
+- Character, armor, weapon and mount visual variation
+- Combat VFX and battlefield atmosphere
+- Dedicated SFX and music set
+- Siege visuals and equipment
+- Naval gameplay and sea travel
+- Expanded AI armies and formations
+- Economy, trade, diplomacy, war and succession integration
+- Family/generation gameplay
+- World events, weather and day/night presentation
+- Save/load reliability
+- Mobile UI, touch controls and performance optimization
+
+## Size estimate
+
+Final APK size is intentionally not fixed yet. The final size will depend mainly on the number of imported 3D models, textures, animations, music and sound effects. The project will be optimized so visual quality does not translate directly into unnecessary file size.
+
+Current target for the finished Android release is approximately **300–600 MB installed**, with the final downloadable APK/AAB size reported from the actual release build rather than guessed.
