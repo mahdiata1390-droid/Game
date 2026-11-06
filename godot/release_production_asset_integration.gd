@@ -7,6 +7,7 @@ class_name ReleaseProductionAssetIntegration
 
 var registry: ReleaseAssetRegistry
 var spawned: Array[Node] = []
+var asset_nodes_by_role: Dictionary = {}
 
 const MAX_WORLD_PROPS := 72
 const MAX_NATURE := 140
@@ -23,6 +24,7 @@ func _populate() -> void:
     if not is_instance_valid(registry):
         return
     _clear_previous()
+    asset_nodes_by_role.clear()
     _populate_environment()
     _populate_extra_buildings()
     _populate_nature()
@@ -71,7 +73,7 @@ func _populate_environment() -> void:
         node.scale = Vector3.ONE * (0.82 + float(i % 4) * 0.08)
         add_child(node)
         spawned.append(node)
-
+        _register_role("settlement", node)
 
 
 func _populate_extra_buildings() -> void:
@@ -93,6 +95,7 @@ func _populate_extra_buildings() -> void:
         node.scale = Vector3.ONE * (0.85 + float(i % 3) * 0.08)
         add_child(node)
         spawned.append(node)
+        _register_role("building", node)
         placed += 1
         if placed >= 24:
             break
@@ -116,6 +119,7 @@ func _populate_animals() -> void:
         node.scale = Vector3.ONE * (0.55 + float(i % 4) * 0.08)
         add_child(node)
         spawned.append(node)
+        _register_role("animal", node)
         placed += 1
         if placed >= 20:
             break
@@ -140,6 +144,7 @@ func _populate_nature() -> void:
         node.scale = Vector3.ONE * (0.65 + float(i % 5) * 0.08)
         add_child(node)
         spawned.append(node)
+        _register_role("nature", node)
         placed += 1
         if placed >= MAX_NATURE:
             break
@@ -193,9 +198,36 @@ func _populate_ring(pack_id: String, limit: int, radius: float, spacing: float, 
         node.scale = Vector3.ONE * (scale_base + float(i % 4) * 0.06)
         add_child(node)
         spawned.append(node)
+        _register_role(pack_id, node)
         placed += 1
         if placed >= limit:
             break
+
+func _register_role(role: String, node: Node) -> void:
+    if not asset_nodes_by_role.has(role):
+        asset_nodes_by_role[role] = []
+    asset_nodes_by_role[role].append(node)
+
+func get_role_nodes(role: String) -> Array:
+    var result: Array = []
+    for node in asset_nodes_by_role.get(role, []):
+        if is_instance_valid(node):
+            result.append(node)
+    return result
+
+func attach_asset_to_actor(actor: Node3D, role: String = "character") -> Node3D:
+    if actor == null:
+        return null
+    var pool := get_role_nodes(role)
+    if pool.is_empty():
+        return null
+    var source: Node3D = pool[0] as Node3D
+    if source == null:
+        return null
+    var copy := source.duplicate()
+    actor.add_child(copy)
+    copy.position = Vector3.ZERO
+    return copy
 
 func get_status() -> Dictionary:
     return {
