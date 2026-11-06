@@ -9,16 +9,18 @@ var registry: ReleaseAssetRegistry
 var spawned: Array[Node] = []
 var asset_nodes_by_role: Dictionary = {}
 var world_state_ref: Node = null
+var host_ref: Node = null
 
-const MAX_WORLD_PROPS := 72
-const MAX_NATURE := 140
-const MAX_CHARACTERS := 12
-const MAX_EXTRA_CHARACTERS := 18
+const MAX_WORLD_PROPS := 96
+const MAX_NATURE := 180
+const MAX_CHARACTERS := 18
+const MAX_EXTRA_CHARACTERS := 24
 const MAX_CREATURES := 12
 const MAX_CROPS := 48
 
 func setup(asset_registry: ReleaseAssetRegistry) -> void:
     registry = asset_registry
+    host_ref = get_parent()
     call_deferred("_populate")
 
 func _populate() -> void:
@@ -35,6 +37,7 @@ func _populate() -> void:
     _populate_extra_characters()
     _populate_creatures()
     _bind_world_content()
+    _apply_live_actor_visuals()
 
 func _clear_previous() -> void:
     for node in spawned:
@@ -207,8 +210,48 @@ func _populate_ring(pack_id: String, limit: int, radius: float, spacing: float, 
 
 func bind_world(world: Node) -> void:
     world_state_ref = world
-    if not spawned.is_empty():
-        _bind_world_content()
+    host_ref = get_parent()
+    call_deferred("_bind_world_content")
+    call_deferred("_apply_live_actor_visuals")
+
+func _apply_live_actor_visuals() -> void:
+    if not is_instance_valid(host_ref):
+        return
+    var character_pool := get_role_nodes("character")
+    if character_pool.is_empty():
+        return
+    var source: Node3D = character_pool[0] as Node3D
+    if source == null:
+        return
+    var actors: Array[Node3D] = []
+    var player_node := host_ref.get("player") as Node3D
+    if player_node != null:
+        actors.append(player_node)
+    var troop_data: Array = host_ref.get("troops")
+    for data in troop_data:
+        var troop := data.get("node") as Node3D
+        if troop != null:
+            actors.append(troop)
+    var troop_index := 0
+    for actor in actors:
+        if not is_instance_valid(actor) or actor.get_node_or_null("ProductionHumanoidVisual") != null:
+            continue
+        for child in actor.get_children():
+            if child is MeshInstance3D:
+                (child as MeshInstance3D).visible = false
+        var visual := source.duplicate()
+        visual.name = "ProductionHumanoidVisual"
+        actor.add_child(visual)
+        visual.position = Vector3(0.0, -0.92, 0.0)
+        visual.rotation = Vector3.ZERO
+        visual.scale = Vector3.ONE * (0.88 + float((troop_index + actors.size()) % 4) * 0.045)
+        if actor != player_node and troop_index < troop_data.size():
+            var faction := String(troop_data[troop_index].get("faction",""))
+            if faction == "eastern_tribes":
+                visual.rotation.y = PI
+            elif faction == "southern_sultanate":
+                visual.rotation.y = PI * 0.5
+            troop_index += 1
 
 func _bind_world_content() -> void:
     if world_state_ref == null or not is_instance_valid(world_state_ref):
