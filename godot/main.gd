@@ -177,6 +177,10 @@ func _build_next_systems() -> void:
 	thirty.name = "ReleaseThirtySystems"
 	add_child(thirty)
 	thirty.build(self)
+	var core100 := ReleaseSeventyCoreSystems.new()
+	core100.name = "ReleaseSeventyCoreSystems"
+	add_child(core100)
+	core100.build(self)
 	var ai := ReleaseArmyTacticalAI.new()
 	ai.name = "ReleaseArmyTacticalAI"
 	add_child(ai)
