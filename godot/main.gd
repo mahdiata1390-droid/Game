@@ -84,6 +84,7 @@ func _boot_gameplay() -> void:
 	_build_battle_command_layer()
 	_build_campaign_command_center()
 	_build_army_settlement_manager()
+	_build_world_event_feed()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
@@ -133,6 +134,12 @@ func _build_army_settlement_manager() -> void:
 	manager.name = "ReleaseArmyAndSettlementManager"
 	add_child(manager)
 	manager.build(self)
+
+func _build_world_event_feed() -> void:
+	var feed := ReleaseWorldEventFeed.new()
+	feed.name = "ReleaseWorldEventFeed"
+	add_child(feed)
+	feed.build(self)
 
 func _spawn_extra_banners_once() -> void:
 	_spawn_extra_banners()
