@@ -33,6 +33,7 @@ var player_buildings:Dictionary = {}
 var production_stock:Dictionary = {"food":30,"wood":10,"iron":5}
 var faction_ai_state:Dictionary = {}
 var simulation_paused: bool = false
+var complete_gameplay_state: Dictionary = {}
 
 
 func initialize_continent() -> void:
@@ -559,7 +560,10 @@ func save_game()->bool:
 	var final_node := get_node_or_null("/root/FinalGameSystems")
 	if final_node and final_node.has_method("get_save_state"):
 		final_state = final_node.get_save_state()
-	var data={"save_version":3,"day":day,"gold":gold,"player_faction":player_faction,"player_start":player_start,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"yearly_tax":yearly_tax,"player_income":player_income,"battle_events":battle_events,"world_events":world_events,"battle_cooldowns":battle_cooldowns,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state,"simulation_paused":simulation_paused,"campaign_state":campaign_state,"final_state":final_state}
+	var complete_node := get_node_or_null("../ReleaseCompleteGameplay")
+	if complete_node and complete_node.has_method("get_save_state"):
+		complete_gameplay_state = complete_node.get_save_state()
+	var data={"save_version":4,"day":day,"gold":gold,"player_faction":player_faction,"player_start":player_start,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"yearly_tax":yearly_tax,"player_income":player_income,"battle_events":battle_events,"world_events":world_events,"battle_cooldowns":battle_cooldowns,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state,"simulation_paused":simulation_paused,"campaign_state":campaign_state,"final_state":final_state,"complete_gameplay_state":complete_gameplay_state}
 	var file:=FileAccess.open(save_path,FileAccess.WRITE)
 	if file==null: return false
 	file.store_string(JSON.stringify(data)); file.close(); return true
@@ -570,7 +574,7 @@ func load_game()->bool:
 	if file==null: return false
 	var parsed=JSON.parse_string(file.get_as_text()); file.close()
 	if typeof(parsed)!=TYPE_DICTIONARY: return false
-	if int(parsed.get("save_version",1)) > 3: return false
+	if int(parsed.get("save_version",1)) > 4: return false
 	for key in ["day","gold","player_faction","player_start","player_region_id","player_mode","player_level","player_xp","player_inventory","family","weather","time_of_day","yearly_tax","player_income","battle_events","world_events","battle_cooldowns","regions","factions","settlements","armies","diplomacy","caravans","ships","sieges","player_equipment","family_members","player_buildings","production_stock","faction_ai_state","simulation_paused"]:
 		if parsed.has(key): set(key,parsed[key])
 	var campaign_node := get_node_or_null("/root/CampaignSystems")
@@ -579,6 +583,9 @@ func load_game()->bool:
 	var final_node := get_node_or_null("/root/FinalGameSystems")
 	if final_node and final_node.has_method("load_save_state") and parsed.has("final_state"):
 		final_node.load_save_state(parsed["final_state"])
+	var complete_node := get_node_or_null("../ReleaseCompleteGameplay")
+	if complete_node and complete_node.has_method("load_save_state") and parsed.has("complete_gameplay_state"):
+		complete_node.load_save_state(parsed["complete_gameplay_state"])
 	return true
 
 func upgrade_settlement_building(settlement_id:int,building:String)->Dictionary:
