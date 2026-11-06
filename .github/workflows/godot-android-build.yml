@@ -77,6 +77,21 @@ jobs:
           architecture/armeabi-v7a=false
           EOF
 
+      - name: Fetch production art packs
+        run: |
+          set -euo pipefail
+          mkdir -p godot/assets/production/medieval_village godot/assets/production/nature godot/assets/production/characters
+          curl -L --fail --retry 3 -o /tmp/medieval_village.zip https://opengameart.org/sites/default/files/medieval_village_megakitstandard.zip
+          curl -L --fail --retry 3 -o /tmp/stylized_nature.zip https://opengameart.org/sites/default/files/stylized_nature_megakitstandard.zip
+          curl -L --fail --retry 3 -o godot/assets/production/characters/character.glb https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/character.glb
+          unzip -q /tmp/medieval_village.zip -d /tmp/medieval_village
+          unzip -q /tmp/stylized_nature.zip -d /tmp/stylized_nature
+          find /tmp/medieval_village -type f -exec cp --parents {} godot/assets/production/medieval_village/ \\
+            \\
+          find /tmp/stylized_nature -type f -exec cp --parents {} godot/assets/production/nature/ \\
+            \\
+          find godot/assets/production -type f | sort | head -40
+
       - name: Validate project
         run: |
           ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --editor --quit
