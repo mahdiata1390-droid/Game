@@ -64,6 +64,9 @@ var siege_stage: ReleaseSiegeStage
 var expansion_stages: ReleaseExpansionStages
 var kingdom_systems: ReleaseKingdomSystems
 var stages_15_19: ReleaseStages15to19
+var stages_20_29: ReleaseStages20to29
+var stages_30_39: ReleaseStages30to39
+var stages_40_49: ReleaseStages40to49
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -146,6 +149,18 @@ func _boot_gameplay() -> void:
 	stages_15_19.name = "Stages15to19"
 	add_child(stages_15_19)
 	stages_15_19.build(self)
+	stages_20_29 = ReleaseStages20to29.new()
+	stages_20_29.name = "Stages20to29"
+	add_child(stages_20_29)
+	stages_20_29.build(self)
+	stages_30_39 = ReleaseStages30to39.new()
+	stages_30_39.name = "Stages30to39"
+	add_child(stages_30_39)
+	stages_30_39.build(self)
+	stages_40_49 = ReleaseStages40to49.new()
+	stages_40_49.name = "Stages40to49"
+	add_child(stages_40_49)
+	stages_40_49.build(self)
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
