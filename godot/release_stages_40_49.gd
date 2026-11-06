@@ -4,7 +4,7 @@ class_name ReleaseStages40to49
 # 40-49 naval/fantasy/content/quality foundation. Fantasy is optional sandbox content.
 var game:Node3D
 var world:Node
-var tick:=0.0
+var tick=0.0
 var ships:Dictionary={}
 var ports:Dictionary={}
 var fantasy:Dictionary={"enabled":true,"creatures":[],"magic":{}}
@@ -67,10 +67,10 @@ func set_quality(preset:String,fps_cap:int)->void:
     game.set_meta("fps_cap",quality["fps_cap"])
 
 func _ui()->void:
-    var layer:=CanvasLayer.new()
+    var layer=CanvasLayer.new()
     layer.name="Stages40to49UI"
     game.add_child(layer)
-    var p:=Panel.new()
+    var p=Panel.new()
     p.position=Vector2(410,490)
     p.size=Vector2(350,72)
     p.modulate.a=0.86
