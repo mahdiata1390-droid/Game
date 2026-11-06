@@ -101,31 +101,31 @@ func _resolve_naval_encounters() -> void:
                 return
 
 func create_trade_contract(resource: String, amount: int, destination_region: int) -> Dictionary:
-	if not ["food","wood","iron"].has(resource) or amount <= 0:
-		return {"ok":false,"reason":"invalid_contract"}
-	if destination_region < 0 or destination_region >= world.regions.size():
-		return {"ok":false,"reason":"invalid_region"}
-	var stock := int(world.production_stock.get(resource,0))
-	var moved := min(amount, stock)
-	if moved <= 0:
-		return {"ok":false,"reason":"no_stock"}
-	world.production_stock[resource] = stock - moved
-	var id := trade_contracts.size()
-	trade_contracts.append({"id":id,"resource":resource,"amount":moved,"destination_region":destination_region,"days_left":3,"reward":moved * (3 if resource == "food" else (5 if resource == "wood" else 8))})
-	return {"ok":true,"contract_id":id,"amount":moved}
+    if not ["food","wood","iron"].has(resource) or amount <= 0:
+        return {"ok":false,"reason":"invalid_contract"}
+    if destination_region < 0 or destination_region >= world.regions.size():
+        return {"ok":false,"reason":"invalid_region"}
+    var stock := int(world.production_stock.get(resource,0))
+    var moved := min(amount, stock)
+    if moved <= 0:
+        return {"ok":false,"reason":"no_stock"}
+    world.production_stock[resource] = stock - moved
+    var id := trade_contracts.size()
+    trade_contracts.append({"id":id,"resource":resource,"amount":moved,"destination_region":destination_region,"days_left":3,"reward":moved * (3 if resource == "food" else (5 if resource == "wood" else 8))})
+    return {"ok":true,"contract_id":id,"amount":moved}
 
 func _simulate_trade_contracts(day: int) -> void:
-	for contract in trade_contracts:
-		if bool(contract.get("complete",false)): continue
-		contract["days_left"] = int(contract.get("days_left",1)) - 1
-		if int(contract["days_left"]) <= 0:
-			var reward := int(contract.get("reward",0))
-			world.gold += reward
-			contract["complete"] = true
-			naval_events.push_front("Trade contract completed: %d gold earned." % reward)
-			if naval_events.size() > 8: naval_events.pop_back()
-	for i in range(trade_contracts.size() - 1, -1, -1):
-		if bool(trade_contracts[i].get("complete",false)): trade_contracts.remove_at(i)
+    for contract in trade_contracts:
+        if bool(contract.get("complete",false)): continue
+        contract["days_left"] = int(contract.get("days_left",1)) - 1
+        if int(contract["days_left"]) <= 0:
+            var reward := int(contract.get("reward",0))
+            world.gold += reward
+            contract["complete"] = true
+            naval_events.push_front("Trade contract completed: %d gold earned." % reward)
+            if naval_events.size() > 8: naval_events.pop_back()
+    for i in range(trade_contracts.size() - 1, -1, -1):
+        if bool(trade_contracts[i].get("complete",false)): trade_contracts.remove_at(i)
 
 func _simulate_naval_missions(day: int) -> void:
     for mission in naval_missions:
@@ -183,11 +183,11 @@ func create_naval_mission(resource: String, amount: int, destination_region: int
     return {"ok":true,"mission_id":id,"ship_id":ship_id,"amount":moved,"reward":reward}
 
 func get_trade_status() -> String:
-	if trade_contracts.is_empty(): return "No active trade contracts."
-	var out := "TRADE CONTRACTS\n"
-	for c in trade_contracts:
-		out += "• %s × %d → region %d • %d days • reward %dG\n" % [String(c.get("resource","")),int(c.get("amount",0)),int(c.get("destination_region",0)),int(c.get("days_left",0)),int(c.get("reward",0))]
-	return out
+    if trade_contracts.is_empty(): return "No active trade contracts."
+    var out := "TRADE CONTRACTS\n"
+    for c in trade_contracts:
+        out += "• %s × %d → region %d • %d days • reward %dG\n" % [String(c.get("resource","")),int(c.get("amount",0)),int(c.get("destination_region",0)),int(c.get("days_left",0)),int(c.get("reward",0))]
+    return out
 
 func _at_war(a: String, b: String) -> bool:
     var key1 := a + "|" + b
@@ -373,23 +373,23 @@ func set_ship_route(ship_id: int, target_region: int) -> Dictionary:
     return {"ok":true}
 
 func recruit_ship_crew(ship_id: int, amount: int) -> Dictionary:
-	if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
-		return {"ok":false,"reason":"invalid_request"}
-	var ship: Dictionary = world.ships[ship_id]
-	if String(ship.get("owner","")) != "Free Company":
-		return {"ok":false,"reason":"not_player_ship"}
-	var current_crew := int(ship.get("crew",0))
-	var max_crew := max(20, int(ship.get("max_crew",60)))
-	if current_crew >= max_crew:
-		return {"ok":false,"reason":"crew_full","max_crew":max_crew}
-	var moved := min(amount, max_crew - current_crew)
-	var cost := moved * 4
-	if int(world.gold) < cost:
-		return {"ok":false,"reason":"not_enough_gold","cost":cost}
-	world.gold -= cost
-	ship["crew"] = current_crew + moved
-	ship["max_crew"] = max_crew
-	return {"ok":true,"crew":int(ship["crew"]),"max_crew":max_crew,"cost":cost}
+    if ship_id < 0 or ship_id >= world.ships.size() or amount <= 0:
+        return {"ok":false,"reason":"invalid_request"}
+    var ship: Dictionary = world.ships[ship_id]
+    if String(ship.get("owner","")) != "Free Company":
+        return {"ok":false,"reason":"not_player_ship"}
+    var current_crew := int(ship.get("crew",0))
+    var max_crew := max(20, int(ship.get("max_crew",60)))
+    if current_crew >= max_crew:
+        return {"ok":false,"reason":"crew_full","max_crew":max_crew}
+    var moved := min(amount, max_crew - current_crew)
+    var cost := moved * 4
+    if int(world.gold) < cost:
+        return {"ok":false,"reason":"not_enough_gold","cost":cost}
+    world.gold -= cost
+    ship["crew"] = current_crew + moved
+    ship["max_crew"] = max_crew
+    return {"ok":true,"crew":int(ship["crew"]),"max_crew":max_crew,"cost":cost}
 
 func _advance_family_month() -> void:
     # Monthly simulation changes loyalty only. Ages advance once per campaign year.
@@ -490,32 +490,32 @@ func change_heir_support(amount: int) -> Dictionary:
     return {"ok":true,"support":int(succession_state["support"])}
 
 func get_save_state() -> Dictionary:
-	return {
-		"naval_events": naval_events.duplicate(),
-		"family_events": family_events.duplicate(),
-		"succession_state": succession_state.duplicate(true),
-		"pending_naval_encounter": pending_naval_encounter.duplicate(true),
-		"trade_contracts": trade_contracts.duplicate(true),
-		"naval_missions": naval_missions.duplicate(true)
-	}
+    return {
+        "naval_events": naval_events.duplicate(),
+        "family_events": family_events.duplicate(),
+        "succession_state": succession_state.duplicate(true),
+        "pending_naval_encounter": pending_naval_encounter.duplicate(true),
+        "trade_contracts": trade_contracts.duplicate(true),
+        "naval_missions": naval_missions.duplicate(true)
+    }
 
 func load_save_state(state: Dictionary) -> void:
-	naval_events.clear()
-	family_events.clear()
-	for event in state.get("naval_events", []):
-		naval_events.append(String(event))
-	for event in state.get("family_events", []):
-		family_events.append(String(event))
-	if state.has("succession_state") and state["succession_state"] is Dictionary:
-		succession_state = state["succession_state"].duplicate(true)
-	if state.has("pending_naval_encounter") and state["pending_naval_encounter"] is Dictionary:
-		pending_naval_encounter = state["pending_naval_encounter"].duplicate(true)
-	trade_contracts.clear()
-	for contract in state.get("trade_contracts", []):
-		trade_contracts.append(contract.duplicate(true))
-	naval_missions.clear()
-	for mission in state.get("naval_missions", []):
-		naval_missions.append(mission.duplicate(true))
+    naval_events.clear()
+    family_events.clear()
+    for event in state.get("naval_events", []):
+        naval_events.append(String(event))
+    for event in state.get("family_events", []):
+        family_events.append(String(event))
+    if state.has("succession_state") and state["succession_state"] is Dictionary:
+        succession_state = state["succession_state"].duplicate(true)
+    if state.has("pending_naval_encounter") and state["pending_naval_encounter"] is Dictionary:
+        pending_naval_encounter = state["pending_naval_encounter"].duplicate(true)
+    trade_contracts.clear()
+    for contract in state.get("trade_contracts", []):
+        trade_contracts.append(contract.duplicate(true))
+    naval_missions.clear()
+    for mission in state.get("naval_missions", []):
+        naval_missions.append(mission.duplicate(true))
 
 func get_succession_status() -> String:
     if not bool(succession_state.get("active",false)):
