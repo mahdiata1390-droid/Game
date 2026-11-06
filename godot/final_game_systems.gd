@@ -1,5 +1,4 @@
 extends Node
-class_name FinalGameSystems
 
 # Final gameplay layer: deeper economy, diplomacy, technology, population,
 # equipment progression, trade, family, ships, wildlife, creatures and world events.
