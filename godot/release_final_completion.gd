@@ -13,6 +13,8 @@ var rng := RandomNumberGenerator.new()
 var combat := {"cooldown":0.0,"parry_window":0.0,"stamina":100.0,"max_stamina":100.0,"combo":0,"weapon":"iron_sword"}
 var projectiles:Array[Node3D] = []
 var npc_jobs:Array[Dictionary] = []
+var npc_visuals:Array[Node3D] = []
+var settlement_runtime:Dictionary = {}
 var animation_nodes:Array[Node] = []
 var siege_runtime:Dictionary = {}
 var naval_runtime:Dictionary = {}
@@ -29,6 +31,7 @@ func build(main_node:Node3D)->void:
 	_restore_state()
 	_setup_runtime_animation()
 	_setup_npc_jobs()
+	_setup_settlement_runtime()
 	set_process(true)
 
 func _process(delta:float)->void:
@@ -49,6 +52,7 @@ func _process(delta:float)->void:
 		life_tick=0.0
 		_life_world_tick()
 		_update_npc_jobs()
+		_update_settlement_runtime()
 	if tick>=12.0:
 		tick=0.0
 		run_qa()
@@ -74,6 +78,7 @@ func attack(weapon:String="")->Dictionary:
 	var target:=_nearest_enemy(float(w[2])+0.8)
 	var damage:=int(round(float(w[0])*(1.0+float(combat["combo"])*0.12)))
 	if target!=null:
+		play_attack_animation()
 		if game.has_method("_damage_troop"):
 			game.call("_damage_troop",target,damage)
 		target.set_meta("hit_stun",0.22)
@@ -445,11 +450,13 @@ func spend_skill(skill:String)->Dictionary:
 
 func _setup_npc_jobs()->void:
 	npc_jobs.clear()
+	npc_visuals.clear()
 	if world==null:
 		return
 	for i in range(min(60,world.settlements.size()*3)):
 		var s:Dictionary=world.settlements[i%world.settlements.size()]
-		npc_jobs.append({"settlement":int(s["id"]),"job":["farmer","merchant","guard","craftsman"][i%4],"shift":i%3,"x":float(s["position"].x)+rng.randf_range(-3,3),"z":float(s["position"].y)+rng.randf_range(-3,3)})
+		var job := ["farmer","merchant","guard","craftsman"][i%4]
+		npc_jobs.append({"settlement":int(s["id"]),"job":job,"shift":i%3,"x":float(s["position"].x)+rng.randf_range(-3,3),"z":float(s["position"].y)+rng.randf_range(-3,3),"target":"farm" if job=="farmer" else ("market" if job=="merchant" else ("gate" if job=="guard" else "workshop"))})
 
 func _update_npc_jobs()->void:
 	for npc in npc_jobs:
@@ -461,6 +468,10 @@ func _update_npc_jobs()->void:
 		var target:=Vector3(center.x+float(npc["x"])-float(center.x),0,center.y+float(npc["z"])-float(center.y))
 		npc["x"]=clamp(float(npc["x"])+rng.randf_range(-0.45,0.45),float(center.x)-3.5,float(center.x)+3.5)
 		npc["z"]=clamp(float(npc["z"])+rng.randf_range(-0.45,0.45),float(center.y)-3.5,float(center.y)+3.5)
+		var visual:Node3D = npc.get("visual") as Node3D
+		if is_instance_valid(visual):
+			visual.position = Vector3(float(npc["x"]), 0.0, float(npc["z"]))
+			visual.rotation.y = atan2(float(npc["z"])-center.y, float(npc["x"])-center.x)
 		# Jobs feed the real settlement economy.
 		if String(npc["job"])=="farmer":
 			s["stockpile"]["food"]=int(s["stockpile"].get("food",0))+1
@@ -468,6 +479,51 @@ func _update_npc_jobs()->void:
 			s["prosperity"]=clamp(int(s.get("prosperity",50))+1,0,100)
 		elif String(npc["job"])=="craftsman":
 			s["stockpile"]["wood"]=int(s["stockpile"].get("wood",0))+1
+
+func _setup_settlement_runtime()->void:
+	settlement_runtime.clear()
+	for s in world.settlements:
+		var sid:=int(s.get("id",settlement_runtime.size()))
+		var kind:=String(s.get("type","village"))
+		settlement_runtime[sid]={
+			"services":["well","market","farm","workshop"] if kind=="village" else (["well","inn","market","guild","blacksmith","barracks"] if kind=="town" else (["market","guild","tavern","blacksmith","barracks","keep","armory","training_yard"] if kind=="castle" else ["market","guild","tavern","blacksmith","barracks","keep","armory","training_yard","farm","workshop"])),
+			"port": kind=="town" and (sid%5==0 or sid==11),
+			"fortification": int(s.get("wall_level",1))*100,
+			"open": true
+		}
+
+func _update_settlement_runtime()->void:
+	for sid in settlement_runtime.keys():
+		if sid<0 or sid>=world.settlements.size():
+			continue
+		var s:Dictionary=world.settlements[int(sid)]
+		var rt:Dictionary=settlement_runtime[sid]
+		var night:=world.time_of_day>=22.0 or world.time_of_day<6.0
+		rt["open"]=not night or rt["services"].has("tavern")
+		if bool(rt["port"]):
+			s["prosperity"]=clamp(int(s.get("prosperity",50))+(1 if world.weather!="storm" else -2),0,100)
+		if int(s.get("wall_level",1))>1:
+			rt["fortification"]=max(0,int(s.get("wall_level",1))*100-int(s.get("siege_damage",0)))
+
+func bind_npc_visuals(nodes:Array)->void:
+	npc_visuals.clear()
+	for node in nodes:
+		if node is Node3D and is_instance_valid(node):
+			npc_visuals.append(node)
+	for i in range(min(npc_visuals.size(),npc_jobs.size())):
+		npc_jobs[i]["visual"]=npc_visuals[i]
+		var s:=world.settlements[int(npc_jobs[i]["settlement"])]
+		npc_visuals[i].position=Vector3(float(npc_jobs[i]["x"]),0.0,float(npc_jobs[i]["z"]))
+
+func get_settlement_services(settlement_id:int)->Dictionary:
+	return settlement_runtime.get(settlement_id,{}).duplicate(true)
+
+func get_settlement_status(settlement_id:int)->Dictionary:
+	if settlement_id<0 or settlement_id>=world.settlements.size():
+		return {}
+	var s:Dictionary=world.settlements[settlement_id]
+	var rt:Dictionary=settlement_runtime.get(settlement_id,{})
+	return {"name":s.get("name",""),"type":s.get("type","village"),"owner":s.get("owner",""),"population":s.get("population",0),"prosperity":s.get("prosperity",0),"garrison":s.get("garrison",0),"services":rt.get("services",[]),"port":rt.get("port",false),"open":rt.get("open",true),"fortification":rt.get("fortification",0)}
 
 func _life_world_tick()->void:
 	advance_family_day()
@@ -540,6 +596,10 @@ func run_qa()->Dictionary:
 	_check(player!=null,"Player connected",notes)
 	_check(float(combat["stamina"])>=0.0,"Combat stamina valid",notes)
 	_check(float(combat["stamina"])<=float(combat["max_stamina"])+0.01,"Combat stamina bounded",notes)
+	_check(world.settlements.all(func(x): return x.has("stockpile")),"Settlement stockpiles valid",notes)
+	_check(world.armies.all(func(x): return x.has("morale") and x.has("soldiers")),"Army state valid",notes)
+	_check(world.ships.all(func(x): return x.has("crew") and x.has("cargo")),"Ship state valid",notes)
+	_check(settlement_runtime.size()==world.settlements.size(),"Settlement runtime services synchronized",notes)
 	qa["last"]=notes
 	return qa.duplicate(true)
 
