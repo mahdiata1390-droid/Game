@@ -86,6 +86,7 @@ func _boot_gameplay() -> void:
 	_build_army_settlement_manager()
 	_build_world_event_feed()
 	_build_release_system_panels()
+	_build_combat_feedback()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
@@ -153,6 +154,13 @@ func _build_release_system_panels() -> void:
 	trade_ui.name = "ReleaseCaravanTrade"
 	add_child(trade_ui)
 	trade_ui.build(self)
+
+func _build_combat_feedback() -> void:
+	var feedback := ReleaseCombatFeedback.new()
+	feedback.name = "ReleaseCombatFeedback"
+	add_child(feedback)
+	feedback.build(self)
+
 
 func _build_world_event_feed() -> void:
 	var feed := ReleaseWorldEventFeed.new()
@@ -339,6 +347,7 @@ func _spawn_troop(team: String, faction_id: String, pos: Vector3, troop_type: St
 	troop.name = faction_id + "_Soldier"
 	add_child(troop)
 	_create_soldier_visual(troop, faction_id)
+	_add_troop_type_visual(troop, troop_type, faction_id)
 	var collision := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
 	shape.height = 1.7
@@ -347,6 +356,20 @@ func _spawn_troop(team: String, faction_id: String, pos: Vector3, troop_type: St
 	troop.add_child(collision)
 	var stats := _troop_combat_stats(troop_type)
 	troops.append({"node": troop, "team": team, "faction": faction_id, "troop_type": troop_type, "represented_count": max(1, represented_count), "hp": int(stats["hp"]), "max_hp": int(stats["hp"]), "attack_damage": int(stats["damage"]), "cooldown": 0.0})
+
+func _add_troop_type_visual(parent: Node3D, troop_type: String, faction_id: String) -> void:
+	var p := _faction_troop_palette(faction_id)
+	if troop_type == "spearman":
+		_mesh_box(Vector3(0.07, 2.4, 0.07), Vector3(-0.68, 1.25, 0.05), p["metal"], parent, Vector3(0, 0, -8))
+		_mesh_box(Vector3(0.42, 0.08, 0.08), Vector3(-0.68, 2.35, 0.05), p["metal"], parent)
+	elif troop_type == "archer":
+		_mesh_cylinder(0.28, 0.08, Vector3(-0.50, 1.0, -0.12), p["leather"], parent)
+		_mesh_box(Vector3(0.08, 0.95, 0.08), Vector3(-0.58, 1.18, -0.20), p["wood"], parent, Vector3(0, 0, -12)) if p.has("wood") else null
+	elif troop_type == "horseman":
+		_mesh_box(Vector3(1.0, 0.32, 1.45), Vector3(0, 0.05, 0.55), p["leather"], parent)
+		_mesh_cylinder(0.18, 0.7, Vector3(-0.42, 0.05, 0.15), p["leather"], parent)
+		_mesh_cylinder(0.18, 0.7, Vector3(0.42, 0.05, 0.15), p["leather"], parent)
+
 
 func _create_soldier_visual(parent: Node3D, faction_id: String) -> void:
 	var p := _faction_troop_palette(faction_id)
@@ -481,10 +504,23 @@ func _toggle_pause() -> void:
 		save.size = Vector2(220, 52)
 		save.pressed.connect(_pause_save)
 		pause_panel.add_child(save)
+		var load := Button.new()
+		load.text = "LOAD GAME"
+		load.position = Vector2(280, 220)
+		load.size = Vector2(220, 52)
+		load.pressed.connect(_pause_load)
+		pause_panel.add_child(load)
 	else:
 		if is_instance_valid(pause_panel):
 			pause_panel.queue_free()
 		pause_panel = null
+
+func _pause_load() -> void:
+	if world_state.load_game():
+		_show_status("GAME LOADED", 2.5)
+	else:
+		_show_status("NO SAVE FOUND", 2.5)
+	
 
 func _pause_save() -> void:
 	if world_state.save_game():
