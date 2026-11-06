@@ -77,6 +77,7 @@ func _boot_gameplay() -> void:
 	_spawn_extra_banners()
 	_spawn_continent_world()
 	_build_visual_content_upgrade()
+	_build_campaign_visuals()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
@@ -89,6 +90,12 @@ func _build_visual_content_upgrade() -> void:
 	upgrade.name = "VisualContentUpgrade"
 	add_child(upgrade)
 	upgrade.build(self)
+
+func _build_campaign_visuals() -> void:
+	var campaign := ReleaseCampaignVisual.new()
+	campaign.name = "ReleaseCampaignVisual"
+	add_child(campaign)
+	campaign.build(self)
 
 func _spawn_extra_banners_once() -> void:
 	_spawn_extra_banners()
