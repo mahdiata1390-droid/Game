@@ -45,6 +45,10 @@ func _process(delta:float)->void:
 	life_tick+=delta
 	_update_projectiles(delta)
 	_update_runtime_animation(delta)
+	if npc_visuals.is_empty() and game.has_node("ProductionAssetIntegration"):
+		var integration:Node = game.get_node("ProductionAssetIntegration")
+		if integration.has_method("get_role_nodes"):
+			bind_npc_visuals(integration.call("get_role_nodes","characters_extra"))
 	if strategic_tick>=4.0:
 		strategic_tick=0.0
 		_strategic_ai_tick()
