@@ -364,7 +364,7 @@ func _add_troop_type_visual(parent: Node3D, troop_type: String, faction_id: Stri
 		_mesh_box(Vector3(0.42, 0.08, 0.08), Vector3(-0.68, 2.35, 0.05), p["metal"], parent)
 	elif troop_type == "archer":
 		_mesh_cylinder(0.28, 0.08, Vector3(-0.50, 1.0, -0.12), p["leather"], parent)
-		_mesh_box(Vector3(0.08, 0.95, 0.08), Vector3(-0.58, 1.18, -0.20), p["wood"], parent, Vector3(0, 0, -12)) if p.has("wood") else null
+		_mesh_box(Vector3(0.08, 0.95, 0.08), Vector3(-0.58, 1.18, -0.20), Color(0.22, 0.12, 0.06), parent, Vector3(0, 0, -12))
 	elif troop_type == "horseman":
 		_mesh_box(Vector3(1.0, 0.32, 1.45), Vector3(0, 0.05, 0.55), p["leather"], parent)
 		_mesh_cylinder(0.18, 0.7, Vector3(-0.42, 0.05, 0.15), p["leather"], parent)
