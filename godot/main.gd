@@ -79,6 +79,7 @@ func _boot_gameplay() -> void:
 	_build_visual_content_upgrade()
 	_build_campaign_visuals()
 	_build_siege_layer()
+	_build_battle_command_layer()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
@@ -104,6 +105,18 @@ func _build_siege_layer() -> void:
 	siege_layer.name = "ReleaseSiegeLayer"
 	add_child(siege_layer)
 	siege_layer.build(self)
+
+
+func _build_battle_command_layer() -> void:
+	var battle_layer := ReleaseBattleCommandLayer.new()
+	battle_layer.name = "ReleaseBattleCommandLayer"
+	add_child(battle_layer)
+	battle_layer.build(self)
+
+func _toggle_camera_mode() -> void:
+	camera_first_person = not camera_first_person
+	if is_instance_valid(status_label):
+		status_label.text = "Camera: %s" % ("FIRST PERSON" if camera_first_person else "THIRD PERSON")
 
 func _spawn_extra_banners_once() -> void:
 	_spawn_extra_banners()
