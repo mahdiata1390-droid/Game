@@ -1,6 +1,4 @@
 extends Node
-class_name CompletionSystems
-
 var world: Node
 var campaign: Node
 var last_day := -1
