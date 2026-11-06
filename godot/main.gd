@@ -91,6 +91,7 @@ func _boot_gameplay() -> void:
 	_build_siege_command()
 	_build_naval_command()
 	_build_world_inspector()
+	_build_next_systems()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
@@ -170,6 +171,29 @@ func _build_naval_command() -> void:
 	ui.name = "ReleaseNavalCommand"
 	add_child(ui)
 	ui.build(self)
+
+func _build_next_systems() -> void:
+	var ai := ReleaseArmyTacticalAI.new()
+	ai.name = "ReleaseArmyTacticalAI"
+	add_child(ai)
+	ai.build(self)
+	var population := ReleasePopulationSimulation.new()
+	population.name = "ReleasePopulationSimulation"
+	add_child(population)
+	population.build(self)
+	var weather := ReleaseWeatherGameplay.new()
+	weather.name = "ReleaseWeatherGameplay"
+	add_child(weather)
+	weather.build(self)
+	var saves := ReleaseSaveSlots.new()
+	saves.name = "ReleaseSaveSlots"
+	add_child(saves)
+	saves.build(self)
+	var contracts := ReleaseContracts.new()
+	contracts.name = "ReleaseContracts"
+	add_child(contracts)
+	contracts.build(self)
+
 
 func _build_world_inspector() -> void:
 	var ui := ReleaseWorldInspector.new()
