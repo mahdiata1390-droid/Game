@@ -420,13 +420,14 @@ func _system_27_succession_pressure() -> void:
 		world.family["heir_age"] = max(0,int(world.family.get("heir_age",0)))
 
 func _system_28_dynamic_contracts() -> void:
-	for contract in active_contracts:
+	for i in range(active_contracts.size() - 1, -1, -1):
+		var contract: Dictionary = active_contracts[i]
 		contract["days_left"] = int(contract.get("days_left",1)) - 1
 		if int(contract["days_left"]) <= 0:
 			if String(contract.get("type","")) == "patrol":
 				reputation += 3
 				renown += 2
-			active_contracts.erase(contract)
+			active_contracts.remove_at(i)
 	if active_contracts.size() < 3:
 		_generate_contract()
 
