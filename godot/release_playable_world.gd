@@ -200,6 +200,19 @@ func _update_hud()->void:
 func get_state()->Dictionary:
     return {"mounted":mounted,"map_open":map_open,"selected_settlement":selected_settlement.duplicate(true)}
 
+func get_save_state()->Dictionary:
+    return get_state()
+
 func load_state(data:Dictionary)->void:
     mounted=bool(data.get("mounted",false))
+    map_open=bool(data.get("map_open",false))
+    selected_settlement=data.get("selected_settlement",{}).duplicate(true)
+    if is_instance_valid(map_panel): map_panel.visible=map_open
+    game.set_meta("strategic_map_open",map_open)
+    game.set_meta("player_mounted",mounted)
+    game.set_meta("movement_speed_bonus",2.2 if mounted else 0.0)
     _ensure_mount_visual()
+    _update_hud()
+
+func load_save_state(data:Dictionary)->void:
+    load_state(data)
