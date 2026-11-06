@@ -115,6 +115,7 @@ func _boot_gameplay() -> void:
 	production_asset_integration.name = "ProductionAssetIntegration"
 	add_child(production_asset_integration)
 	production_asset_integration.setup(asset_registry)
+	production_asset_integration.bind_world(world_state)
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
