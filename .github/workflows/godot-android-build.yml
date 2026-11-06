@@ -198,3 +198,5 @@ jobs:
 
 # Build verification trigger: final gameplay integration.
 # Final QA build trigger: Android release-candidate smoke test.
+
+# Build 313 diagnostic refresh: run against current release-candidate fixes.
