@@ -26,8 +26,27 @@ var touch_look_start := Vector2.ZERO
 var touch_look_id := -1
 var hidden_nodes: Array[Node3D] = []
 var base_visibility := {}
+var _built := false
+
+func _ready() -> void:
+	call_deferred("_attach_to_game")
+
+func _attach_to_game() -> void:
+	if _built:
+		return
+	var scene := get_tree().current_scene
+	if scene == null:
+		call_deferred("_attach_to_game")
+		return
+	var root := scene as Node3D
+	if root == null:
+		return
+	build(root)
 
 func build(main_node: Node3D) -> void:
+	if _built:
+		return
+	_built = true
 	game = main_node
 	world = game.get("world_state")
 	player = game.get("player")
