@@ -47,17 +47,6 @@ func _cylinder(parent: Node3D, radius: float, height: float, pos: Vector3, color
 	parent.add_child(n)
 	return n
 
-func _cone(parent: Node3D, radius: float, height: float, pos: Vector3, color: Color) -> MeshInstance3D:
-	var n := MeshInstance3D.new()
-	var mesh := PrismMesh.new()
-	mesh.left_to_right = false
-	mesh.size = Vector3(radius * 2.0, height, radius * 2.0)
-	n.mesh = mesh
-	n.position = pos
-	n.material_override = _mat(color)
-	parent.add_child(n)
-	return n
-
 func _build_landmarks() -> void:
 	var fort := Node3D.new()
 	fort.name = "StoneHillFort"
