@@ -52,6 +52,7 @@ var pause_panel: Panel
 var game_paused := false
 var complete_gameplay: ReleaseCompleteGameplay
 var depth_systems: ReleaseDepthSystems
+var vertical_completion: ReleaseVerticalGameplay
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -97,6 +98,7 @@ func _boot_gameplay() -> void:
 	_build_world_map_ui()
 	_build_complete_gameplay()
 	_build_depth_systems()
+	_build_vertical_completion()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
@@ -206,6 +208,12 @@ func _build_next_systems() -> void:
 	add_child(contracts)
 	contracts.build(self)
 
+
+func _build_vertical_completion() -> void:
+	vertical_completion = ReleaseVerticalGameplay.new()
+	vertical_completion.name = "ReleaseVerticalGameplay"
+	add_child(vertical_completion)
+	vertical_completion.build(self)
 
 func _build_depth_systems() -> void:
 	depth_systems = ReleaseDepthSystems.new()
@@ -1031,6 +1039,12 @@ func _spawn_extra_banners() -> void:
 	_create_war_banner(Vector3(12, 0, 10), "eastern_tribes")
 
 func _player_attack() -> void:
+	if is_instance_valid(vertical_completion):
+		var strike: Dictionary = vertical_completion.player_strike()
+		if bool(strike.get("ok", false)):
+			attack_cooldown = 0.45
+			_show_status("⚔ %s • %d DMG" % [String(strike.get("weapon", "hit")), int(strike.get("damage", 0))], 0.8)
+			return
 	if is_instance_valid(depth_systems):
 		var strike: Dictionary = depth_systems.player_strike()
 		if bool(strike.get("ok",false)):
