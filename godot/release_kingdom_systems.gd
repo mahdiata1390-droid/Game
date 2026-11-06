@@ -5,7 +5,7 @@ class_name ReleaseKingdomSystems
 
 var game: Node3D
 var world: Node
-var tick := 0.0
+var tick = 0.0
 var relations: Dictionary = {}
 var kingdom: Dictionary = {"laws":{}, "projects":{}, "treasury":0}
 var rebellions: Dictionary = {}
@@ -33,7 +33,7 @@ func _process(delta: float) -> void:
 
 # Stage 10 — Diplomacy
 func set_relation(faction_a:String, faction_b:String, value:int) -> void:
-    var key := _relation_key(faction_a,faction_b)
+    var key = _relation_key(faction_a,faction_b)
     relations[key] = clampi(value,-100,100)
 
 func get_relation(a:String,b:String) -> int:
@@ -41,7 +41,7 @@ func get_relation(a:String,b:String) -> int:
     return int(relations.get(_relation_key(a,b),0))
 
 func diplomacy_action(a:String,b:String,action:String) -> Dictionary:
-    var change := {"peace":12,"alliance":20,"trade":8,"threat":-15,"war":-40}.get(action,0)
+    var change = {"peace":12,"alliance":20,"trade":8,"threat":-15,"war":-40}.get(action,0)
     set_relation(a,b,get_relation(a,b)+change)
     return {"ok":true,"relation":get_relation(a,b),"action":action}
 
@@ -49,12 +49,12 @@ func _relation_key(a:String,b:String) -> String:
     return (a+"|"+b) if a < b else (b+"|"+a)
 
 func _diplomacy_tick() -> void:
-    var factions := _faction_names()
+    var factions = _faction_names()
     for i in range(factions.size()):
         for j in range(i+1,factions.size()):
             var a:String=factions[i]
             var b:String=factions[j]
-            var r:=get_relation(a,b)
+            var r=get_relation(a,b)
             if r < -65:
                 _record_event("%s and %s are on the brink of war." % [a,b])
             elif r > 70:
@@ -66,15 +66,15 @@ func _faction_names() -> Array:
     if world.has("factions"):
         for f in world.factions:
             if f is Dictionary:
-                var n:=String(f.get("id",f.get("name","")))
+                var n=String(f.get("id",f.get("name","")))
                 if n!="": out.append(n)
     for s in world.settlements:
-        var owner:=String(s.get("owner",""))
+        var owner=String(s.get("owner",""))
         if owner!="" and not out.has(owner): out.append(owner)
     return out
 
 func faction_strength(faction:String) -> int:
-    var score:=0
+    var score=0
     for s in world.settlements:
         if String(s.get("owner",""))==faction:
             score += 50 + int(s.get("garrison",0))
@@ -88,17 +88,17 @@ func set_law(law:String,value:bool) -> void:
     kingdom["laws"][law]=value
 
 func start_project(name:String,cost:int,days:int) -> Dictionary:
-    var gold:=int(world.get("gold"))
+    var gold=int(world.get("gold"))
     if gold<cost: return {"ok":false,"reason":"insufficient_gold"}
     world.set("gold",gold-cost)
     kingdom["projects"][name]={"remaining":max(1,days),"cost":cost}
     return {"ok":true,"project":name}
 
 func _kingdom_tick() -> void:
-    var treasury:=0
+    var treasury=0
     for s in world.settlements:
-        var owner:=String(s.get("owner",""))
-        var prosperity:=int(s.get("prosperity",50))
+        var owner=String(s.get("owner",""))
+        var prosperity=int(s.get("prosperity",50))
         if owner==String(world.get("player_faction")):
             treasury += max(0,prosperity/10)
     kingdom["treasury"]=treasury
@@ -113,13 +113,13 @@ func _kingdom_tick() -> void:
 
 # Stage 13 — Rebellion
 func _rebellion_tick() -> void:
-    var player_faction:=String(world.get("player_faction"))
+    var player_faction=String(world.get("player_faction"))
     for i in range(world.settlements.size()):
         var s:Dictionary=world.settlements[i]
         if String(s.get("owner",""))!=player_faction: continue
-        var loyalty:=int(s.get("loyalty",70))
-        var prosperity:=int(s.get("prosperity",50))
-        var risk:=max(0,60-loyalty)+max(0,35-prosperity)
+        var loyalty=int(s.get("loyalty",70))
+        var prosperity=int(s.get("prosperity",50))
+        var risk=max(0,60-loyalty)+max(0,35-prosperity)
         rebellions[str(i)]=risk
         if risk>=55:
             s["rebellion_risk"]=risk
@@ -130,7 +130,7 @@ func _rebellion_tick() -> void:
 
 # Stage 14 — Dynamic world events
 func _world_event_tick() -> void:
-    var options:=["Harvest festival","Bandit pressure","Merchant boom","Harsh winter","Road repairs","Border tension"]
+    var options=["Harvest festival","Bandit pressure","Merchant boom","Harsh winter","Road repairs","Border tension"]
     var event:String=options[int(Time.get_ticks_msec()/8000)%options.size()]
     var payload={"type":event,"day":int(world.get("day"))}
     events.push_back(payload)
@@ -156,10 +156,10 @@ func _record_event(message:String) -> void:
     if events.size()>20: events.pop_front()
 
 func _create_ui() -> void:
-    var layer:=CanvasLayer.new()
+    var layer=CanvasLayer.new()
     layer.name="KingdomSystemsUI"
     game.add_child(layer)
-    var panel:=Panel.new()
+    var panel=Panel.new()
     panel.position=Vector2(18,410)
     panel.size=Vector2(350,82)
     panel.modulate.a=0.88
@@ -172,7 +172,7 @@ func _create_ui() -> void:
 
 func _update_status() -> void:
     if not is_instance_valid(status_label): return
-    var active_rebels:=0
+    var active_rebels=0
     for v in rebellions.values():
         if int(v)>=55: active_rebels+=1
     status_label.text="KINGDOM SYSTEMS\nRelations:%d  Rebel risk:%d  Events:%d" % [relations.size(),active_rebels,events.size()]
