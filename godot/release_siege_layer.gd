@@ -165,7 +165,7 @@ func _create_marker(sid: int) -> Node3D:
 	host.add_child(root)
 
 	var camp := MeshInstance3D.new()
-	var camp_mesh := ConeMesh.new()
+	var camp_mesh := CylinderMesh.new()
 	camp_mesh.bottom_radius = 0.48
 	camp_mesh.top_radius = 0.08
 	camp_mesh.height = 0.75
