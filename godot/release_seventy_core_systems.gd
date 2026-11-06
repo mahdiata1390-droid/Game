@@ -549,16 +549,18 @@ func 95_house_wealth() -> void:
 	world.family["house_wealth"] = int(world.gold) + int(world.family.get("family_reputation",50))*2
 
 func 96_player_renown() -> void:
-	world.player_renown = max(0,int(world.get("player_renown")) + (1 if int(world.day)%7==0 else 0))
+	var renown := int(world.get_meta("player_renown",0))
+	if int(world.day)%7==0: renown += 1
+	world.set_meta("player_renown",max(0,renown))
 
 func 97_player_reputation() -> void:
-	world.player_reputation = clamp(int(world.get("player_reputation")), -100,100)
+	world.set_meta("player_reputation",clamp(int(world.get_meta("player_reputation",0)),-100,100))
 
 func 98_campaign_statistics() -> void:
-	world.campaign_statistics = {"day":int(world.day),"gold":int(world.gold),"armies":world.armies.size(),"settlements":world.settlements.size(),"ships":world.ships.size(),"events":world.world_events.size()}
+	world.set_meta("campaign_statistics",{"day":int(world.day),"gold":int(world.gold),"armies":world.armies.size(),"settlements":world.settlements.size(),"ships":world.ships.size(),"events":world.world_events.size()})
 
 func 99_world_event_history() -> void:
-	world.event_history = world.world_events.slice(max(0,world.world_events.size()-40),world.world_events.size())
+	world.set_meta("event_history",world.world_events.slice(max(0,world.world_events.size()-40),world.world_events.size()))
 
 func 100_sandbox_consistency() -> void:
 	for s in world.settlements:
