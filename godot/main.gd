@@ -1063,6 +1063,13 @@ func _spawn_extra_banners() -> void:
 	_create_war_banner(Vector3(12, 0, 10), "eastern_tribes")
 
 func _player_attack() -> void:
+	if is_instance_valid(final_completion):
+		var final_strike: Dictionary = final_completion.attack()
+		if bool(final_strike.get("ok", false)):
+			final_completion.play_attack_animation()
+			attack_cooldown = 0.45
+			_show_status("⚔ FINAL • %d DMG • COMBO %d" % [int(final_strike.get("damage", 0)), int(final_strike.get("combo", 0))], 0.8)
+			return
 	if is_instance_valid(ten_complete):
 		var strike: Dictionary = ten_complete.player_strike()
 		if bool(strike.get("ok", false)):
