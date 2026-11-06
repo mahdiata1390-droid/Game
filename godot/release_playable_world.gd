@@ -1,6 +1,4 @@
 extends Node
-class_name ReleasePlayableWorld
-
 var game:Node3D
 var world:Node
 var map_panel:Panel
