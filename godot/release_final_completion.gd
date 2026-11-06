@@ -23,6 +23,19 @@ var tick:=0.0
 var strategic_tick:=0.0
 var life_tick:=0.0
 
+func _restore_state() -> void:
+	if world == null:
+		return
+	var saved: Variant = world.get("final_completion_state")
+	if saved is Dictionary:
+		load_save_state(saved)
+
+func _update_runtime_animation(delta: float) -> void:
+	for node in animation_nodes:
+		if is_instance_valid(node) and node is Node3D:
+			var actor: Node3D = node as Node3D
+			actor.rotation.y += delta * 0.18
+
 func build(main_node:Node3D)->void:
 	game=main_node
 	world=game.get("world_state")
