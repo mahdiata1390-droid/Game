@@ -88,6 +88,9 @@ func _boot_gameplay() -> void:
 	_build_release_system_panels()
 	_build_combat_feedback()
 	_build_recruitment_board()
+	_build_siege_command()
+	_build_naval_command()
+	_build_world_inspector()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
@@ -155,6 +158,25 @@ func _build_release_system_panels() -> void:
 	trade_ui.name = "ReleaseCaravanTrade"
 	add_child(trade_ui)
 	trade_ui.build(self)
+
+func _build_siege_command() -> void:
+	var ui := ReleaseSiegeCommand.new()
+	ui.name = "ReleaseSiegeCommand"
+	add_child(ui)
+	ui.build(self)
+
+func _build_naval_command() -> void:
+	var ui := ReleaseNavalCommand.new()
+	ui.name = "ReleaseNavalCommand"
+	add_child(ui)
+	ui.build(self)
+
+func _build_world_inspector() -> void:
+	var ui := ReleaseWorldInspector.new()
+	ui.name = "ReleaseWorldInspector"
+	add_child(ui)
+	ui.build(self)
+
 
 func _build_recruitment_board() -> void:
 	var board := ReleaseRecruitmentBoard.new()
