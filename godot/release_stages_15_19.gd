@@ -6,7 +6,7 @@ class_name ReleaseStages15to19
 
 var game:Node3D
 var world:Node
-var tick:=0.0
+var tick=0.0
 var battle:Dictionary={}
 var settlement_states:Dictionary={}
 var character_states:Dictionary={}
@@ -45,7 +45,7 @@ func get_map_state()->Dictionary:
     return {"discovered":discovered.duplicate(true),"player_region":String(world.get("player_region_id"))}
 
 func _map_tick()->void:
-    var current:=String(world.get("player_region_id"))
+    var current=String(world.get("player_region_id"))
     if current!="":
         discovered[current]=true
     var route=world.get_meta("player_travel_route",[])
@@ -63,11 +63,11 @@ func start_battle(attacker:String,defender:String,attacker_force:int,defender_fo
 func resolve_battle()->Dictionary:
     if not battle.get("active",false):
         return {"ok":false}
-    var af:=int(battle["attacker_force"])
-    var df:=int(battle["defender_force"])
-    var winner:="attacker" if af>=df else "defender"
-    var loss_a:=clampi(int(af*0.18 if winner=="attacker" else af*0.30),0,af)
-    var loss_d:=clampi(int(df*0.30 if winner=="attacker" else df*0.18),0,df)
+    var af=int(battle["attacker_force"])
+    var df=int(battle["defender_force"])
+    var winner="attacker" if af>=df else "defender"
+    var loss_a=clampi(int(af*0.18 if winner=="attacker" else af*0.30),0,af)
+    var loss_d=clampi(int(df*0.30 if winner=="attacker" else df*0.18),0,df)
     battle["attacker_casualties"]=loss_a
     battle["defender_casualties"]=loss_d
     battle["winner"]=winner
@@ -97,7 +97,7 @@ func siege_pressure(siege_id:String)->int:
 func _siege_tick()->void:
     for s in world.settlements:
         if bool(s.get("under_siege",false)):
-            var supply:=int(s.get("siege_supply",100))
+            var supply=int(s.get("siege_supply",100))
             s["siege_supply"]=max(0,supply-1)
             if s["siege_supply"]==0:
                 s["prosperity"]=max(0,int(s.get("prosperity",50))-2)
@@ -106,7 +106,7 @@ func _siege_tick()->void:
 func get_settlement_services(settlement_id:int)->Dictionary:
     if settlement_id<0 or settlement_id>=world.settlements.size(): return {}
     var s:Dictionary=world.settlements[settlement_id]
-    var type:=String(s.get("type","village")).to_lower()
+    var type=String(s.get("type","village")).to_lower()
     var services={"market":true,"farm":true,"inn":type!="village",
         "barracks":type=="town" or type=="city" or type=="castle",
         "keep":type=="castle","workshop":type!="village"}
@@ -116,9 +116,9 @@ func upgrade_settlement(settlement_id:int,service:String)->Dictionary:
     if settlement_id<0 or settlement_id>=world.settlements.size(): return {"ok":false}
     var s:Dictionary=world.settlements[settlement_id]
     var levels:Dictionary=s.get("service_levels",{})
-    var old:=int(levels.get(service,0))
-    var cost:=80+old*60
-    var gold:=int(world.get("gold"))
+    var old=int(levels.get(service,0))
+    var cost=80+old*60
+    var gold=int(world.get("gold"))
     if gold<cost: return {"ok":false,"reason":"insufficient_gold","cost":cost}
     world.set("gold",gold-cost)
     levels[service]=old+1
@@ -129,7 +129,7 @@ func upgrade_settlement(settlement_id:int,service:String)->Dictionary:
 func _settlement_tick()->void:
     for i in range(world.settlements.size()):
         var s:Dictionary=world.settlements[i]
-        var id:=str(i)
+        var id=str(i)
         settlement_states[id]={"prosperity":int(s.get("prosperity",50)),
             "services":get_settlement_services(i)}
         if int(s.get("prosperity",50))>80:
@@ -151,10 +151,10 @@ func _character_tick()->void:
         character_states[id]=c
 
 func _build_ui()->void:
-    var layer:=CanvasLayer.new()
+    var layer=CanvasLayer.new()
     layer.name="Stages15to19UI"
     game.add_child(layer)
-    var panel:=Panel.new()
+    var panel=Panel.new()
     panel.position=Vector2(18,500)
     panel.size=Vector2(360,80)
     panel.modulate.a=0.86
@@ -167,7 +167,7 @@ func _build_ui()->void:
 
 func _update_ui()->void:
     if not is_instance_valid(map_status): return
-    var active:=bool(battle.get("active",false))
+    var active=bool(battle.get("active",false))
     map_status.text="MAP • discovered %d | battle %s | settlements %d | characters %d" % [discovered.size(),"ACTIVE" if active else "READY",settlement_states.size(),character_states.size()]
 
 func get_save_state()->Dictionary:
