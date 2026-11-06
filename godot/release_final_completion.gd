@@ -469,20 +469,54 @@ func _update_npc_jobs()->void:
 			continue
 		var s:Dictionary=world.settlements[sid]
 		var center:Vector2=s.get("position",Vector2.ZERO)
-		var target:=Vector3(center.x+float(npc["x"])-float(center.x),0,center.y+float(npc["z"])-float(center.y))
-		npc["x"]=clamp(float(npc["x"])+rng.randf_range(-0.45,0.45),float(center.x)-3.5,float(center.x)+3.5)
-		npc["z"]=clamp(float(npc["z"])+rng.randf_range(-0.45,0.45),float(center.y)-3.5,float(center.y)+3.5)
-		var visual:Node3D = npc.get("visual") as Node3D
+		var job:=String(npc["job"])
+		var hour:=world.time_of_day
+		var danger:=_settlement_is_in_danger(sid)
+		var target:=_job_target(s,job,hour,danger)
+		var current:=Vector2(float(npc["x"]),float(npc["z"]))
+		var next:=current.move_toward(target,0.9)
+		npc["x"]=clamp(next.x,float(center.x)-12.0,float(center.x)+12.0)
+		npc["z"]=clamp(next.y,float(center.y)-12.0,float(center.y)+12.0)
+		npc["state"]="flee" if danger and job!="guard" else ("work" if not danger else "defend")
+		var visual:Node3D=npc.get("visual") as Node3D
 		if is_instance_valid(visual):
-			visual.position = Vector3(float(npc["x"]), 0.0, float(npc["z"]))
-			visual.rotation.y = atan2(float(npc["z"])-center.y, float(npc["x"])-center.x)
-		# Jobs feed the real settlement economy.
-		if String(npc["job"])=="farmer":
+			visual.position=Vector3(float(npc["x"]),0.0,float(npc["z"]))
+			if current.distance_to(Vector2(float(npc["x"]),float(npc["z"])))>0.02:
+				visual.rotation.y=atan2(float(npc["z"])-current.y,float(npc["x"])-current.x)
+		if job=="farmer" and not danger:
 			s["stockpile"]["food"]=int(s["stockpile"].get("food",0))+1
-		elif String(npc["job"])=="merchant":
+		elif job=="merchant" and not danger:
 			s["prosperity"]=clamp(int(s.get("prosperity",50))+1,0,100)
-		elif String(npc["job"])=="craftsman":
+		elif job=="craftsman" and not danger:
 			s["stockpile"]["wood"]=int(s["stockpile"].get("wood",0))+1
+		elif job=="guard" and danger:
+			s["garrison"]=int(s.get("garrison",0))+1
+
+func _settlement_is_in_danger(sid:int)->bool:
+	for army in world.armies:
+		var rid:=int(army.get("region",-1))
+		if rid<0 or rid>=world.regions.size():
+			continue
+		var owner:=String(world.regions[rid].get("owner",""))
+		var settlement_owner:=String(world.settlements[sid].get("owner",""))
+		if owner!=settlement_owner and _relation(owner,settlement_owner)<0:
+			return true
+	return false
+
+func _job_target(s:Dictionary,job:String,hour:float,danger:bool)->Vector2:
+	var center:Vector2=s.get("position",Vector2.ZERO)
+	if danger:
+		if job=="guard":
+			return center+Vector2(0,-5)
+		return center+Vector2(0,6)
+	var phase:=int(floor(hour/4.0))%6
+	if job=="farmer":
+		return center+Vector2(-7,5) if phase%2==0 else center+Vector2(-5,7)
+	if job=="merchant":
+		return center+Vector2(4,-2)
+	if job=="craftsman":
+		return center+Vector2(-3,-4)
+	return center+Vector2(0,-5)
 
 func _setup_settlement_runtime()->void:
 	settlement_runtime.clear()
