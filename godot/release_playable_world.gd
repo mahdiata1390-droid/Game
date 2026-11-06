@@ -13,6 +13,12 @@ var sim_timer:=0.0
 var battle_fx:Node3D
 var rng:=RandomNumberGenerator.new()
 
+func _build_interaction_fx() -> void:
+	battle_fx = Node3D.new()
+	battle_fx.name = "CampaignInteractionFX"
+	game.add_child(battle_fx)
+	game.set_meta("campaign_interaction_fx_ready", true)
+
 func build(main_node:Node3D)->void:
     game=main_node
     world=game.get("world_state")
