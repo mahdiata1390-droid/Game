@@ -63,8 +63,9 @@ func _diplomacy_tick() -> void:
 # Stage 11 — Faction simulation
 func _faction_names() -> Array:
     var out:Array=[]
-    if world.has("factions"):
-        for f in world.factions:
+    var faction_data = world.get("factions")
+    if faction_data is Array:
+        for f in faction_data:
             if f is Dictionary:
                 var n=String(f.get("id",f.get("name","")))
                 if n!="": out.append(n)
