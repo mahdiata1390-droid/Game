@@ -86,10 +86,8 @@ jobs:
           curl -L --fail --retry 3 -o godot/assets/production/characters/character.glb https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/character.glb
           unzip -q /tmp/medieval_village.zip -d /tmp/medieval_village
           unzip -q /tmp/stylized_nature.zip -d /tmp/stylized_nature
-          find /tmp/medieval_village -type f -exec cp --parents {} godot/assets/production/medieval_village/ \\
-            \\
-          find /tmp/stylized_nature -type f -exec cp --parents {} godot/assets/production/nature/ \\
-            \\
+          cp -a /tmp/medieval_village/. godot/assets/production/medieval_village/
+          cp -a /tmp/stylized_nature/. godot/assets/production/nature/
           find godot/assets/production -type f | sort | head -40
 
       - name: Validate project
