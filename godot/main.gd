@@ -694,14 +694,16 @@ func _toggle_pause() -> void:
 func _pause_load() -> void:
 	if world_state.load_game():
 		var saved_pos = world_state.get_meta("saved_player_position", null)
-		if saved_pos is Vector3 and is_instance_valid(player):
-			player.global_position = saved_pos
+		if saved_pos is Array and saved_pos.size() == 3 and is_instance_valid(player):
+			player.global_position = Vector3(float(saved_pos[0]), float(saved_pos[1]), float(saved_pos[2]))
 		_show_status("GAME LOADED", 2.5)
 	else:
 		_show_status("NO SAVE FOUND", 2.5)
 	
 
 func _pause_save() -> void:
+	if is_instance_valid(player):
+		world_state.set_meta("saved_player_position", player.global_position)
 	if world_state.save_game():
 		_show_status("GAME SAVED", 2.5)
 	else:
