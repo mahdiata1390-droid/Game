@@ -1,6 +1,4 @@
 extends Node
-class_name ReleaseProductionPolish
-
 # Final production layer: mobile controls, graphics presets, tutorial, autosave,
 # performance culling and a small in-game QA/status panel.
 # This layer only coordinates existing systems; WorldState remains authoritative.
@@ -289,10 +287,10 @@ func _update_streaming_visibility() -> void:
 		"quality":
 			distance_limit = 105.0
 	for child in game.get_children():
-		var node := child as Node3D
+		var node: Node3D = child as Node3D
 		if node == null or node == player or node == game:
 			continue
-		if node is Camera3D or node is WorldEnvironment or node is DirectionalLight3D:
+		if child is Camera3D or child is WorldEnvironment or child is DirectionalLight3D:
 			continue
 		if not (node is MeshInstance3D or node.get_child_count() > 0):
 			continue
