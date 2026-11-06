@@ -28,6 +28,8 @@ var battle_initial_attacker := 0
 var battle_initial_defender := 0
 var battle_casualties := {"ALLY": 0, "ENEMY": 0}
 var battle_casualty_types := {"ALLY": {}, "ENEMY": {}}
+var battle_command_formation := "line"
+var battle_command_order := "hold"
 var battle_attacker_force: Dictionary = {}
 var battle_defender_force: Dictionary = {}
 var world_state: Node
@@ -671,7 +673,16 @@ func _update_troops(delta: float) -> void:
 			var distance := node.global_position.distance_to(target.global_position)
 			var moving := false
 			var attacking := false
-			if distance > ATTACK_RANGE:
+			if battle_command_order == "retreat" and String(data.team) == "ALLY":
+				var away := (node.global_position - target.global_position)
+				away.y = 0
+				if away.length() > 0.05:
+					node.velocity = away.normalized() * TROOP_SPEED
+					node.move_and_slide()
+					moving = true
+			elif battle_command_order == "hold" and String(data.team) == "ALLY" and distance > ATTACK_RANGE:
+				node.velocity = Vector3.ZERO
+			elif distance > ATTACK_RANGE:
 				var dir := (target.global_position - node.global_position)
 				dir.y = 0
 				node.velocity = dir.normalized() * TROOP_SPEED
