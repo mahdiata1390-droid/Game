@@ -80,15 +80,21 @@ jobs:
       - name: Fetch production art packs
         run: |
           set -euo pipefail
-          mkdir -p godot/assets/production/medieval_village godot/assets/production/nature godot/assets/production/characters
+          mkdir -p godot/assets/production/medieval_village godot/assets/production/nature godot/assets/production/characters godot/assets/production/buildings_extra godot/assets/production/animals
           curl -L --fail --retry 3 -o /tmp/medieval_village.zip https://opengameart.org/sites/default/files/medieval_village_megakitstandard.zip
           curl -L --fail --retry 3 -o /tmp/stylized_nature.zip https://opengameart.org/sites/default/files/stylized_nature_megakitstandard.zip
+          curl -L --fail --retry 3 -o /tmp/medieval_buildings.zip 'https://opengameart.org/sites/default/files/Modular%20Medieval%20Pack%20by%20%40Quaternius_0.zip'
+          curl -L --fail --retry 3 -o /tmp/prototype_kit.zip https://opengameart.org/sites/default/files/kenney_prototype-kit.zip
           curl -L --fail --retry 3 -o godot/assets/production/characters/character.glb https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/character.glb
           unzip -q /tmp/medieval_village.zip -d /tmp/medieval_village
           unzip -q /tmp/stylized_nature.zip -d /tmp/stylized_nature
+          unzip -q /tmp/medieval_buildings.zip -d /tmp/medieval_buildings
+          unzip -q /tmp/prototype_kit.zip -d /tmp/prototype_kit
           cp -a /tmp/medieval_village/. godot/assets/production/medieval_village/
           cp -a /tmp/stylized_nature/. godot/assets/production/nature/
-          find godot/assets/production -type f | sort | head -40
+          cp -a /tmp/medieval_buildings/. godot/assets/production/buildings_extra/
+          cp -a /tmp/prototype_kit/. godot/assets/production/animals/
+          find godot/assets/production -type f | sort | head -120
 
       - name: Validate project
         run: |
