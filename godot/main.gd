@@ -57,6 +57,7 @@ var world_life_mobile: ReleaseWorldLifeMobile
 var ten_complete: ReleaseTenComplete
 var final_completion: ReleaseFinalCompletion
 var asset_registry: ReleaseAssetRegistry
+var production_asset_integration: ReleaseProductionAssetIntegration
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -110,6 +111,10 @@ func _boot_gameplay() -> void:
 	asset_registry.name = "ProductionAssetRegistry"
 	add_child(asset_registry)
 	asset_registry.scan()
+	production_asset_integration = ReleaseProductionAssetIntegration.new()
+	production_asset_integration.name = "ProductionAssetIntegration"
+	add_child(production_asset_integration)
+	production_asset_integration.setup(asset_registry)
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
