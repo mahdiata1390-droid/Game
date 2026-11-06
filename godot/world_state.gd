@@ -34,6 +34,7 @@ var production_stock:Dictionary = {"food":30,"wood":10,"iron":5}
 var faction_ai_state:Dictionary = {}
 var simulation_paused: bool = false
 var complete_gameplay_state: Dictionary = {}
+var vertical_completion_state: Dictionary = {}
 
 
 func initialize_continent() -> void:
@@ -569,7 +570,10 @@ func save_game()->bool:
 	var complete_node := get_node_or_null("../ReleaseCompleteGameplay")
 	if complete_node and complete_node.has_method("get_save_state"):
 		complete_gameplay_state = complete_node.get_save_state()
-	var data={"save_version":4,"day":day,"gold":gold,"player_faction":player_faction,"player_start":player_start,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"yearly_tax":yearly_tax,"player_income":player_income,"battle_events":battle_events,"world_events":world_events,"battle_cooldowns":battle_cooldowns,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state,"simulation_paused":simulation_paused,"campaign_state":campaign_state,"final_state":final_state,"complete_gameplay_state":complete_gameplay_state,"depth_systems_state":_get_depth_state()}
+	var vertical_node := get_node_or_null("../ReleaseVerticalGameplay")
+	if vertical_node and vertical_node.has_method("get_save_state"):
+		vertical_completion_state = vertical_node.get_save_state()
+	var data={"save_version":5,"day":day,"gold":gold,"player_faction":player_faction,"player_start":player_start,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"yearly_tax":yearly_tax,"player_income":player_income,"battle_events":battle_events,"world_events":world_events,"battle_cooldowns":battle_cooldowns,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state,"simulation_paused":simulation_paused,"campaign_state":campaign_state,"final_state":final_state,"complete_gameplay_state":complete_gameplay_state,"depth_systems_state":_get_depth_state(),"vertical_completion_state":vertical_completion_state}
 	var file:=FileAccess.open(save_path,FileAccess.WRITE)
 	if file==null: return false
 	file.store_string(JSON.stringify(data)); file.close(); return true
@@ -580,7 +584,7 @@ func load_game()->bool:
 	if file==null: return false
 	var parsed=JSON.parse_string(file.get_as_text()); file.close()
 	if typeof(parsed)!=TYPE_DICTIONARY: return false
-	if int(parsed.get("save_version",1)) > 4: return false
+	if int(parsed.get("save_version",1)) > 5: return false
 	for key in ["day","gold","player_faction","player_start","player_region_id","player_mode","player_level","player_xp","player_inventory","family","weather","time_of_day","yearly_tax","player_income","battle_events","world_events","battle_cooldowns","regions","factions","settlements","armies","diplomacy","caravans","ships","sieges","player_equipment","family_members","player_buildings","production_stock","faction_ai_state","simulation_paused"]:
 		if parsed.has(key): set(key,parsed[key])
 	var campaign_node := get_node_or_null("/root/CampaignSystems")
@@ -592,10 +596,13 @@ func load_game()->bool:
 	var complete_node := get_node_or_null("../ReleaseCompleteGameplay")
 	if complete_node and complete_node.has_method("load_save_state") and parsed.has("complete_gameplay_state"):
 		complete_node.load_save_state(parsed["complete_gameplay_state"])
-	var depth_node := get_node_or_null("../ReleaseDepthSystems")
-	if depth_node and depth_node.has_method("load_state") and parsed.has("depth_systems_state"):
-		depth_node.load_state(parsed["depth_systems_state"])
-	return true
+\tvar depth_node := get_node_or_null("../ReleaseDepthSystems")
+\tif depth_node and depth_node.has_method("load_state") and parsed.has("depth_systems_state"):
+\t\tdepth_node.load_state(parsed["depth_systems_state"])
+\tvar vertical_node := get_node_or_null("../ReleaseVerticalGameplay")
+\tif vertical_node and vertical_node.has_method("load_save_state") and parsed.has("vertical_completion_state"):
+\t\tvertical_node.load_save_state(parsed["vertical_completion_state"])
+\treturn true
 
 func upgrade_settlement_building(settlement_id:int,building:String)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size(): return {"ok":false,"reason":"invalid_settlement"}
