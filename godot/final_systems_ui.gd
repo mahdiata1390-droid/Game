@@ -147,7 +147,7 @@ func _refresh() -> void:
             content.text = _overview()
 
 func _overview() -> String:
-    var s := world.get_world_status()
+    var s: Dictionary = world.get_world_status()
     return "DAY %d • %s • GOLD %d\n\nLevel: %d\nRegion: %d\nSettlements: %d\nArmies: %d\nShips: %d\nSieges: %d\nCaravans: %d\n\nRenown: %d\nTitle: %s\nTechnology points: %d\n\nThe world continues to simulate while this panel is closed." % [
         int(s.get("day",1)), String(s.get("weather","clear")), int(s.get("gold",0)),
         int(s.get("level",1)), int(s.get("player_region",0)), int(s.get("settlements",0)),
@@ -379,7 +379,7 @@ func _rebuild_cargo_unload_controls() -> void:
     for i in range(min(ids.size(), 2)):
         var ship_id := ids[i]
         for j in range(resources.size()):
-            var resource := resources[j]
+            var resource: String = String(resources[j])
             var b := Button.new()
             b.text = "UNLOAD %s • SHIP %d" % [resource.to_upper(), ship_id + 1]
             b.position = Vector2(28 + j * 250, 704 + i * 24)
@@ -422,7 +422,7 @@ func _rebuild_technology_controls() -> void:
         return
     var names := ["agriculture","smithing","commerce","engineering","navigation","medicine","warfare","mysticism"]
     for i in range(names.size()):
-        var name := names[i]
+        var name: String = String(names[i])
         var b := Button.new()
         b.text = "RESEARCH " + name.to_upper()
         b.position = Vector2(28 + (i % 2) * 360, 500 + (i / 2) * 32)
@@ -432,7 +432,7 @@ func _rebuild_technology_controls() -> void:
         technology_controls.append(b)
 
 func _unlock_technology(name: String) -> void:
-    var ok := systems.unlock_technology(name)
+    var ok: bool = bool(systems.unlock_technology(name))
     _refresh()
     content.text = "TECHNOLOGY\n\n" + (("Unlocked " + name + ".") if ok else "Research failed: no points or technology already at maximum.")
 
@@ -461,7 +461,7 @@ func _rebuild_trade_controls() -> void:
     _clear_controls(trade_controls)
     if selected_tab != "navy" or panel == null:
         return
-    var regions := world.regions
+    var regions: Array = world.regions
     for i in range(min(regions.size(), 3)):
         var b := Button.new()
         b.text = "TRADE FOOD → " + String(regions[i].get("name","REGION"))
