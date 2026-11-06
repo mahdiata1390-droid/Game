@@ -7,10 +7,10 @@ class_name ReleaseCombatSystem
 var game: Node3D
 var world: Node
 var player: CharacterBody3D
-var rng := RandomNumberGenerator.new()
+var rng = RandomNumberGenerator.new()
 var states: Dictionary = {}
 var fx_root: Node3D
-var tick := 0.0
+var tick = 0.0
 
 func build(main_node:Node3D)->void:
 	game=main_node
@@ -28,10 +28,10 @@ func _process(delta:float)->void:
 	tick+=delta
 	var troops:Array=game.get("troops") if game.get("troops")!=null else []
 	for entry in troops:
-		var node:=entry.get("node") as Node3D
+		var node=entry.get("node") as Node3D
 		if not is_instance_valid(node):
 			continue
-		var id:=node.get_instance_id()
+		var id=node.get_instance_id()
 		if not states.has(id):
 			states[id]={"phase":"idle","timer":0.0,"cooldown":rng.randf_range(0.1,0.8),"stagger":0.0,"blocking":false,"attack_id":0}
 		var st:Dictionary=states[id]
@@ -43,12 +43,12 @@ func _process(delta:float)->void:
 			node.velocity=Vector3.ZERO
 			states[id]=st
 			continue
-		var target:=_nearest_enemy(node,String(entry.get("team","")))
+		var target=_nearest_enemy(node,String(entry.get("team","")))
 		if target==null:
 			st["phase"]="idle"
 			states[id]=st
 			continue
-		var distance:=node.global_position.distance_to(target.global_position)
+		var distance=node.global_position.distance_to(target.global_position)
 		if distance>4.0:
 			st["phase"]="advance"
 			st["blocking"]=false
@@ -75,15 +75,15 @@ func _process(delta:float)->void:
 
 func _nearest_enemy(from:Node3D,team:String)->Node3D:
 	var best:Node3D
-	var best_distance:=4.2
+	var best_distance=4.2
 	var troops:Array=game.get("troops") if game.get("troops")!=null else []
 	for entry in troops:
 		if String(entry.get("team",""))==team:
 			continue
-		var n:=entry.get("node") as Node3D
+		var n=entry.get("node") as Node3D
 		if not is_instance_valid(n):
 			continue
-		var d:=from.global_position.distance_to(n.global_position)
+		var d=from.global_position.distance_to(n.global_position)
 		if d<best_distance:
 			best_distance=d
 			best=n
@@ -92,7 +92,7 @@ func _nearest_enemy(from:Node3D,team:String)->Node3D:
 func _resolve_attack(attacker:Node3D,target:Node3D,entry:Dictionary)->void:
 	if not is_instance_valid(target):
 		return
-	var damage:=int(entry.get("attack_damage",18))
+	var damage=int(entry.get("attack_damage",18))
 	var target_state:Dictionary=states.get(target.get_instance_id(),{})
 	if bool(target_state.get("blocking",false)):
 		damage=max(1,int(round(damage*0.35)))
@@ -116,7 +116,7 @@ func player_hit(target:Node3D,damage:int)->void:
 	_spawn_hit_feedback(target,damage)
 
 func _animate_state(node:Node3D,phase:String,delta:float)->void:
-	var t:=tick
+	var t=tick
 	if phase=="attack_windup":
 		node.rotation.x=lerp(node.rotation.x,-0.18,0.25)
 	elif phase=="recover":
@@ -132,13 +132,13 @@ func _animate_state(node:Node3D,phase:String,delta:float)->void:
 func _spawn_hit_feedback(target:Node3D,damage:int)->void:
 	if not is_instance_valid(target):
 		return
-	var label:=Label3D.new()
+	var label=Label3D.new()
 	label.text="-"+str(damage)
 	label.font_size=22
 	label.outline_size=5
 	label.position=Vector3(0,2.4,0)
 	target.add_child(label)
-	var tween:=create_tween()
+	var tween=create_tween()
 	tween.tween_property(label,"position",Vector3(0,3.1,0),0.38)
 	tween.parallel().tween_property(label,"modulate:a",0.0,0.38)
 	tween.tween_callback(label.queue_free)
