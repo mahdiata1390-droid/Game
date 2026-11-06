@@ -551,6 +551,12 @@ func create_caravan(origin_id:int,destination_id:int)->Dictionary:
 	if result.get("ok",false): caravans.append(result["caravan"])
 	return result
 
+func _get_depth_state() -> Dictionary:
+	var n := get_node_or_null("../ReleaseDepthSystems")
+	if n and n.has_method("get_state"):
+		return n.get_state()
+	return {}
+
 func save_game()->bool:
 	var campaign_state:Dictionary = {}
 	var campaign_node := get_node_or_null("/root/CampaignSystems")
@@ -563,7 +569,7 @@ func save_game()->bool:
 	var complete_node := get_node_or_null("../ReleaseCompleteGameplay")
 	if complete_node and complete_node.has_method("get_save_state"):
 		complete_gameplay_state = complete_node.get_save_state()
-	var data={"save_version":4,"day":day,"gold":gold,"player_faction":player_faction,"player_start":player_start,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"yearly_tax":yearly_tax,"player_income":player_income,"battle_events":battle_events,"world_events":world_events,"battle_cooldowns":battle_cooldowns,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state,"simulation_paused":simulation_paused,"campaign_state":campaign_state,"final_state":final_state,"complete_gameplay_state":complete_gameplay_state}
+	var data={"save_version":4,"day":day,"gold":gold,"player_faction":player_faction,"player_start":player_start,"player_region_id":player_region_id,"player_mode":player_mode,"player_level":player_level,"player_xp":player_xp,"player_inventory":player_inventory,"family":family,"weather":weather,"time_of_day":time_of_day,"yearly_tax":yearly_tax,"player_income":player_income,"battle_events":battle_events,"world_events":world_events,"battle_cooldowns":battle_cooldowns,"regions":regions,"factions":factions,"settlements":settlements,"armies":armies,"diplomacy":diplomacy,"caravans":caravans,"ships":ships,"sieges":sieges,"player_equipment":player_equipment,"family_members":family_members,"player_buildings":player_buildings,"production_stock":production_stock,"faction_ai_state":faction_ai_state,"simulation_paused":simulation_paused,"campaign_state":campaign_state,"final_state":final_state,"complete_gameplay_state":complete_gameplay_state,"depth_systems_state":_get_depth_state()}
 	var file:=FileAccess.open(save_path,FileAccess.WRITE)
 	if file==null: return false
 	file.store_string(JSON.stringify(data)); file.close(); return true
@@ -586,6 +592,9 @@ func load_game()->bool:
 	var complete_node := get_node_or_null("../ReleaseCompleteGameplay")
 	if complete_node and complete_node.has_method("load_save_state") and parsed.has("complete_gameplay_state"):
 		complete_node.load_save_state(parsed["complete_gameplay_state"])
+	var depth_node := get_node_or_null("../ReleaseDepthSystems")
+	if depth_node and depth_node.has_method("load_state") and parsed.has("depth_systems_state"):
+		depth_node.load_state(parsed["depth_systems_state"])
 	return true
 
 func upgrade_settlement_building(settlement_id:int,building:String)->Dictionary:
