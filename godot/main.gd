@@ -54,6 +54,7 @@ var complete_gameplay: ReleaseCompleteGameplay
 var depth_systems: ReleaseDepthSystems
 var vertical_completion: ReleaseVerticalGameplay
 var world_life_mobile: ReleaseWorldLifeMobile
+var ten_complete: ReleaseTenComplete
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -101,6 +102,7 @@ func _boot_gameplay() -> void:
 	_build_depth_systems()
 	_build_vertical_completion()
 	_build_world_life_mobile()
+	_build_ten_complete()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
@@ -210,6 +212,12 @@ func _build_next_systems() -> void:
 	add_child(contracts)
 	contracts.build(self)
 
+
+func _build_ten_complete() -> void:
+	ten_complete = ReleaseTenComplete.new()
+	ten_complete.name = "ReleaseTenComplete"
+	add_child(ten_complete)
+	ten_complete.build(self)
 
 func _build_world_life_mobile() -> void:
 	world_life_mobile = ReleaseWorldLifeMobile.new()
@@ -1047,6 +1055,12 @@ func _spawn_extra_banners() -> void:
 	_create_war_banner(Vector3(12, 0, 10), "eastern_tribes")
 
 func _player_attack() -> void:
+	if is_instance_valid(ten_complete):
+		var strike: Dictionary = ten_complete.player_strike()
+		if bool(strike.get("ok", false)):
+			attack_cooldown = 0.45
+			_show_status("⚔ %s • %d DMG • COMBO %d" % [String(strike.get("weapon", "hit")), int(strike.get("damage", 0)), int(strike.get("combo", 0))], 0.8)
+			return
 	if is_instance_valid(vertical_completion):
 		var strike: Dictionary = vertical_completion.player_strike()
 		if bool(strike.get("ok", false)):
