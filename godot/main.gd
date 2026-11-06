@@ -61,6 +61,7 @@ var production_asset_integration: ReleaseProductionAssetIntegration
 var combat_system: ReleaseCombatSystem
 var npc_ai_system: ReleaseNpcAiSystem
 var siege_stage: ReleaseSiegeStage
+var expansion_stages: ReleaseExpansionStages
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -131,6 +132,10 @@ func _boot_gameplay() -> void:
 	siege_stage.name = "SiegeStage"
 	add_child(siege_stage)
 	siege_stage.build(self)
+	expansion_stages = ReleaseExpansionStages.new()
+	expansion_stages.name = "ExpansionStages"
+	add_child(expansion_stages)
+	expansion_stages.build(self)
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
