@@ -76,12 +76,19 @@ func _boot_gameplay() -> void:
 	_build_interaction_ui()
 	_spawn_extra_banners()
 	_spawn_continent_world()
+	_build_visual_content_upgrade()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
 		await get_tree().create_timer(1.5).timeout
 		boot.queue_free()
+
+func _build_visual_content_upgrade() -> void:
+	var upgrade := ContentUpgrade.new()
+	upgrade.name = "VisualContentUpgrade"
+	add_child(upgrade)
+	upgrade.build(self)
 
 func _spawn_extra_banners_once() -> void:
 	_spawn_extra_banners()
