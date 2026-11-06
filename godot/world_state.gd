@@ -53,13 +53,32 @@ func initialize_continent() -> void:
 		regions.append({"id":i,"name":d[0],"owner":d[3],"position":d[1],"resource":d[2],"population":1200+i*180,"prosperity":45+(i*7)%40})
 		_get_faction(d[3])["territory"].append(i)
 	_add_settlement("Northwatch","castle",0,Vector2(-18,-13),"north_kingdom",720); _add_settlement("Pinehaven","village",1,Vector2(-6,-15),"north_kingdom",260); _add_settlement("Valoria","city",2,Vector2(7,-14),"river_kingdom",1450); _add_settlement("Steppe Camp","village",3,Vector2(19,-9),"eastern_tribes",310); _add_settlement("Frostport","town",4,Vector2(-20,0),"north_kingdom",610); _add_settlement("Kingsbridge","city",5,Vector2(-5,-1),"river_kingdom",1300); _add_settlement("Goldford","town",6,Vector2(8,-1),"river_kingdom",820); _add_settlement("Redstone","castle",7,Vector2(19,2),"eastern_tribes",540); _add_settlement("Clanhold","castle",8,Vector2(-17,12),"western_clans",490); _add_settlement("Basinfield","village",9,Vector2(-3,11),"river_kingdom",280); _add_settlement("Sahr","city",10,Vector2(10,12),"southern_sultanate",1600); _add_settlement("Pearl Bay","town",11,Vector2(20,15),"southern_sultanate",730)
-	_add_army("Northwatch Host","north_kingdom",0,180); _add_army("Valoria Royal Army","river_kingdom",2,260); _add_army("Steppe Riders","eastern_tribes",3,210); _add_army("Sahr Expedition","southern_sultanate",10,240); _add_army("Western Warband","western_clans",8,150)
+	_populate_minor_settlements()
+	_add_army("Northwatch Host","north_kingdom",0,180); _add_army("Valoria Royal Army","river_kingdom",2,260); _add_army("Steppe Riders","eastern_tribes",3,210); _add_army("Sahr Expedition","southern_sultanate",10,240); _add_army("Western Warband","western_clans",8,150); _add_army("Frost Patrol","north_kingdom",4,95); _add_army("Heartland Guard","river_kingdom",5,120); _add_army("Red Frontier Riders","eastern_tribes",7,130); _add_army("Sahr Coast Guard","southern_sultanate",11,105); _add_army("Forest Raiders","western_clans",9,85); _add_army("Kingsroad Escort","river_kingdom",6,110)
 	ships.append({"id":0,"name":"Pearl Trader","owner":"southern_sultanate","region":11,"crew":35,"cargo":{"food":40,"wood":15,"iron":5},"moving":false,"target_region":11})
 	ships.append({"id":1,"name":"Frost Cutter","owner":"north_kingdom","region":4,"crew":28,"cargo":{"food":25,"wood":25,"iron":3},"moving":false,"target_region":4})
 	for a in factions:
 		for b in factions:
 			if a["id"] != b["id"]: a["relations"][b["id"]] = 0
 	diplomacy["north_kingdom|river_kingdom"]="peace"; diplomacy["river_kingdom|eastern_tribes"]="war"; diplomacy["western_clans|river_kingdom"]="war"; diplomacy["southern_sultanate|river_kingdom"]="peace"
+
+func _populate_minor_settlements() -> void:
+	# Fill the continent with deterministic hamlets, farms and small market villages.
+	# These are real campaign settlements: they produce resources, collect taxes,
+	# can be conquered, and appear on the strategic map.
+	var suffixes := ["Ash", "Brook", "Cross", "Dale", "Field", "Glen", "Hill", "Mead", "Oak", "Pine", "Stone", "Vale"]
+	for region_id in range(regions.size()):
+		var region: Dictionary = regions[region_id]
+		var center: Vector2 = region["position"]
+		var owner := String(region["owner"])
+		for slot in range(3):
+			var angle := deg_to_rad(float((region_id * 97 + slot * 121) % 360))
+			var radius := 2.2 + float(slot) * 1.15
+			var pos := center + Vector2(cos(angle), sin(angle)) * radius
+			var name := "%s %s" % [String(suffixes[(region_id * 3 + slot) % suffixes.size()]), String(suffixes[(region_id + slot * 2 + 3) % suffixes.size()])]
+			var population := 120 + ((region_id * 83 + slot * 47) % 260)
+			_add_settlement(name, "village", region_id, pos, owner, population)
+
 
 func _add_settlement(name:String,kind:String,region_id:int,position:Vector2,owner:String,population:int)->void:
 	var garrison_count := 40 if kind=="village" else 100
