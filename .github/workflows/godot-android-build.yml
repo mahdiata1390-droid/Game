@@ -109,21 +109,18 @@ jobs:
           find godot/assets/production -type f | sort > /tmp/production_asset_list.txt
           sed -n '1,160p' /tmp/production_asset_list.txt
 
-      - name: Validate project
+      - name: Validate project and scripts
         run: |
-          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --editor --quit
+          set -o pipefail
+          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --editor --quit --check-only 2>&1 | tee godot-check.log
+          ! grep -E "SCRIPT ERROR|Parse Error|ERROR:" godot-check.log
 
       - name: Runtime smoke test
         run: |
-          timeout 12s ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --quit-after 5 || test $? -eq 124
+          set -o pipefail
+          timeout 15s ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --quit-after 8 2>&1 | tee godot-runtime.log || test ${PIPESTATUS[0]} -eq 124
+          ! grep -E "SCRIPT ERROR|Parse Error" godot-runtime.log
 
-      - name: Godot script error gate
-        run: |
-          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --editor --quit 2>&1 | tee godot-script-check.log
-          if grep -q "SCRIPT ERROR" godot-script-check.log; then
-            echo "Godot reported SCRIPT ERROR"
-            exit 1
-          fi
 
       - name: Export APK
         run: |
