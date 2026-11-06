@@ -82,6 +82,7 @@ func _boot_gameplay() -> void:
 	_build_campaign_visuals()
 	_build_siege_layer()
 	_build_battle_command_layer()
+	_build_campaign_command_center()
 	_build_world_map_ui()
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
@@ -119,6 +120,12 @@ func _toggle_camera_mode() -> void:
 	camera_first_person = not camera_first_person
 	if is_instance_valid(status_label):
 		status_label.text = "Camera: %s" % ("FIRST PERSON" if camera_first_person else "THIRD PERSON")
+
+func _build_campaign_command_center() -> void:
+	var command_center := ReleaseCampaignCommandCenter.new()
+	command_center.name = "ReleaseCampaignCommandCenter"
+	add_child(command_center)
+	command_center.build(self)
 
 func _spawn_extra_banners_once() -> void:
 	_spawn_extra_banners()
