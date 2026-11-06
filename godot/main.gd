@@ -1,55 +1,55 @@
 extends Node3D
 
-var PLAYER_SPEED := 5.0
+var PLAYER_SPEED = 5.0
 const TROOP_SPEED := 2.1
 const ATTACK_RANGE := 1.7
 const ATTACK_DAMAGE := 12
 const MAX_HP := 100
 
 var player: CharacterBody3D
-var player_hp := MAX_HP
+var player_hp = MAX_HP
 var camera: Camera3D
-var yaw := 0.0
-var pitch := -12.0
-var move_touch := Vector2.ZERO
-var look_touch := Vector2.ZERO
-var touch_forward := false
-var touch_back := false
-var touch_left := false
-var touch_right := false
-var touch_look_active := false
+var yaw = 0.0
+var pitch = -12.0
+var move_touch = Vector2.ZERO
+var look_touch = Vector2.ZERO
+var touch_forward = false
+var touch_back = false
+var touch_left = false
+var touch_right = false
+var touch_look_active = false
 var troops: Array[Dictionary] = []
 var status_label: Label
 var hp_label: Label
-var attack_cooldown := 0.0
-var battle_time := 0.0
-var battle_in_progress := false
-var battle_initial_attacker := 0
-var battle_initial_defender := 0
-var battle_casualties := {"ALLY": 0, "ENEMY": 0}
-var battle_casualty_types := {"ALLY": {}, "ENEMY": {}}
-var battle_command_formation := "line"
-var battle_command_order := "hold"
+var attack_cooldown = 0.0
+var battle_time = 0.0
+var battle_in_progress = false
+var battle_initial_attacker = 0
+var battle_initial_defender = 0
+var battle_casualties = {"ALLY": 0, "ENEMY": 0}
+var battle_casualty_types = {"ALLY": {}, "ENEMY": {}}
+var battle_command_formation = "line"
+var battle_command_order = "hold"
 var battle_attacker_force: Dictionary = {}
 var battle_defender_force: Dictionary = {}
 var world_state: Node
 var world_map_panel: Control
 var world_map_label: Label
-var map_open := false
+var map_open = false
 var travel_buttons: Array[Node] = []
 var map_canvas: Control
 var army_command_panel: Panel
-var camera_first_person := false
+var camera_first_person = false
 var settlement_interior: Node3D
-var interior_active := false
-var current_settlement_id := -1
+var interior_active = false
+var current_settlement_id = -1
 var interior_npcs: Array[Node3D] = []
 var inventory_panel: Panel
 var inventory_label: Label
-var inventory_open := false
-var status_hold := 0.0
+var inventory_open = false
+var status_hold = 0.0
 var pause_panel: Panel
-var game_paused := false
+var game_paused = false
 var complete_gameplay: ReleaseCompleteGameplay
 var depth_systems: ReleaseDepthSystems
 var vertical_completion: ReleaseVerticalGameplay
@@ -77,7 +77,7 @@ func _ready() -> void:
 	call_deferred("_boot_gameplay")
 
 func _set_boot_status(message: String) -> void:
-	var hint := get_node_or_null("BootStatus/Hint") as Label
+	var hint = get_node_or_null("BootStatus/Hint") as Label
 	if is_instance_valid(hint):
 		hint.text = message
 
@@ -172,33 +172,33 @@ func _boot_gameplay() -> void:
 	add_child(playable_world)
 	playable_world.build(self)
 	_set_boot_status("WORLD READY • sandbox systems online")
-	var boot := get_node_or_null("BootStatus") as CanvasLayer
+	var boot = get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
 		await get_tree().create_timer(1.5).timeout
 		boot.queue_free()
 
 func _build_visual_content_upgrade() -> void:
-	var upgrade := ContentUpgrade.new()
+	var upgrade = ContentUpgrade.new()
 	upgrade.name = "VisualContentUpgrade"
 	add_child(upgrade)
 	upgrade.build(self)
 
 func _build_campaign_visuals() -> void:
-	var campaign := ReleaseCampaignVisual.new()
+	var campaign = ReleaseCampaignVisual.new()
 	campaign.name = "ReleaseCampaignVisual"
 	add_child(campaign)
 	campaign.build(self)
 
 
 func _build_siege_layer() -> void:
-	var siege_layer := ReleaseSiegeLayer.new()
+	var siege_layer = ReleaseSiegeLayer.new()
 	siege_layer.name = "ReleaseSiegeLayer"
 	add_child(siege_layer)
 	siege_layer.build(self)
 
 
 func _build_battle_command_layer() -> void:
-	var battle_layer := ReleaseBattleCommandLayer.new()
+	var battle_layer = ReleaseBattleCommandLayer.new()
 	battle_layer.name = "ReleaseBattleCommandLayer"
 	add_child(battle_layer)
 	battle_layer.build(self)
@@ -209,73 +209,73 @@ func _toggle_camera_mode() -> void:
 		status_label.text = "Camera: %s" % ("FIRST PERSON" if camera_first_person else "THIRD PERSON")
 
 func _build_campaign_command_center() -> void:
-	var command_center := ReleaseCampaignCommandCenter.new()
+	var command_center = ReleaseCampaignCommandCenter.new()
 	command_center.name = "ReleaseCampaignCommandCenter"
 	add_child(command_center)
 	command_center.build(self)
 
 func _build_army_settlement_manager() -> void:
-	var manager := ReleaseArmyAndSettlementManager.new()
+	var manager = ReleaseArmyAndSettlementManager.new()
 	manager.name = "ReleaseArmyAndSettlementManager"
 	add_child(manager)
 	manager.build(self)
 
 func _build_release_system_panels() -> void:
-	var armory := ReleaseEquipmentArmory.new()
+	var armory = ReleaseEquipmentArmory.new()
 	armory.name = "ReleaseEquipmentArmory"
 	add_child(armory)
 	armory.build(self)
-	var family_ui := ReleaseFamilySuccession.new()
+	var family_ui = ReleaseFamilySuccession.new()
 	family_ui.name = "ReleaseFamilySuccession"
 	add_child(family_ui)
 	family_ui.build(self)
-	var diplomacy_ui := ReleaseDiplomacyBoard.new()
+	var diplomacy_ui = ReleaseDiplomacyBoard.new()
 	diplomacy_ui.name = "ReleaseDiplomacyBoard"
 	add_child(diplomacy_ui)
 	diplomacy_ui.build(self)
-	var trade_ui := ReleaseCaravanTrade.new()
+	var trade_ui = ReleaseCaravanTrade.new()
 	trade_ui.name = "ReleaseCaravanTrade"
 	add_child(trade_ui)
 	trade_ui.build(self)
 
 func _build_siege_command() -> void:
-	var ui := ReleaseSiegeCommand.new()
+	var ui = ReleaseSiegeCommand.new()
 	ui.name = "ReleaseSiegeCommand"
 	add_child(ui)
 	ui.build(self)
 
 func _build_naval_command() -> void:
-	var ui := ReleaseNavalCommand.new()
+	var ui = ReleaseNavalCommand.new()
 	ui.name = "ReleaseNavalCommand"
 	add_child(ui)
 	ui.build(self)
 
 func _build_next_systems() -> void:
-	var thirty := ReleaseThirtySystems.new()
+	var thirty = ReleaseThirtySystems.new()
 	thirty.name = "ReleaseThirtySystems"
 	add_child(thirty)
 	thirty.build(self)
-	var core100 := ReleaseSeventyCoreSystems.new()
+	var core100 = ReleaseSeventyCoreSystems.new()
 	core100.name = "ReleaseSeventyCoreSystems"
 	add_child(core100)
 	core100.build(self)
-	var ai := ReleaseArmyTacticalAI.new()
+	var ai = ReleaseArmyTacticalAI.new()
 	ai.name = "ReleaseArmyTacticalAI"
 	add_child(ai)
 	ai.build(self)
-	var population := ReleasePopulationSimulation.new()
+	var population = ReleasePopulationSimulation.new()
 	population.name = "ReleasePopulationSimulation"
 	add_child(population)
 	population.build(self)
-	var weather := ReleaseWeatherGameplay.new()
+	var weather = ReleaseWeatherGameplay.new()
 	weather.name = "ReleaseWeatherGameplay"
 	add_child(weather)
 	weather.build(self)
-	var saves := ReleaseSaveSlots.new()
+	var saves = ReleaseSaveSlots.new()
 	saves.name = "ReleaseSaveSlots"
 	add_child(saves)
 	saves.build(self)
-	var contracts := ReleaseContracts.new()
+	var contracts = ReleaseContracts.new()
 	contracts.name = "ReleaseContracts"
 	add_child(contracts)
 	contracts.build(self)
@@ -318,28 +318,28 @@ func _build_complete_gameplay() -> void:
 	complete_gameplay.build(self)
 
 func _build_world_inspector() -> void:
-	var ui := ReleaseWorldInspector.new()
+	var ui = ReleaseWorldInspector.new()
 	ui.name = "ReleaseWorldInspector"
 	add_child(ui)
 	ui.build(self)
 
 
 func _build_recruitment_board() -> void:
-	var board := ReleaseRecruitmentBoard.new()
+	var board = ReleaseRecruitmentBoard.new()
 	board.name = "ReleaseRecruitmentBoard"
 	add_child(board)
 	board.build(self)
 
 
 func _build_combat_feedback() -> void:
-	var feedback := ReleaseCombatFeedback.new()
+	var feedback = ReleaseCombatFeedback.new()
 	feedback.name = "ReleaseCombatFeedback"
 	add_child(feedback)
 	feedback.build(self)
 
 
 func _build_world_event_feed() -> void:
-	var feed := ReleaseWorldEventFeed.new()
+	var feed = ReleaseWorldEventFeed.new()
 	feed.name = "ReleaseWorldEventFeed"
 	add_child(feed)
 	feed.build(self)
@@ -350,8 +350,8 @@ func _spawn_extra_banners_once() -> void:
 func _build_world() -> void:
 	# Keep the core render path intentionally small and deterministic.
 	# Detailed content is added only after a valid player camera exists.
-	var world_env := WorldEnvironment.new()
-	var environment := Environment.new()
+	var world_env = WorldEnvironment.new()
+	var environment = Environment.new()
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = Color(0.055, 0.075, 0.10)
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -360,23 +360,23 @@ func _build_world() -> void:
 	world_env.environment = environment
 	add_child(world_env)
 
-	var sun := DirectionalLight3D.new()
+	var sun = DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55, -25, 0)
 	sun.light_energy = 1.2
 	add_child(sun)
 
-	var ground := StaticBody3D.new()
+	var ground = StaticBody3D.new()
 	ground.name = "Ground"
-	var mesh := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
+	var mesh = MeshInstance3D.new()
+	var plane = PlaneMesh.new()
 	plane.size = Vector2(70, 70)
 	mesh.mesh = plane
-	var mat := StandardMaterial3D.new()
+	var mat = StandardMaterial3D.new()
 	mat.albedo_color = Color(0.20, 0.25, 0.16)
 	mesh.material_override = mat
 	ground.add_child(mesh)
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
+	var shape = CollisionShape3D.new()
+	var box = BoxShape3D.new()
 	box.size = Vector3(70, 0.2, 70)
 	shape.shape = box
 	shape.position.y = -0.1
@@ -389,14 +389,14 @@ func _build_world() -> void:
 	_create_rocks_and_paths()
 
 func _mat(color: Color) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
+	var m = StandardMaterial3D.new()
 	m.albedo_color = color
 	m.roughness = 0.82
 	return m
 
 func _mesh_box(size: Vector3, pos: Vector3, color: Color, parent: Node3D, rotation := Vector3.ZERO) -> MeshInstance3D:
-	var n := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
+	var n = MeshInstance3D.new()
+	var mesh = BoxMesh.new()
 	mesh.size = size
 	n.mesh = mesh
 	n.position = pos
@@ -406,8 +406,8 @@ func _mesh_box(size: Vector3, pos: Vector3, color: Color, parent: Node3D, rotati
 	return n
 
 func _mesh_cylinder(radius: float, height: float, pos: Vector3, color: Color, parent: Node3D) -> MeshInstance3D:
-	var n := MeshInstance3D.new()
-	var mesh := CylinderMesh.new()
+	var n = MeshInstance3D.new()
+	var mesh = CylinderMesh.new()
 	mesh.top_radius = radius
 	mesh.bottom_radius = radius * 1.05
 	mesh.height = height
@@ -418,8 +418,8 @@ func _mesh_cylinder(radius: float, height: float, pos: Vector3, color: Color, pa
 	return n
 
 func _mesh_sphere(radius: float, pos: Vector3, color: Color, parent: Node3D) -> MeshInstance3D:
-	var n := MeshInstance3D.new()
-	var mesh := SphereMesh.new()
+	var n = MeshInstance3D.new()
+	var mesh = SphereMesh.new()
 	mesh.radius = radius
 	mesh.height = radius * 2.0
 	n.mesh = mesh
@@ -432,11 +432,11 @@ func _create_settlement(center: Vector3) -> void:
 	# Settlements are stylized authored silhouettes: readable from gameplay distance,
 	# with enough construction detail to never look like colored placeholder blocks.
 	for i in range(5):
-		var house := Node3D.new()
+		var house = Node3D.new()
 		house.name = "MedievalHouse_%d" % i
 		house.position = center + Vector3((i % 3) * 4.2 - 4.2, 0, (i / 3) * 4.4)
 		add_child(house)
-		var wall := _mat(Color(0.42, 0.30, 0.20))
+		var wall = _mat(Color(0.42, 0.30, 0.20))
 		_mesh_box(Vector3(3.4, 2.4, 3.0), Vector3(0, 1.2, 0), wall.albedo_color, house)
 		_mesh_box(Vector3(3.7, 0.35, 3.3), Vector3(0, 2.55, 0), Color(0.16, 0.08, 0.055), house, Vector3(0, 0, 3.0))
 		_mesh_box(Vector3(0.7, 1.25, 0.08), Vector3(0, 0.63, -1.53), Color(0.12, 0.065, 0.035), house)
@@ -450,9 +450,9 @@ func _create_settlement(center: Vector3) -> void:
 
 func _create_tree_cluster() -> void:
 	for i in range(35):
-		var tree := Node3D.new()
-		var x := float((i * 17) % 50) - 25.0
-		var z := float((i * 29) % 50) - 25.0
+		var tree = Node3D.new()
+		var x = float((i * 17) % 50) - 25.0
+		var z = float((i * 29) % 50) - 25.0
 		tree.position = Vector3(x, 0, z)
 		add_child(tree)
 		_mesh_cylinder(0.18, 1.8, Vector3(0, 0.9, 0), Color(0.22, 0.12, 0.07), tree)
@@ -461,8 +461,8 @@ func _create_tree_cluster() -> void:
 
 func _create_rocks_and_paths() -> void:
 	for i in range(24):
-		var x := float((i * 11) % 48) - 24.0
-		var z := float((i * 7) % 38) - 19.0
+		var x = float((i * 11) % 48) - 24.0
+		var z = float((i * 7) % 38) - 19.0
 		_mesh_sphere(0.25 + float(i % 3) * 0.12, Vector3(x, 0.2, z), Color(0.25, 0.27, 0.25), self)
 	for i in range(11):
 		_mesh_box(Vector3(2.4, 0.08, 1.1), Vector3(-8 + i * 1.7, 0.05, -2.0), Color(0.32, 0.27, 0.19), self)
@@ -473,18 +473,18 @@ func _build_player() -> void:
 	add_child(player)
 	player.position = Vector3(0, 1, 8)
 
-	var body := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
+	var body = MeshInstance3D.new()
+	var capsule = CapsuleMesh.new()
 	capsule.height = 1.8
 	capsule.radius = 0.45
 	body.mesh = capsule
-	var mat := StandardMaterial3D.new()
+	var mat = StandardMaterial3D.new()
 	mat.albedo_color = Color(0.18, 0.42, 0.78)
 	body.material_override = mat
 	player.add_child(body)
 
-	var collision := CollisionShape3D.new()
-	var capsule_shape := CapsuleShape3D.new()
+	var collision = CollisionShape3D.new()
+	var capsule_shape = CapsuleShape3D.new()
 	capsule_shape.height = 1.8
 	capsule_shape.radius = 0.45
 	collision.shape = capsule_shape
@@ -518,23 +518,23 @@ func _faction_troop_palette(faction_id: String) -> Dictionary:
 			return {"armor": Color(0.24,0.20,0.28), "cloth": Color(0.10,0.075,0.13), "metal": Color(0.68,0.72,0.70), "leather": Color(0.20,0.12,0.08), "shield": Color(0.10,0.075,0.13), "style": "clan"}
 
 func _spawn_troop(team: String, faction_id: String, pos: Vector3, troop_type: String = "levy", represented_count: int = 1) -> void:
-	var troop := CharacterBody3D.new()
+	var troop = CharacterBody3D.new()
 	troop.position = pos
 	troop.name = faction_id + "_Soldier"
 	add_child(troop)
 	_create_soldier_visual(troop, faction_id)
 	_add_troop_type_visual(troop, troop_type, faction_id)
-	var collision := CollisionShape3D.new()
-	var shape := CapsuleShape3D.new()
+	var collision = CollisionShape3D.new()
+	var shape = CapsuleShape3D.new()
 	shape.height = 1.7
 	shape.radius = 0.38
 	collision.shape = shape
 	troop.add_child(collision)
-	var stats := _troop_combat_stats(troop_type)
+	var stats = _troop_combat_stats(troop_type)
 	troops.append({"node": troop, "team": team, "faction": faction_id, "troop_type": troop_type, "represented_count": max(1, represented_count), "hp": int(stats["hp"]), "max_hp": int(stats["hp"]), "attack_damage": int(stats["damage"]), "cooldown": 0.0})
 
 func _add_troop_type_visual(parent: Node3D, troop_type: String, faction_id: String) -> void:
-	var p := _faction_troop_palette(faction_id)
+	var p = _faction_troop_palette(faction_id)
 	if troop_type == "spearman":
 		_mesh_box(Vector3(0.07, 2.4, 0.07), Vector3(-0.68, 1.25, 0.05), p["metal"], parent, Vector3(0, 0, -8))
 		_mesh_box(Vector3(0.42, 0.08, 0.08), Vector3(-0.68, 2.35, 0.05), p["metal"], parent)
@@ -548,7 +548,7 @@ func _add_troop_type_visual(parent: Node3D, troop_type: String, faction_id: Stri
 
 
 func _create_soldier_visual(parent: Node3D, faction_id: String) -> void:
-	var p := _faction_troop_palette(faction_id)
+	var p = _faction_troop_palette(faction_id)
 	var armor: Color = p["armor"]
 	var cloth: Color = p["cloth"]
 	var metal: Color = p["metal"]
@@ -562,7 +562,7 @@ func _create_soldier_visual(parent: Node3D, faction_id: String) -> void:
 	_mesh_cylinder(0.34, 0.18, Vector3(0, 1.99, 0), metal, parent)
 	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(-0.48, 0.98, 0), armor, parent, Vector3(0, 0, -18))
 	_mesh_box(Vector3(0.16, 0.65, 0.16), Vector3(0.48, 0.98, 0), armor, parent, Vector3(0, 0, 18))
-	var sword := _mesh_box(Vector3(0.10, 0.95, 0.07), Vector3(0.68, 0.93, -0.15), metal, parent, Vector3(0, 0, -18))
+	var sword = _mesh_box(Vector3(0.10, 0.95, 0.07), Vector3(0.68, 0.93, -0.15), metal, parent, Vector3(0, 0, -18))
 	sword.name = "Sword"
 	_mesh_box(Vector3(0.30, 0.07, 0.12), Vector3(0.68, 0.58, -0.15), leather, parent)
 	_mesh_cylinder(0.42, 0.10, Vector3(-0.48, 1.0, 0.30), shield, parent)
@@ -583,7 +583,7 @@ func _create_soldier_visual(parent: Node3D, faction_id: String) -> void:
 		_mesh_box(Vector3(0.10, 0.34, 0.08), Vector3(0, 2.13, 0), metal, parent)
 
 func _build_ui() -> void:
-	var layer := CanvasLayer.new()
+	var layer = CanvasLayer.new()
 	add_child(layer)
 
 	hp_label = Label.new()
@@ -596,7 +596,7 @@ func _build_ui() -> void:
 	status_label.add_theme_font_size_override("font_size", 20)
 	layer.add_child(status_label)
 
-	var attack := Button.new()
+	var attack = Button.new()
 	attack.text = "⚔ ATTACK"
 	attack.position = Vector2(1035, 545)
 	attack.size = Vector2(205, 105)
@@ -605,18 +605,18 @@ func _build_ui() -> void:
 	layer.add_child(attack)
 
 	# Mobile controls: large, thumb-friendly buttons for movement and pause.
-	var pad := Control.new()
+	var pad = Control.new()
 	pad.name = "TouchMovementPad"
 	pad.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(pad)
-	var up := _make_touch_button(pad, "▲", Vector2(105, 505), "forward")
-	var down := _make_touch_button(pad, "▼", Vector2(105, 615), "back")
-	var left := _make_touch_button(pad, "◀", Vector2(25, 560), "left")
-	var right := _make_touch_button(pad, "▶", Vector2(185, 560), "right")
+	var up = _make_touch_button(pad, "▲", Vector2(105, 505), "forward")
+	var down = _make_touch_button(pad, "▼", Vector2(105, 615), "back")
+	var left = _make_touch_button(pad, "◀", Vector2(25, 560), "left")
+	var right = _make_touch_button(pad, "▶", Vector2(185, 560), "right")
 	for b in [up, down, left, right]:
 		b.mouse_filter = Control.MOUSE_FILTER_STOP
-	var pause := Button.new()
+	var pause = Button.new()
 	pause.text = "Ⅱ"
 	pause.position = Vector2(1170, 24)
 	pause.size = Vector2(70, 52)
@@ -625,7 +625,7 @@ func _build_ui() -> void:
 	layer.add_child(pause)
 
 func _make_touch_button(parent: Control, label: String, pos: Vector2, direction: String) -> Button:
-	var b := Button.new()
+	var b = Button.new()
 	b.text = label
 	b.position = pos
 	b.size = Vector2(70, 70)
@@ -658,29 +658,29 @@ func _toggle_pause() -> void:
 		pause_panel.position = Vector2(360, 145)
 		pause_panel.size = Vector2(560, 380)
 		add_child(pause_panel)
-		var title := Label.new()
+		var title = Label.new()
 		title.text = "GAME PAUSED"
 		title.position = Vector2(28, 24)
 		title.add_theme_font_size_override("font_size", 28)
 		pause_panel.add_child(title)
-		var info := Label.new()
+		var info = Label.new()
 		info.text = "Day %d • Gold %d\nProgress is safe while paused." % [world_state.day, world_state.gold]
 		info.position = Vector2(28, 72)
 		info.add_theme_font_size_override("font_size", 18)
 		pause_panel.add_child(info)
-		var resume := Button.new()
+		var resume = Button.new()
 		resume.text = "RESUME"
 		resume.position = Vector2(28, 150)
 		resume.size = Vector2(220, 52)
 		resume.pressed.connect(_toggle_pause)
 		pause_panel.add_child(resume)
-		var save := Button.new()
+		var save = Button.new()
 		save.text = "SAVE GAME"
 		save.position = Vector2(28, 220)
 		save.size = Vector2(220, 52)
 		save.pressed.connect(_pause_save)
 		pause_panel.add_child(save)
-		var load := Button.new()
+		var load = Button.new()
 		load.text = "LOAD GAME"
 		load.position = Vector2(280, 220)
 		load.size = Vector2(220, 52)
@@ -710,22 +710,22 @@ func _pause_save() -> void:
 		_show_status("SAVE FAILED", 2.5)
 
 func _build_interaction_ui() -> void:
-	var layer := CanvasLayer.new()
+	var layer = CanvasLayer.new()
 	layer.name = "GameplayInteractionUI"
 	add_child(layer)
-	var enter := Button.new()
+	var enter = Button.new()
 	enter.text = "ENTER SETTLEMENT"
 	enter.position = Vector2(28, 105)
 	enter.size = Vector2(220, 54)
 	enter.pressed.connect(_enter_nearest_settlement)
 	layer.add_child(enter)
-	var leave := Button.new()
+	var leave = Button.new()
 	leave.text = "LEAVE SETTLEMENT"
 	leave.position = Vector2(28, 225)
 	leave.size = Vector2(220, 54)
 	leave.pressed.connect(_leave_settlement)
 	layer.add_child(leave)
-	var inv := Button.new()
+	var inv = Button.new()
 	inv.text = "INVENTORY"
 	inv.position = Vector2(28, 285)
 	inv.size = Vector2(180, 54)
@@ -741,7 +741,7 @@ func _build_interaction_ui() -> void:
 	inventory_label.size = Vector2(470, 330)
 	inventory_label.add_theme_font_size_override("font_size", 22)
 	inventory_panel.add_child(inventory_label)
-	var close := Button.new()
+	var close = Button.new()
 	close.text = "CLOSE"
 	close.position = Vector2(180, 360)
 	close.size = Vector2(160, 48)
@@ -751,21 +751,21 @@ func _build_interaction_ui() -> void:
 func _nearest_settlement_id() -> int:
 	if not world_state or not is_instance_valid(player):
 		return -1
-	var best := -1
-	var best_dist := 16.0
+	var best = -1
+	var best_dist = 16.0
 	for s in world_state.settlements:
-		var region := int(s.get("region", -1))
+		var region = int(s.get("region", -1))
 		if region != world_state.player_region_id:
 			continue
-		var p := Vector3(float(s["position"].x), 0, float(s["position"].y if s["position"] is Vector2 else s["position"].z))
-		var d := player.global_position.distance_to(p)
+		var p = Vector3(float(s["position"].x), 0, float(s["position"].y if s["position"] is Vector2 else s["position"].z))
+		var d = player.global_position.distance_to(p)
 		if d < best_dist:
 			best_dist = d
 			best = int(s["id"])
 	return best
 
 func _enter_nearest_settlement() -> void:
-	var id := _nearest_settlement_id()
+	var id = _nearest_settlement_id()
 	if id < 0:
 		status_label.text = "No settlement nearby. Travel there from WORLD MAP."
 		return
@@ -789,21 +789,21 @@ func _enter_settlement(settlement_id: int) -> void:
 	status_label.text = "%s • INTERIOR • Talk to the people, visit the market, or leave." % String(s["name"])
 
 func _create_interior_environment(root: Node3D, kind: String) -> void:
-	var floor_color := Color(0.25,0.19,0.13)
-	var wall_color := Color(0.40,0.34,0.27)
+	var floor_color = Color(0.25,0.19,0.13)
+	var wall_color = Color(0.40,0.34,0.27)
 	_mesh_box(Vector3(24,0.25,18),Vector3(0,-0.12,0),floor_color,root)
 	_mesh_box(Vector3(24,4,0.35),Vector3(0,2,-9),wall_color,root)
 	_mesh_box(Vector3(24,4,0.35),Vector3(0,2,9),wall_color,root)
 	_mesh_box(Vector3(0.35,4,18),Vector3(-12,2,0),wall_color,root)
 	_mesh_box(Vector3(0.35,4,18),Vector3(12,2,0),wall_color,root)
 	for i in range(5):
-		var stall := Node3D.new()
+		var stall = Node3D.new()
 		stall.position=Vector3(-9+i*4.5,0,-5.5)
 		root.add_child(stall)
 		_mesh_box(Vector3(3.4,1.2,1.5),Vector3(0,0.6,0),Color(0.31,0.20,0.11),stall)
 		_mesh_box(Vector3(3.8,0.18,1.9),Vector3(0,1.35,0),Color(0.12,0.08,0.05),stall)
 	_mesh_box(Vector3(5,2.2,1),Vector3(0,1.1,6.5),Color(0.20,0.13,0.08),root)
-	var title:=Label3D.new()
+	var title =Label3D.new()
 	title.text="%s • %s" % [String(world_state.settlements[current_settlement_id]["name"]),kind.to_upper()]
 	title.position=Vector3(0,3.5,7.5)
 	title.font_size=48
@@ -812,13 +812,13 @@ func _create_interior_environment(root: Node3D, kind: String) -> void:
 func _spawn_interior_npcs(root: Node3D, settlement_id: int) -> void:
 	interior_npcs.clear()
 	for i in range(8):
-		var npc:=Node3D.new()
+		var npc =Node3D.new()
 		npc.name="Civilian_%d"%i
 		npc.position=Vector3(-8+(i%4)*5.0,0.0,-1.5+(i/4)*5.0)
 		root.add_child(npc)
 		_mesh_box(Vector3(0.55,0.9,0.38),Vector3(0,0.95,0),Color(0.28+float(i%3)*0.05,0.18+float(i%2)*0.05,0.12),npc)
 		_mesh_sphere(0.25,Vector3(0,1.65,0),Color(0.68,0.48,0.32),npc)
-		var role:=Label3D.new()
+		var role =Label3D.new()
 		role.text=["Merchant","Farmer","Smith","Guard"][i%4]
 		role.position=Vector3(0,2.1,0)
 		role.font_size=28
@@ -841,8 +841,8 @@ func _toggle_inventory() -> void:
 	inventory_open=not inventory_open
 	inventory_panel.visible=inventory_open
 	if inventory_open:
-		var eq:=world_state.player_equipment
-		var inv:=world_state.player_inventory
+		var eq =world_state.player_equipment
+		var inv =world_state.player_inventory
 		inventory_label.text="INVENTORY • LOOT & EQUIPMENT\n\nFood: %d\nWood: %d\nIron: %d\n\nEQUIPMENT\nWeapon: %s\nArmor: %s\nShield: %s\nHorse: %s\n\nGold: %d" % [int(inv.get("food",0)),int(inv.get("wood",0)),int(inv.get("iron",0)),String(eq.get("weapon","none")),String(eq.get("armor","none")),String(eq.get("shield","none")),String(eq.get("horse","none")),world_state.gold]
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -873,20 +873,20 @@ func _physics_process(delta: float) -> void:
 		status_label.text = "ONE CONTINENT • Day %d • %d settlements • %d armies" % [world_state.day, world_state.settlements.size(), world_state.armies.size()]
 
 func _update_player(_delta: float) -> void:
-	var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var input_vec = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	if touch_forward: input_vec.y -= 1.0
 	if touch_back: input_vec.y += 1.0
 	if touch_left: input_vec.x -= 1.0
 	if touch_right: input_vec.x += 1.0
 	if input_vec.length() > 1.0:
 		input_vec = input_vec.normalized()
-	var direction := Vector3(input_vec.x, 0, input_vec.y)
+	var direction = Vector3(input_vec.x, 0, input_vec.y)
 	if direction.length() > 1.0:
 		direction = direction.normalized()
-	var basis := Basis(Vector3.UP, deg_to_rad(yaw))
+	var basis = Basis(Vector3.UP, deg_to_rad(yaw))
 	direction = basis * direction
-	var movement_bonus := float(get_meta("movement_speed_bonus", 0.0))
-	var current_speed := PLAYER_SPEED + movement_bonus
+	var movement_bonus = float(get_meta("movement_speed_bonus", 0.0))
+	var current_speed = PLAYER_SPEED + movement_bonus
 	player.velocity.x = direction.x * current_speed
 	player.velocity.z = direction.z * current_speed
 	player.velocity.y = -1.0
@@ -902,8 +902,8 @@ func _update_player(_delta: float) -> void:
 func _animate_troop_visual(troop: Node3D, moving: bool, attacking: bool, phase: float) -> void:
 	if not is_instance_valid(troop):
 		return
-	var body := troop.get_node_or_null("Body") as Node3D
-	var sword := troop.get_node_or_null("Sword") as Node3D
+	var body = troop.get_node_or_null("Body") as Node3D
+	var sword = troop.get_node_or_null("Sword") as Node3D
 	if body:
 		body.position.y = 1.05 + (sin(phase * 10.0) * 0.035 if moving else 0.0)
 	if sword:
@@ -927,13 +927,13 @@ func _update_troops(delta: float) -> void:
 			troops.remove_at(i)
 			continue
 		data.cooldown = max(0.0, float(data.cooldown) - delta)
-		var target := _nearest_enemy(node, String(data.team))
+		var target = _nearest_enemy(node, String(data.team))
 		if target:
-			var distance := node.global_position.distance_to(target.global_position)
-			var moving := false
-			var attacking := false
+			var distance = node.global_position.distance_to(target.global_position)
+			var moving = false
+			var attacking = false
 			if battle_command_order == "retreat" and String(data.team) == "ALLY":
-				var away := (node.global_position - target.global_position)
+				var away = (node.global_position - target.global_position)
 				away.y = 0
 				if away.length() > 0.05:
 					node.velocity = away.normalized() * TROOP_SPEED
@@ -942,7 +942,7 @@ func _update_troops(delta: float) -> void:
 			elif battle_command_order == "hold" and String(data.team) == "ALLY" and distance > ATTACK_RANGE:
 				node.velocity = Vector3.ZERO
 			elif distance > ATTACK_RANGE:
-				var dir := (target.global_position - node.global_position)
+				var dir = (target.global_position - node.global_position)
 				dir.y = 0
 				node.velocity = dir.normalized() * TROOP_SPEED
 				node.move_and_slide()
@@ -953,7 +953,7 @@ func _update_troops(delta: float) -> void:
 				attacking = true
 			else:
 				attacking = float(data.cooldown) > 0.55
-			var look_target := target.global_position
+			var look_target = target.global_position
 			look_target.y = node.global_position.y
 			if node.global_position.distance_to(look_target) > 0.05:
 				node.look_at(look_target, Vector3.UP)
@@ -962,14 +962,14 @@ func _update_troops(delta: float) -> void:
 
 func _nearest_enemy(from: Node3D, team: String) -> Node3D:
 	var best: Node3D
-	var best_distance := INF
+	var best_distance = INF
 	for data in troops:
 		if String(data.team) == team:
 			continue
 		var node: Node3D = data.node
 		if not is_instance_valid(node):
 			continue
-		var distance := from.global_position.distance_to(node.global_position)
+		var distance = from.global_position.distance_to(node.global_position)
 		if distance < best_distance:
 			best_distance = distance
 			best = node
@@ -980,9 +980,9 @@ func _damage_troop(target: Node3D, damage: int = ATTACK_DAMAGE) -> void:
 		if troops[i].node == target:
 			troops[i].hp = int(troops[i].hp) - max(1, damage)
 			if int(troops[i].hp) <= 0:
-				var dead_team := String(troops[i].team)
-				var dead_type := String(troops[i].get("troop_type", "levy"))
-				var dead_count := int(troops[i].get("represented_count", 1))
+				var dead_team = String(troops[i].team)
+				var dead_type = String(troops[i].get("troop_type", "levy"))
+				var dead_count = int(troops[i].get("represented_count", 1))
 				battle_casualties[dead_team] = int(battle_casualties.get(dead_team, 0)) + dead_count
 				if dead_team == "ENEMY" and world_state:
 					world_state.player_inventory["iron"] = int(world_state.player_inventory.get("iron",0)) + randi_range(0,2)
@@ -997,28 +997,28 @@ func _damage_troop(target: Node3D, damage: int = ATTACK_DAMAGE) -> void:
 var siege_visual_root: Node3D
 var siege_wall_segments: Array[Node3D] = []
 var siege_gate: Node3D
-var siege_gate_hp := 120
-var siege_wall_hp := 500
+var siege_gate_hp = 120
+var siege_wall_hp = 500
 
 func create_siege_visual(settlement_name: String, wall_level: int) -> void:
 	clear_siege_visual()
 	siege_visual_root=Node3D.new()
 	siege_visual_root.name="ActiveSiege_%s"%settlement_name
 	add_child(siege_visual_root)
-	var wall_color:=Color(0.30,0.30,0.31)
-	var timber:=Color(0.18,0.12,0.08)
-	var stone:=Color(0.42,0.42,0.40)
-	var wall_len:=18.0+float(wall_level)*2.0
+	var wall_color =Color(0.30,0.30,0.31)
+	var timber =Color(0.18,0.12,0.08)
+	var stone =Color(0.42,0.42,0.40)
+	var wall_len =18.0+float(wall_level)*2.0
 	for side in [-1.0,1.0]:
 		for i in range(5):
-			var seg:=Node3D.new()
+			var seg =Node3D.new()
 			seg.position=Vector3(-wall_len/2.0+i*(wall_len/4.0),0,side*8.0)
 			siege_visual_root.add_child(seg)
 			_mesh_box(Vector3(wall_len/4.4,3.2,1.1),Vector3(0,1.6,0),wall_color,seg)
 			_mesh_box(Vector3(wall_len/4.8,0.18,1.35),Vector3(0,3.25,0),stone,seg)
 			siege_wall_segments.append(seg)
 	for side in [-1.0,1.0]:
-		var tower:=Node3D.new()
+		var tower =Node3D.new()
 		tower.position=Vector3(side*wall_len/2.0,0,8.0)
 		siege_visual_root.add_child(tower)
 		_mesh_box(Vector3(2.6,5.0,2.6),Vector3(0,2.5,0),wall_color,tower)
@@ -1044,9 +1044,9 @@ func update_siege_visual(progress:int, gate_breached:bool, gate_hp:int=120, wall
 		else:
 			siege_gate.rotation_degrees.y=clamp(float(120-gate_hp)*0.35,0.0,30.0)
 	for i in range(siege_wall_segments.size()):
-		var seg:=siege_wall_segments[i]
+		var seg =siege_wall_segments[i]
 		if not is_instance_valid(seg): continue
-		var damage_ratio:=clamp(float(siege_wall_hp)/500.0,0.15,1.0)
+		var damage_ratio =clamp(float(siege_wall_hp)/500.0,0.15,1.0)
 		seg.scale.y=damage_ratio
 		if progress>=60 and i%2==0:
 			seg.rotation_degrees.z=3.0 if i%4==0 else -3.0
@@ -1066,7 +1066,7 @@ func _create_banner(parent: Node3D, position: Vector3, team_color: Color) -> voi
 	_mesh_box(Vector3(0.92, 0.055, 0.055), position + Vector3(0.50, 2.08, -0.035), Color(0.82, 0.70, 0.30), parent)
 
 func _create_war_banner(position: Vector3, faction_id: String) -> void:
-	var root := Node3D.new()
+	var root = Node3D.new()
 	root.name = "WarBanner_" + faction_id
 	root.position = position
 	add_child(root)
@@ -1081,22 +1081,22 @@ func _clear_battlefield() -> void:
 
 func _spawn_force(force: Dictionary, team: String, faction_id: String, center: Vector3) -> void:
 	var composition: Dictionary = force.get("troops", {})
-	var total := max(1, int(force.get("soldiers", 1)))
-	var visual_cap := 24
-	var remaining_visual := visual_cap
-	var types := ["horseman", "spearman", "archer", "levy"]
-	var spawned := 0
+	var total = max(1, int(force.get("soldiers", 1)))
+	var visual_cap = 24
+	var remaining_visual = visual_cap
+	var types = ["horseman", "spearman", "archer", "levy"]
+	var spawned = 0
 	for troop_type in types:
-		var actual := int(composition.get(troop_type, 0))
+		var actual = int(composition.get(troop_type, 0))
 		if actual <= 0 or remaining_visual <= 0:
 			continue
-		var visual_count := min(remaining_visual, max(1, int(ceil(float(actual) * float(visual_cap) / float(total)))))
-		var represented := max(1, int(ceil(float(actual) / float(visual_count))))
+		var visual_count = min(remaining_visual, max(1, int(ceil(float(actual) * float(visual_cap) / float(total)))))
+		var represented = max(1, int(ceil(float(actual) / float(visual_count))))
 		for i in range(visual_count):
-			var row := i / 6
-			var col := i % 6
-			var side := -1.0 if team == "ALLY" else 1.0
-			var pos := center + Vector3((col - 2.5) * 1.7, 0, side * (row * 1.9))
+			var row = i / 6
+			var col = i % 6
+			var side = -1.0 if team == "ALLY" else 1.0
+			var pos = center + Vector3((col - 2.5) * 1.7, 0, side * (row * 1.9))
 			_spawn_troop(team, faction_id, pos, troop_type, min(represented, actual))
 			actual -= min(represented, actual)
 			spawned += 1
@@ -1115,8 +1115,8 @@ func prepare_battle(attacker: Dictionary, defender: Dictionary) -> void:
 	battle_initial_defender = max(0, int(defender.get("soldiers", 0)))
 	battle_casualties = {"ALLY": 0, "ENEMY": 0}
 	battle_casualty_types = {"ALLY": {}, "ENEMY": {}}
-	var attacker_faction := String(attacker.get("owner", world_state.player_faction if world_state else "Free Company"))
-	var defender_faction := String(defender.get("owner", "river_kingdom"))
+	var attacker_faction = String(attacker.get("owner", world_state.player_faction if world_state else "Free Company"))
+	var defender_faction = String(defender.get("owner", "river_kingdom"))
 	_spawn_force(attacker, "ALLY", attacker_faction, player.global_position + Vector3(0, 0, -2))
 	_spawn_force(defender, "ENEMY", defender_faction, player.global_position + Vector3(0, 0, -13))
 
@@ -1124,8 +1124,8 @@ func get_battle_casualties() -> Dictionary:
 	return {"attacker": int(battle_casualties.get("ALLY", 0)), "defender": int(battle_casualties.get("ENEMY", 0)), "attacker_types": battle_casualty_types.get("ALLY", {}).duplicate(), "defender_types": battle_casualty_types.get("ENEMY", {}).duplicate()}
 
 func get_battle_remaining() -> Dictionary:
-	var ally := 0
-	var enemy := 0
+	var ally = 0
+	var enemy = 0
 	for data in troops:
 		if String(data.get("team", "")) == "ALLY": ally += int(data.get("represented_count", 1))
 		elif String(data.get("team", "")) == "ENEMY": enemy += int(data.get("represented_count", 1))
@@ -1170,19 +1170,19 @@ func _player_attack() -> void:
 		return
 	attack_cooldown = 0.45
 	var closest: Node3D
-	var best := ATTACK_RANGE + 0.6
+	var best = ATTACK_RANGE + 0.6
 	for data in troops:
 		if String(data.team) != "ENEMY":
 			continue
 		var node: Node3D = data.node
 		if not is_instance_valid(node):
 			continue
-		var d := player.global_position.distance_to(node.global_position)
+		var d = player.global_position.distance_to(node.global_position)
 		if d < best:
 			best = d
 			closest = node
 	if closest:
-		var player_damage := ATTACK_DAMAGE
+		var player_damage = ATTACK_DAMAGE
 		if world_state and world_state.has_method("get_player_combat_bonus"):
 			player_damage = max(ATTACK_DAMAGE, int(round(float(ATTACK_DAMAGE) * float(world_state.get_player_combat_bonus()))))
 		_damage_troop(closest, player_damage)
@@ -1195,13 +1195,13 @@ func _spawn_continent_world() -> void:
 	for settlement in world_state.settlements:
 		var p: Vector2 = settlement["position"]
 		var owner: String = settlement["owner"]
-		var marker := Node3D.new()
+		var marker = Node3D.new()
 		marker.name = "Settlement_%s" % settlement["name"]
 		marker.position = Vector3(p.x, 0, p.y)
 		add_child(marker)
-		var color := world_state.get_faction_color(owner)
+		var color = world_state.get_faction_color(owner)
 		var kind: String = settlement["type"]
-		var height := 0.9
+		var height = 0.9
 		if kind == "city":
 			height = 1.5
 		elif kind == "castle":
@@ -1213,7 +1213,7 @@ func _spawn_continent_world() -> void:
 		else:
 			_build_village_visual(marker, color, owner)
 		_create_settlement_heraldry(marker, owner, kind)
-		var label := Label3D.new()
+		var label = Label3D.new()
 		label.text = String(settlement["name"])
 		label.font_size = 24
 		label.outline_size = 6
@@ -1251,19 +1251,19 @@ func _build_castle_visual(root: Node3D, faction_color: Color, owner: String) -> 
 func _create_settlement_heraldry(root: Node3D, owner: String, kind: String) -> void:
 	# Each realm gets its own original heraldic identity, inspired by medieval-fantasy
 	# visual language rather than copying any film/show emblem.
-	var banner_root := Node3D.new()
+	var banner_root = Node3D.new()
 	banner_root.name = "FactionHeraldry"
 	banner_root.position = Vector3(0, 0, -1.9)
 	root.add_child(banner_root)
 	_create_faction_banner(banner_root, owner, 0.72 if kind == "village" else 0.92)
 
 func _create_faction_banner(parent: Node3D, faction_id: String, scale := 1.0) -> void:
-	var bg := world_state.get_faction_banner(faction_id)
-	var accent := world_state.get_faction_accent(faction_id)
-	var emblem := world_state.get_faction_emblem(faction_id)
-	var pole_h := 3.2 * scale
-	var flag_w := 1.35 * scale
-	var flag_h := 0.82 * scale
+	var bg = world_state.get_faction_banner(faction_id)
+	var accent = world_state.get_faction_accent(faction_id)
+	var emblem = world_state.get_faction_emblem(faction_id)
+	var pole_h = 3.2 * scale
+	var flag_w = 1.35 * scale
+	var flag_h = 0.82 * scale
 	_mesh_cylinder(0.045 * scale, pole_h, Vector3(0, pole_h * 0.5, 0), Color(0.16,0.12,0.08), parent)
 	_mesh_sphere(0.085 * scale, Vector3(0, pole_h + 0.05 * scale, 0), accent, parent)
 	_mesh_box(Vector3(flag_w, flag_h, 0.055 * scale), Vector3(flag_w * 0.5, pole_h - 0.72 * scale, 0), bg, parent)
@@ -1293,8 +1293,8 @@ func _draw_heraldic_emblem(parent: Node3D, emblem: String, center: Vector3, scal
 	elif emblem == "sun":
 		_mesh_cylinder(0.18*scale, 0.06*scale, center, accent, parent)
 		for angle in [0,45,90,135]:
-			var rad := deg_to_rad(float(angle))
-			var p := center + Vector3(cos(rad)*0.30*scale, sin(rad)*0.30*scale, 0)
+			var rad = deg_to_rad(float(angle))
+			var p = center + Vector3(cos(rad)*0.30*scale, sin(rad)*0.30*scale, 0)
 			_mesh_box(Vector3(0.18,0.055,0.055)*scale, p, accent, parent, Vector3(0,0,float(angle)))
 	else:
 		_mesh_box(Vector3(0.10,0.50,0.07)*scale, center, accent, parent)
@@ -1319,10 +1319,10 @@ func _process(delta: float) -> void:
 
 
 func _build_world_map_ui() -> void:
-	var layer := CanvasLayer.new()
+	var layer = CanvasLayer.new()
 	layer.name = "WorldMapUI"
 	add_child(layer)
-	var button := Button.new()
+	var button = Button.new()
 	button.text = "WORLD MAP"
 	button.position = Vector2(28, 105)
 	button.size = Vector2(190, 58)
@@ -1337,7 +1337,7 @@ func _build_world_map_ui() -> void:
 	world_map_panel.visible = false
 	layer.add_child(world_map_panel)
 
-	var title := Label.new()
+	var title = Label.new()
 	title.text = "CONTINENT MAP  •  TAP A SETTLEMENT TO TRAVEL"
 	title.position = Vector2(24, 16)
 	title.add_theme_font_size_override("font_size", 22)
@@ -1358,26 +1358,26 @@ func _build_world_map_ui() -> void:
 	world_map_label.add_theme_font_size_override("font_size", 16)
 	world_map_panel.add_child(world_map_label)
 
-	var next_day := Button.new()
+	var next_day = Button.new()
 	next_day.text = "NEXT DAY"
 	next_day.position = Vector2(575, 575)
 	next_day.size = Vector2(120, 48)
 	next_day.pressed.connect(_advance_world_day)
 	world_map_panel.add_child(next_day)
 
-	var close := Button.new()
+	var close = Button.new()
 	close.text = "CLOSE"
 	close.position = Vector2(830, 575)
 	close.size = Vector2(120, 48)
 	close.pressed.connect(_toggle_world_map)
 	world_map_panel.add_child(close)
 
-	var market:=Button.new(); market.text="MARKET"; market.position=Vector2(575,625); market.size=Vector2(100,36); market.pressed.connect(_open_current_market); world_map_panel.add_child(market)
-	var diplomacy:=Button.new(); diplomacy.text="DIPLOMACY"; diplomacy.position=Vector2(685,625); diplomacy.size=Vector2(120,36); diplomacy.pressed.connect(_open_diplomacy); world_map_panel.add_child(diplomacy)
-	var caravan:=Button.new(); caravan.text="CARAVAN"; caravan.position=Vector2(815,625); caravan.size=Vector2(110,36); caravan.pressed.connect(_create_quick_caravan); world_map_panel.add_child(caravan)
-	var save:=Button.new(); save.text="SAVE"; save.position=Vector2(575,665); save.size=Vector2(100,30); save.pressed.connect(_save_game); world_map_panel.add_child(save)
-	var load:=Button.new(); load.text="LOAD"; load.position=Vector2(685,665); load.size=Vector2(100,30); load.pressed.connect(_load_game); world_map_panel.add_child(load)
-	var manage:=Button.new(); manage.text="MANAGE"; manage.position=Vector2(795,665); manage.size=Vector2(110,30); manage.pressed.connect(_open_management); world_map_panel.add_child(manage)
+	var market =Button.new(); market.text="MARKET"; market.position=Vector2(575,625); market.size=Vector2(100,36); market.pressed.connect(_open_current_market); world_map_panel.add_child(market)
+	var diplomacy =Button.new(); diplomacy.text="DIPLOMACY"; diplomacy.position=Vector2(685,625); diplomacy.size=Vector2(120,36); diplomacy.pressed.connect(_open_diplomacy); world_map_panel.add_child(diplomacy)
+	var caravan =Button.new(); caravan.text="CARAVAN"; caravan.position=Vector2(815,625); caravan.size=Vector2(110,36); caravan.pressed.connect(_create_quick_caravan); world_map_panel.add_child(caravan)
+	var save =Button.new(); save.text="SAVE"; save.position=Vector2(575,665); save.size=Vector2(100,30); save.pressed.connect(_save_game); world_map_panel.add_child(save)
+	var load =Button.new(); load.text="LOAD"; load.position=Vector2(685,665); load.size=Vector2(100,30); load.pressed.connect(_load_game); world_map_panel.add_child(load)
+	var manage =Button.new(); manage.text="MANAGE"; manage.position=Vector2(795,665); manage.size=Vector2(110,30); manage.pressed.connect(_open_management); world_map_panel.add_child(manage)
 
 func _open_current_market()->void:
 	for i in range(world_state.settlements.size()):
@@ -1386,31 +1386,31 @@ func _open_current_market()->void:
 	status_label.text="No settlement market in this region."
 
 func _open_diplomacy()->void:
-	var panel:=Panel.new(); panel.position=Vector2(230,105); panel.size=Vector2(600,430); add_child(panel)
-	var title:=Label.new(); title.text="DIPLOMACY • FREE COMPANY"; title.position=Vector2(20,16); title.add_theme_font_size_override("font_size",22); panel.add_child(title)
-	var states=["peace","war","trade","alliance"]; var y:=58
+	var panel =Panel.new(); panel.position=Vector2(230,105); panel.size=Vector2(600,430); add_child(panel)
+	var title =Label.new(); title.text="DIPLOMACY • FREE COMPANY"; title.position=Vector2(20,16); title.add_theme_font_size_override("font_size",22); panel.add_child(title)
+	var states=["peace","war","trade","alliance"]; var y =58
 	for f in world_state.factions:
 		if String(f["id"])==String(world_state.player_faction) or String(f["id"])=="Free Company": continue
-		var label:=Label.new(); label.text=String(f["name"]); label.position=Vector2(20,y+6); label.size=Vector2(230,30); panel.add_child(label)
+		var label =Label.new(); label.text=String(f["name"]); label.position=Vector2(20,y+6); label.size=Vector2(230,30); panel.add_child(label)
 		for j in range(states.size()):
-			var b:=Button.new(); b.text=states[j].to_upper(); b.position=Vector2(250+j*78,y); b.size=Vector2(72,30); b.pressed.connect(_set_diplomacy.bind(String(f["id"]),states[j],panel)); panel.add_child(b)
+			var b =Button.new(); b.text=states[j].to_upper(); b.position=Vector2(250+j*78,y); b.size=Vector2(72,30); b.pressed.connect(_set_diplomacy.bind(String(f["id"]),states[j],panel)); panel.add_child(b)
 		y+=52
-	var close2:=Button.new(); close2.text="CLOSE"; close2.position=Vector2(250,360); close2.size=Vector2(100,34); close2.pressed.connect(panel.queue_free); panel.add_child(close2)
+	var close2 =Button.new(); close2.text="CLOSE"; close2.position=Vector2(250,360); close2.size=Vector2(100,34); close2.pressed.connect(panel.queue_free); panel.add_child(close2)
 
 func _set_diplomacy(faction:String,state:String,panel:Panel)->void:
-	var result:=world_state.set_diplomacy(world_state.player_faction,faction,state)
+	var result =world_state.set_diplomacy(world_state.player_faction,faction,state)
 	_show_status("Diplomacy: %s" % state.to_upper(), 2.5)
 	if result.get("ok",false): panel.queue_free()
 
 func _create_quick_caravan()->void:
-	var origin:=-1; var destination:=-1
+	var origin =-1; var destination =-1
 	for i in range(world_state.settlements.size()):
 		if int(world_state.settlements[i]["region"])==world_state.player_region_id: origin=i; break
 	if origin<0: status_label.text="No settlement for caravan."; return
 	for i in range(world_state.settlements.size()):
 		if i!=origin: destination=i; break
 	if destination<0: return
-	var result:=world_state.create_caravan(origin,destination)
+	var result =world_state.create_caravan(origin,destination)
 	_show_status("Caravan launched." if result.get("ok",false) else "Caravan failed: %s" % result.get("reason","unknown"), 2.5)
 
 func _save_game()->void:
@@ -1421,40 +1421,40 @@ func _load_game()->void:
 	if map_open: _refresh_world_map()
 
 func _open_management()->void:
-	var panel:=Panel.new(); panel.position=Vector2(205,90); panel.size=Vector2(670,560); add_child(panel)
-	var title:=Label.new(); title.text="FREE COMPANY • MANAGEMENT"; title.position=Vector2(22,16); title.add_theme_font_size_override("font_size",23); panel.add_child(title)
-	var info:=Label.new(); var summary:=world_state.get_world_status(); info.text="Level %d  •  Gold %d  •  Day %d  •  Weather %s\nEquipment: %s / %s / %s / %s" % [summary["level"],summary["gold"],summary["day"],summary["weather"],world_state.player_equipment["weapon"],world_state.player_equipment["armor"],world_state.player_equipment["horse"],world_state.player_equipment["shield"]]; info.position=Vector2(22,55); info.size=Vector2(620,60); panel.add_child(info)
-	var settlement_id:=-1
+	var panel =Panel.new(); panel.position=Vector2(205,90); panel.size=Vector2(670,560); add_child(panel)
+	var title =Label.new(); title.text="FREE COMPANY • MANAGEMENT"; title.position=Vector2(22,16); title.add_theme_font_size_override("font_size",23); panel.add_child(title)
+	var info =Label.new(); var summary =world_state.get_world_status(); info.text="Level %d  •  Gold %d  •  Day %d  •  Weather %s\nEquipment: %s / %s / %s / %s" % [summary["level"],summary["gold"],summary["day"],summary["weather"],world_state.player_equipment["weapon"],world_state.player_equipment["armor"],world_state.player_equipment["horse"],world_state.player_equipment["shield"]]; info.position=Vector2(22,55); info.size=Vector2(620,60); panel.add_child(info)
+	var settlement_id =-1
 	for i in range(world_state.settlements.size()):
 		if int(world_state.settlements[i]["region"])==world_state.player_region_id and String(world_state.settlements[i]["owner"])==world_state.player_faction: settlement_id=i; break
 	if settlement_id>=0:
-		var s:=world_state.settlements[settlement_id]
-		var city:=Label.new(); city.text="Settlement: %s • Garrison %d • Wall %d\nBuildings: Farm %d • Workshop %d • Market %d • Barracks %d" % [s["name"],s["garrison"],s["wall_level"],s["buildings"]["farm"],s["buildings"]["workshop"],s["buildings"]["market"],s["buildings"]["barracks"]]; city.position=Vector2(22,125); city.size=Vector2(620,55); panel.add_child(city)
+		var s =world_state.settlements[settlement_id]
+		var city =Label.new(); city.text="Settlement: %s • Garrison %d • Wall %d\nBuildings: Farm %d • Workshop %d • Market %d • Barracks %d" % [s["name"],s["garrison"],s["wall_level"],s["buildings"]["farm"],s["buildings"]["workshop"],s["buildings"]["market"],s["buildings"]["barracks"]]; city.position=Vector2(22,125); city.size=Vector2(620,55); panel.add_child(city)
 		var builds=["farm","workshop","market","barracks"]
 		for i in range(builds.size()):
-			var bb:=Button.new(); bb.text="UPGRADE "+builds[i].to_upper(); bb.position=Vector2(22+i*155,190); bb.size=Vector2(145,36); bb.pressed.connect(_upgrade_building.bind(settlement_id,builds[i],panel)); panel.add_child(bb)
-	var eq_title:=Label.new(); eq_title.text="EQUIPMENT"; eq_title.position=Vector2(22,245); eq_title.add_theme_font_size_override("font_size",18); panel.add_child(eq_title)
+			var bb =Button.new(); bb.text="UPGRADE "+builds[i].to_upper(); bb.position=Vector2(22+i*155,190); bb.size=Vector2(145,36); bb.pressed.connect(_upgrade_building.bind(settlement_id,builds[i],panel)); panel.add_child(bb)
+	var eq_title =Label.new(); eq_title.text="EQUIPMENT"; eq_title.position=Vector2(22,245); eq_title.add_theme_font_size_override("font_size",18); panel.add_child(eq_title)
 	var equipment=[["weapon","steel_sword",120],["armor","plate_armor",250],["horse","war_horse",300],["shield","steel_shield",100]]
 	for i in range(equipment.size()):
 		var e: Array = equipment[i]
-		var eb := Button.new()
+		var eb = Button.new()
 		eb.text = "%s • %d G" % [String(e[1]).replace("_", " ").capitalize(), int(e[2])]
 		eb.position = Vector2(22 + (i % 2) * 250, 280 + (i / 2) * 42)
 		eb.size = Vector2(230, 34)
 		eb.pressed.connect(_upgrade_equipment.bind(String(e[0]), String(e[1]), int(e[2]), panel))
 		panel.add_child(eb)
-	var family_label:=Label.new(); family_label.text="FAMILY • Generation %d • Heir: %s" % [world_state.family["generation"],world_state.family["heir_name"]]; family_label.position=Vector2(22,375); panel.add_child(family_label)
-	var guardian:=Button.new(); guardian.text="HIRE HOUSEHOLD GUARDIAN • 75 G"; guardian.position=Vector2(22,410); guardian.size=Vector2(270,36); guardian.pressed.connect(_hire_guardian); panel.add_child(guardian)
-	var close:=Button.new(); close.text="CLOSE"; close.position=Vector2(270,500); close.size=Vector2(120,36); close.pressed.connect(panel.queue_free); panel.add_child(close)
+	var family_label =Label.new(); family_label.text="FAMILY • Generation %d • Heir: %s" % [world_state.family["generation"],world_state.family["heir_name"]]; family_label.position=Vector2(22,375); panel.add_child(family_label)
+	var guardian =Button.new(); guardian.text="HIRE HOUSEHOLD GUARDIAN • 75 G"; guardian.position=Vector2(22,410); guardian.size=Vector2(270,36); guardian.pressed.connect(_hire_guardian); panel.add_child(guardian)
+	var close =Button.new(); close.text="CLOSE"; close.position=Vector2(270,500); close.size=Vector2(120,36); close.pressed.connect(panel.queue_free); panel.add_child(close)
 
 func _upgrade_building(settlement_id:int,building:String,panel:Panel)->void:
-	var r:=world_state.upgrade_settlement_building(settlement_id,building); status_label.text="Building upgraded." if r.get("ok",false) else "Upgrade failed: "+String(r.get("reason","unknown")); panel.queue_free(); _refresh_world_map()
+	var r =world_state.upgrade_settlement_building(settlement_id,building); status_label.text="Building upgraded." if r.get("ok",false) else "Upgrade failed: "+String(r.get("reason","unknown")); panel.queue_free(); _refresh_world_map()
 
 func _upgrade_equipment(slot:String,item:String,cost:int,panel:Panel)->void:
-	var r:=world_state.upgrade_player_equipment(slot,item,cost); status_label.text="Equipped "+item if r.get("ok",false) else "Equipment failed: "+String(r.get("reason","unknown")); panel.queue_free()
+	var r =world_state.upgrade_player_equipment(slot,item,cost); status_label.text="Equipped "+item if r.get("ok",false) else "Equipment failed: "+String(r.get("reason","unknown")); panel.queue_free()
 
 func _hire_guardian()->void:
-	var r:=world_state.recruit_guardian(); status_label.text="Household guardian hired." if r.get("ok",false) else "Cannot hire guardian."
+	var r =world_state.recruit_guardian(); status_label.text="Household guardian hired." if r.get("ok",false) else "Cannot hire guardian."
 
 func _toggle_world_map() -> void:
 	map_open = not map_open
@@ -1468,7 +1468,7 @@ func _refresh_world_map() -> void:
 			b.queue_free()
 	travel_buttons.clear()
 
-	var text := "DAY %d     GOLD %d\n" % [world_state.day, world_state.gold]
+	var text = "DAY %d     GOLD %d\n" % [world_state.day, world_state.gold]
 	text += "CURRENT REGION: %s\n\n" % world_state.regions[world_state.player_region_id]["name"]
 	text += "TERRITORIES\n"
 	for faction in world_state.factions:
@@ -1499,7 +1499,7 @@ func _refresh_world_map() -> void:
 		var army: Dictionary = world_state.armies[i]
 		if String(army["owner"]) != String(world_state.player_faction) and String(army["owner"]) != "Free Company":
 			continue
-		var command := Button.new()
+		var command = Button.new()
 		command.text = "ARMY %d • %s" % [i + 1, String(army["name"])]
 		command.position = Vector2(575, 500 + (i % 2) * 36)
 		command.size = Vector2(360, 32)
@@ -1512,9 +1512,9 @@ func _refresh_world_map() -> void:
 	for i in range(world_state.settlements.size()):
 		var settlement: Dictionary = world_state.settlements[i]
 		var p: Vector2 = settlement["position"]
-		var map_x := 20.0 + ((p.x + 22.0) / 44.0) * 470.0
-		var map_y := 30.0 + ((p.y + 18.0) / 36.0) * 430.0
-		var travel := Button.new()
+		var map_x = 20.0 + ((p.x + 22.0) / 44.0) * 470.0
+		var map_y = 30.0 + ((p.y + 18.0) / 36.0) * 430.0
+		var travel = Button.new()
 		travel.text = "● " + String(settlement["name"])
 		travel.position = Vector2(map_x - 50, map_y + 22)
 		travel.size = Vector2(145, 34)
@@ -1525,33 +1525,33 @@ func _refresh_world_map() -> void:
 		travel_buttons.append(travel)
 
 func _open_start_mode() -> void:
-	var panel:=Panel.new()
+	var panel =Panel.new()
 	panel.position=Vector2(220,150); panel.size=Vector2(560,300)
 	add_child(panel)
-	var title:=Label.new(); title.text="CHOOSE YOUR LIFE"; title.position=Vector2(24,20); title.add_theme_font_size_override("font_size",24); panel.add_child(title)
+	var title =Label.new(); title.text="CHOOSE YOUR LIFE"; title.position=Vector2(24,20); title.add_theme_font_size_override("font_size",24); panel.add_child(title)
 	var modes=[["ORDINARY","Start with little gold and build your power."],["KING","Start as a ruler with 1000 gold."],["TRIBAL LEADER","Start as a tribal leader with 500 gold."]]
 	for i in range(modes.size()):
-		var b:=Button.new(); b.text=modes[i][0]+"  •  "+modes[i][1]; b.position=Vector2(24,70+i*58); b.size=Vector2(510,46)
+		var b =Button.new(); b.text=modes[i][0]+"  •  "+modes[i][1]; b.position=Vector2(24,70+i*58); b.size=Vector2(510,46)
 		b.pressed.connect(_choose_start_mode.bind(modes[i][0].to_lower().replace(" ","_"),panel)); panel.add_child(b)
 
 func _choose_start_mode(mode:String,panel:Panel)->void:
-	var result:=world_state.set_player_mode("tribal_leader" if mode=="tribal_leader" else ("king" if mode=="king" else "ordinary"))
+	var result =world_state.set_player_mode("tribal_leader" if mode=="tribal_leader" else ("king" if mode=="king" else "ordinary"))
 	status_label.text="You begin as %s • Gold %d" % [result["mode"],world_state.gold]
 	panel.queue_free()
 
 func _open_trade(settlement_id:int)->void:
-	var panel:=Panel.new(); panel.position=Vector2(180,110); panel.size=Vector2(640,420); add_child(panel)
-	var title:=Label.new(); title.text="MARKET • "+String(world_state.settlements[settlement_id]["name"]); title.position=Vector2(24,18); title.add_theme_font_size_override("font_size",24); panel.add_child(title)
-	var prices:=world_state.get_market_prices(settlement_id)
+	var panel =Panel.new(); panel.position=Vector2(180,110); panel.size=Vector2(640,420); add_child(panel)
+	var title =Label.new(); title.text="MARKET • "+String(world_state.settlements[settlement_id]["name"]); title.position=Vector2(24,18); title.add_theme_font_size_override("font_size",24); panel.add_child(title)
+	var prices =world_state.get_market_prices(settlement_id)
 	var resources=["food","wood","iron"]
 	for i in range(resources.size()):
-		var res:=resources[i]; var row:=Label.new(); row.text="%s  •  Price %d  •  Owned %d" % [res.capitalize(),int(prices[res]),int(world_state.player_inventory.get(res,0))]; row.position=Vector2(28,70+i*90); panel.add_child(row)
-		var buy:=Button.new(); buy.text="BUY 10"; buy.position=Vector2(360,62+i*90); buy.size=Vector2(110,42); buy.pressed.connect(_trade.bind(settlement_id,res,10,true,panel)); panel.add_child(buy)
-		var sell:=Button.new(); sell.text="SELL 10"; sell.position=Vector2(485,62+i*90); sell.size=Vector2(110,42); sell.pressed.connect(_trade.bind(settlement_id,res,10,false,panel)); panel.add_child(sell)
-	var close:=Button.new(); close.text="CLOSE"; close.position=Vector2(250,350); close.size=Vector2(140,42); close.pressed.connect(panel.queue_free); panel.add_child(close)
+		var res =resources[i]; var row =Label.new(); row.text="%s  •  Price %d  •  Owned %d" % [res.capitalize(),int(prices[res]),int(world_state.player_inventory.get(res,0))]; row.position=Vector2(28,70+i*90); panel.add_child(row)
+		var buy =Button.new(); buy.text="BUY 10"; buy.position=Vector2(360,62+i*90); buy.size=Vector2(110,42); buy.pressed.connect(_trade.bind(settlement_id,res,10,true,panel)); panel.add_child(buy)
+		var sell =Button.new(); sell.text="SELL 10"; sell.position=Vector2(485,62+i*90); sell.size=Vector2(110,42); sell.pressed.connect(_trade.bind(settlement_id,res,10,false,panel)); panel.add_child(sell)
+	var close =Button.new(); close.text="CLOSE"; close.position=Vector2(250,350); close.size=Vector2(140,42); close.pressed.connect(panel.queue_free); panel.add_child(close)
 
 func _trade(settlement_id:int,res:String,amount:int,buy:bool,panel:Panel)->void:
-	var result:=world_state.trade_resource(settlement_id,res,amount,buy)
+	var result =world_state.trade_resource(settlement_id,res,amount,buy)
 	status_label.text=("TRADE COMPLETE" if result.get("ok",false) else "TRADE FAILED: "+String(result.get("reason","unknown")))
 	if result.get("ok",false): panel.queue_free()
 
@@ -1559,32 +1559,32 @@ func _open_recruitment(settlement_id: int) -> void:
 	if settlement_id < 0 or settlement_id >= world_state.settlements.size():
 		return
 	var settlement: Dictionary = world_state.settlements[settlement_id]
-	var troop_types := ["levy", "spearman", "archer", "horseman"]
-	var costs := {"levy":5, "spearman":9, "archer":11, "horseman":18}
-	var panel := Panel.new()
+	var troop_types = ["levy", "spearman", "archer", "horseman"]
+	var costs = {"levy":5, "spearman":9, "archer":11, "horseman":18}
+	var panel = Panel.new()
 	panel.name = "RecruitmentPanel"
 	panel.position = Vector2(565, 360)
 	panel.size = Vector2(390, 245)
 	world_map_panel.add_child(panel)
-	var title := Label.new()
+	var title = Label.new()
 	title.text = "RECRUITMENT • %s" % String(settlement["name"])
 	title.position = Vector2(16, 10)
 	title.add_theme_font_size_override("font_size", 17)
 	panel.add_child(title)
-	var gold_label := Label.new()
+	var gold_label = Label.new()
 	gold_label.text = "Gold: %d  •  Choose a troop type" % world_state.gold
 	gold_label.position = Vector2(16, 38)
 	panel.add_child(gold_label)
 	for i in range(troop_types.size()):
-		var troop_type := troop_types[i]
-		var button := Button.new()
+		var troop_type = troop_types[i]
+		var button = Button.new()
 		button.text = "%s  •  %d gold each" % [troop_type.capitalize(), costs[troop_type]]
 		button.position = Vector2(16, 70 + i * 36)
 		button.size = Vector2(355, 30)
 		button.add_theme_font_size_override("font_size", 12)
 		button.pressed.connect(_recruit_troop.bind(settlement_id, troop_type, panel))
 		panel.add_child(button)
-	var close := Button.new()
+	var close = Button.new()
 	close.text = "CLOSE"
 	close.position = Vector2(280, 205)
 	close.size = Vector2(90, 28)
@@ -1633,22 +1633,22 @@ func _open_army_command(army_id: int) -> void:
 	army_command_panel.position = Vector2(565, 300)
 	army_command_panel.size = Vector2(390, 270)
 	world_map_panel.add_child(army_command_panel)
-	var info := Label.new()
+	var info = Label.new()
 	info.text = "%s\nTroops: %d • Morale: %d • Food: %d\nRegion: %s" % [army["name"], army["soldiers"], army["morale"], army["food"], world_state.regions[int(army["region"])]["name"]]
 	info.position = Vector2(16, 12)
 	info.size = Vector2(350, 65)
 	info.add_theme_font_size_override("font_size", 14)
 	army_command_panel.add_child(info)
-	var formation_title:=Label.new(); formation_title.text="FORMATION"; formation_title.position=Vector2(16,80); formation_title.add_theme_font_size_override("font_size",12); army_command_panel.add_child(formation_title)
+	var formation_title =Label.new(); formation_title.text="FORMATION"; formation_title.position=Vector2(16,80); formation_title.add_theme_font_size_override("font_size",12); army_command_panel.add_child(formation_title)
 	var formations=["line","shield_wall","wedge","skirmish"]
 	for j in range(formations.size()):
-		var fb:=Button.new(); fb.text=formations[j].to_upper(); fb.position=Vector2(16+(j%2)*88,100+(j/2)*28); fb.size=Vector2(82,24); fb.pressed.connect(_set_army_formation.bind(army_id,formations[j])); army_command_panel.add_child(fb)
-	var order_title:=Label.new(); order_title.text="ORDER"; order_title.position=Vector2(200,80); order_title.add_theme_font_size_override("font_size",12); army_command_panel.add_child(order_title)
+		var fb =Button.new(); fb.text=formations[j].to_upper(); fb.position=Vector2(16+(j%2)*88,100+(j/2)*28); fb.size=Vector2(82,24); fb.pressed.connect(_set_army_formation.bind(army_id,formations[j])); army_command_panel.add_child(fb)
+	var order_title =Label.new(); order_title.text="ORDER"; order_title.position=Vector2(200,80); order_title.add_theme_font_size_override("font_size",12); army_command_panel.add_child(order_title)
 	var orders=["hold","attack","defend","raid"]
 	for j in range(orders.size()):
-		var ob:=Button.new(); ob.text=orders[j].to_upper(); ob.position=Vector2(200+(j%2)*88,100+(j/2)*28); ob.size=Vector2(82,24); ob.pressed.connect(_set_army_order.bind(army_id,orders[j])); army_command_panel.add_child(ob)
+		var ob =Button.new(); ob.text=orders[j].to_upper(); ob.position=Vector2(200+(j%2)*88,100+(j/2)*28); ob.size=Vector2(82,24); ob.pressed.connect(_set_army_order.bind(army_id,orders[j])); army_command_panel.add_child(ob)
 
-	var close := Button.new()
+	var close = Button.new()
 	close.text = "CLOSE"
 	close.position = Vector2(280, 220)
 	close.size = Vector2(90, 30)
@@ -1660,8 +1660,8 @@ func _open_army_command(army_id: int) -> void:
 	army_command_panel.add_child(close)
 	var neighbors: Array[int] = world_state.get_region_neighbors(int(army["region"]))
 	for j in range(neighbors.size()):
-		var region_id := neighbors[j]
-		var move := Button.new()
+		var region_id = neighbors[j]
+		var move = Button.new()
 		move.text = "MOVE → %s" % String(world_state.regions[region_id]["name"])
 		move.position = Vector2(16 + (j % 2) * 178, 160 + (j / 2) * 31)
 		move.size = Vector2(168, 27)
@@ -1670,10 +1670,10 @@ func _open_army_command(army_id: int) -> void:
 		army_command_panel.add_child(move)
 
 func _set_army_formation(army_id:int,formation:String)->void:
-	var r:=world_state.set_army_formation(army_id,formation); status_label.text="Formation: "+formation if r.get("ok",false) else "Formation failed."
+	var r =world_state.set_army_formation(army_id,formation); status_label.text="Formation: "+formation if r.get("ok",false) else "Formation failed."
 
 func _set_army_order(army_id:int,order:String)->void:
-	var r:=world_state.set_army_order(army_id,order); status_label.text="Order: "+order if r.get("ok",false) else "Order failed."
+	var r =world_state.set_army_order(army_id,order); status_label.text="Order: "+order if r.get("ok",false) else "Order failed."
 
 func _issue_player_army_move(army_id: int, target_region: int) -> void:
 	var result: Dictionary = world_state.issue_army_move(army_id, target_region)
