@@ -8,6 +8,7 @@ class_name ReleaseProductionAssetIntegration
 var registry: ReleaseAssetRegistry
 var spawned: Array[Node] = []
 var asset_nodes_by_role: Dictionary = {}
+var world_state_ref: Node = null
 
 const MAX_WORLD_PROPS := 72
 const MAX_NATURE := 140
@@ -33,6 +34,7 @@ func _populate() -> void:
     _populate_characters()
     _populate_extra_characters()
     _populate_creatures()
+    _bind_world_content()
 
 func _clear_previous() -> void:
     for node in spawned:
@@ -167,7 +169,7 @@ func _populate_characters() -> void:
         node.scale = Vector3.ONE * 1.0
         add_child(node)
         spawned.append(node)
-
+        _register_role("character", node)
 
 
 func _populate_crops() -> void:
@@ -202,6 +204,98 @@ func _populate_ring(pack_id: String, limit: int, radius: float, spacing: float, 
         placed += 1
         if placed >= limit:
             break
+
+func bind_world(world: Node) -> void:
+    world_state_ref = world
+    if not spawned.is_empty():
+        _bind_world_content()
+
+func _bind_world_content() -> void:
+    if world_state_ref == null or not is_instance_valid(world_state_ref):
+        return
+    var settlements: Array = world_state_ref.get("settlements")
+    if settlements.is_empty():
+        return
+    var settlement_nodes := get_role_nodes("settlement")
+    var building_nodes := get_role_nodes("building")
+    var character_nodes := get_role_nodes("character")
+    var extra_character_nodes := get_role_nodes("characters_extra")
+    var animal_nodes := get_role_nodes("animal")
+    var crop_nodes := get_role_nodes("crops")
+    var creature_nodes := get_role_nodes("creatures")
+    var nature_nodes := get_role_nodes("nature")
+    var used := {}
+    for i in range(settlements.size()):
+        var settlement: Dictionary = settlements[i]
+        var p: Vector2 = settlement.get("position", Vector2.ZERO)
+        var center := Vector3(p.x, 0.0, p.y)
+        var kind := String(settlement.get("type", "village"))
+        if i < settlement_nodes.size():
+            var house: Node3D = settlement_nodes[i]
+            house.position = center
+            house.rotation.y = deg_to_rad(float((i * 37) % 360))
+            house.scale = Vector3.ONE * (1.0 if kind == "village" else (1.15 if kind == "town" else (1.3 if kind == "city" else 1.45)))
+            used[house] = true
+        for slot in range(3):
+            var bi := i * 3 + slot
+            if bi < building_nodes.size():
+                var building: Node3D = building_nodes[bi]
+                var angle := deg_to_rad(float(slot * 120 + i * 17))
+                var radius := 2.8 + float(slot) * 1.1
+                building.position = center + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+                building.rotation.y = angle + PI * 0.5
+                used[building] = true
+        for slot in range(2):
+            var ci := i * 2 + slot
+            var pool: Array = extra_character_nodes if slot == 1 and not extra_character_nodes.is_empty() else character_nodes
+            var idx := ci if slot == 0 else i
+            if idx < pool.size():
+                var npc: Node3D = pool[idx]
+                var angle := deg_to_rad(float(slot * 180 + i * 29))
+                npc.position = center + Vector3(cos(angle) * 3.8, 0.0, sin(angle) * 3.8)
+                npc.rotation.y = angle + PI
+                npc.scale = Vector3.ONE * 0.92
+                used[npc] = true
+        if kind == "village" or kind == "town":
+            for slot in range(2):
+                var fi := i * 2 + slot
+                if fi < crop_nodes.size():
+                    var crop: Node3D = crop_nodes[fi]
+                    var angle := deg_to_rad(float(slot * 180 + 45))
+                    crop.position = center + Vector3(cos(angle) * 6.5, 0.0, sin(angle) * 6.5)
+                    crop.scale = Vector3.ONE * 0.72
+                    used[crop] = true
+            if not animal_nodes.is_empty():
+                var ai := i % animal_nodes.size()
+                var animal: Node3D = animal_nodes[ai]
+                animal.position = center + Vector3(5.0, 0.0, -4.5)
+                animal.scale = Vector3.ONE * 0.62
+                used[animal] = true
+    for i in range(nature_nodes.size()):
+        var tree: Node3D = nature_nodes[i]
+        if used.has(tree):
+            continue
+        var region_id := i % max(1, settlements.size())
+        var base: Vector2 = settlements[region_id].get("position", Vector2.ZERO)
+        var angle := float(i) * 2.39996
+        var radius := 9.0 + float(i % 8) * 1.8
+        tree.position = Vector3(base.x + cos(angle) * radius, 0.0, base.y + sin(angle) * radius)
+        tree.scale = Vector3.ONE * (0.7 + float(i % 4) * 0.07)
+    for i in range(creature_nodes.size()):
+        var creature: Node3D = creature_nodes[i]
+        var region_id := (i * 3 + 4) % max(1, settlements.size())
+        var base: Vector2 = settlements[region_id].get("position", Vector2.ZERO)
+        var angle := float(i) * 2.73
+        creature.position = Vector3(base.x + cos(angle) * 15.0, 0.0, base.y + sin(angle) * 15.0)
+        creature.scale = Vector3.ONE * 0.8
+
+    # Any unused production nodes stay far enough from the playable settlement ring
+    # to act as background dressing instead of overlapping the campaign structures.
+    for node in spawned:
+        if not is_instance_valid(node) or used.has(node):
+            continue
+        if node is Node3D and (node.position.length() < 7.0):
+            node.position += Vector3(35.0, 0.0, 35.0)
 
 func _register_role(role: String, node: Node) -> void:
     if not asset_nodes_by_role.has(role):
