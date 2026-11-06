@@ -4,7 +4,7 @@ class_name ReleaseStages20to29
 # 20-24 Core character/combat pass; 25-29 living-world simulation pass.
 var game:Node3D
 var world:Node
-var tick:=0.0
+var tick=0.0
 var rider:Dictionary={"mounted":false,"mount_id":"","speed_bonus":0.0}
 var combat:Dictionary={"weapon_class":"balanced","combo":0,"stamina":100,"block":false,"ranged_ready":true}
 var units:Dictionary={}
@@ -83,7 +83,7 @@ func command_unit(unit_id:String,formation:String,order:String)->void:
 # 24 Battle command readiness
 func battle_readiness(unit_ids:Array)->int:
     if unit_ids.is_empty(): return 0
-    var total:=0
+    var total=0
     for id in unit_ids:
         if units.has(id): total+=int(units[id].get("morale",50))
     return int(total/max(1,unit_ids.size()))
@@ -112,7 +112,7 @@ func _farm_tick()->void:
     for id in farms.keys():
         var f:Dictionary=farms[id]
         if int(f.get("condition",100))>0:
-            var sid:=int(f.get("settlement",-1))
+            var sid=int(f.get("settlement",-1))
             if sid>=0 and sid<world.settlements.size():
                 var s:Dictionary=world.settlements[sid]
                 var r:Dictionary=s.get("resources",{})
@@ -139,10 +139,10 @@ func trigger_life_event(kind:String,settlement_id:int)->void:
         "accident": s["prosperity"]=max(0,int(s.get("prosperity",50))-2)
 
 func _ui()->void:
-    var layer:=CanvasLayer.new()
+    var layer=CanvasLayer.new()
     layer.name="Stages20to29UI"
     game.add_child(layer)
-    var p:=Panel.new()
+    var p=Panel.new()
     p.position=Vector2(18,585)
     p.size=Vector2(380,72)
     p.modulate.a=0.86
