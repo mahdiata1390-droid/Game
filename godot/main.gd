@@ -67,6 +67,7 @@ var stages_15_19: ReleaseStages15to19
 var stages_20_29: ReleaseStages20to29
 var stages_30_39: ReleaseStages30to39
 var stages_40_49: ReleaseStages40to49
+var final_game_pass: ReleaseFinalGamePass
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -161,6 +162,10 @@ func _boot_gameplay() -> void:
 	stages_40_49.name = "Stages40to49"
 	add_child(stages_40_49)
 	stages_40_49.build(self)
+	final_game_pass = ReleaseFinalGamePass.new()
+	final_game_pass.name = "FinalGamePass"
+	add_child(final_game_pass)
+	final_game_pass.build(self)
 	_set_boot_status("WORLD READY • sandbox systems online")
 	var boot := get_node_or_null("BootStatus") as CanvasLayer
 	if is_instance_valid(boot):
