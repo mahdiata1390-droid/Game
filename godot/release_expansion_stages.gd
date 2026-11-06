@@ -6,7 +6,7 @@ class_name ReleaseExpansionStages
 
 var game: Node3D
 var world: Node
-var tick := 0.0
+var tick = 0.0
 var travel: Dictionary = {}
 var economy: Dictionary = {}
 var family: Dictionary = {}
@@ -37,8 +37,8 @@ func _process(delta: float) -> void:
 func travel_to_region(target_region: int) -> Dictionary:
     if target_region < 0 or target_region >= world.regions.size():
         return {"ok":false,"reason":"invalid_region"}
-    var start := int(world.get("player_region_id"))
-    var route := _find_route(start,target_region)
+    var start = int(world.get("player_region_id"))
+    var route = _find_route(start,target_region)
     if route.is_empty():
         return {"ok":false,"reason":"no_route"}
     travel = {"active":true,"route":route,"index":0,"progress":0.0,"speed":1.0}
@@ -51,9 +51,9 @@ func _find_route(start:int,target:int) -> Array:
         return [start]
     if not world.has_method("get_region_neighbors"):
         return []
-    var queue := [start]
-    var previous := {start:-1}
-    var head := 0
+    var queue = [start]
+    var previous = {start:-1}
+    var head = 0
     while head < queue.size():
         var current:int = queue[head]
         head += 1
@@ -63,7 +63,7 @@ func _find_route(start:int,target:int) -> Array:
             previous[next] = current
             if next == target:
                 var route:Array = [target]
-                var cursor := target
+                var cursor = target
                 while int(previous[cursor]) != -1:
                     cursor = int(previous[cursor])
                     route.push_front(cursor)
@@ -79,7 +79,7 @@ func _update_travel(delta:float) -> void:
         return
     travel["progress"] = 0.0
     var route:Array = travel.get("route",[])
-    var idx := int(travel.get("index",0)) + 1
+    var idx = int(travel.get("index",0)) + 1
     if idx >= route.size():
         travel["active"] = false
         world.set_meta("player_travel_active",false)
@@ -98,12 +98,12 @@ func trade(settlement_id:int, resource:String, amount:int, buy:bool) -> Dictiona
         return {"ok":false,"reason":"invalid_trade"}
     var s:Dictionary = world.settlements[settlement_id]
     var stock:Dictionary = s.get("resources",{})
-    var key := String(resource)
-    var current := int(stock.get(key,0))
-    var price := _resource_price(s,key)
-    var gold := int(world.get("gold"))
+    var key = String(resource)
+    var current = int(stock.get(key,0))
+    var price = _resource_price(s,key)
+    var gold = int(world.get("gold"))
     if buy:
-        var cost := price * amount
+        var cost = price * amount
         if current < amount or gold < cost:
             return {"ok":false,"reason":"insufficient_stock_or_gold"}
         stock[key] = current - amount
@@ -119,15 +119,15 @@ func trade(settlement_id:int, resource:String, amount:int, buy:bool) -> Dictiona
     return {"ok":true,"price":price,"gold":world.get("gold"),"stock":stock.get(key,0)}
 
 func _resource_price(s:Dictionary,key:String) -> int:
-    var base := {"food":4,"wood":6,"stone":8,"iron":12,"cloth":10,"horses":20}.get(key,7)
-    var stock := int(s.get("resources",{}).get(key,20))
-    var prosperity := int(s.get("prosperity",50))
+    var base = {"food":4,"wood":6,"stone":8,"iron":12,"cloth":10,"horses":20}.get(key,7)
+    var stock = int(s.get("resources",{}).get(key,20))
+    var prosperity = int(s.get("prosperity",50))
     return max(1,int(float(base) * (1.35 - min(stock,100)/180.0) * (0.8 + prosperity/250.0)))
 
 func _economy_tick() -> void:
     for s in world.settlements:
         var resources:Dictionary = s.get("resources",{})
-        var prosperity := int(s.get("prosperity",50))
+        var prosperity = int(s.get("prosperity",50))
         resources["food"] = int(resources.get("food",20)) + max(1,prosperity/35)
         resources["wood"] = int(resources.get("wood",20)) + max(1,prosperity/55)
         if int(resources.get("food",0)) > 120:
@@ -142,7 +142,7 @@ func _economy_tick() -> void:
 func add_family_member_role(role:String,name:String) -> Dictionary:
     if not family.has("members"):
         family["members"] = []
-    var id := int(family.get("next_id",1))
+    var id = int(family.get("next_id",1))
     family["next_id"] = id + 1
     family["members"].append({"id":id,"name":name,"role":role,"age":18,"loyalty":70,"alive":true})
     return {"ok":true,"id":id}
@@ -158,12 +158,12 @@ func _family_tick() -> void:
     _update_heir()
 
 func _update_heir() -> void:
-    var best_id := -1
-    var best_score := -1
+    var best_id = -1
+    var best_score = -1
     for member in family.get("members",[]):
         if not bool(member.get("alive",true)):
             continue
-        var score := int(member.get("age",0))*2 + int(member.get("loyalty",0))
+        var score = int(member.get("age",0))*2 + int(member.get("loyalty",0))
         if String(member.get("role","")) == "heir":
             score += 50
         if score > best_score:
@@ -194,7 +194,7 @@ func _naval_tick() -> void:
     if not bool(naval.get("active",false)):
         return
     naval["progress"] = float(naval.get("progress",0.0)) + 0.1
-    var ship_id := int(naval.get("ship_id",-1))
+    var ship_id = int(naval.get("ship_id",-1))
     if ship_id >= 0 and ship_id < world.ships.size():
         var ship:Dictionary = world.ships[ship_id]
         ship["fatigue"] = min(100,int(ship.get("fatigue",0))+1)
@@ -209,10 +209,10 @@ func get_naval_state() -> Dictionary:
     return naval.duplicate(true)
 
 func _create_ui() -> void:
-    var layer := CanvasLayer.new()
+    var layer = CanvasLayer.new()
     layer.name = "ExpansionStagesUI"
     game.add_child(layer)
-    var panel := Panel.new()
+    var panel = Panel.new()
     panel.position = Vector2(18,320)
     panel.size = Vector2(330,80)
     panel.modulate.a = 0.88
