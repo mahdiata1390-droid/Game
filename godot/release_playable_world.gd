@@ -1,6 +1,6 @@
 extends Node
 var game:Node3D
-var world: WorldState
+var world: Node
 var map_panel:Panel
 var info:Label
 var target_label:Label
@@ -19,7 +19,7 @@ func _build_interaction_fx() -> void:
 
 func build(main_node:Node3D)->void:
     game=main_node
-    world = game.get("world_state") as WorldState
+    world = game.get("world_state") as Node
     rng.seed=912734
     _build_campaign_hud()
     _build_world_map()
