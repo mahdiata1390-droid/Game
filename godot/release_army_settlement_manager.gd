@@ -6,8 +6,8 @@ var world: Node
 var layer: CanvasLayer
 var panel: Panel
 var info: Label
-var selected_army := 0
-var selected_settlement := 0
+var selected_army = 0
+var selected_settlement = 0
 
 func build(root: Node) -> void:
 	host = root
@@ -24,7 +24,7 @@ func _build() -> void:
 	panel.position = Vector2(28, 30)
 	panel.size = Vector2(320, 430)
 	layer.add_child(panel)
-	var title := Label.new()
+	var title = Label.new()
 	title.text = "ARMY & SETTLEMENT"
 	title.position = Vector2(12, 10)
 	title.add_theme_font_size_override("font_size", 17)
@@ -33,9 +33,9 @@ func _build() -> void:
 	info.position = Vector2(12, 42)
 	info.size = Vector2(296, 160)
 	panel.add_child(info)
-	var labels := ["NEXT ARMY","FORM LINE","SHIELD WALL","WEDGE","SKIRMISH","HOLD","ATTACK","DEFEND","RAID","GARRISON","BUILD BARRACKS"]
+	var labels = ["NEXT ARMY","FORM LINE","SHIELD WALL","WEDGE","SKIRMISH","HOLD","ATTACK","DEFEND","RAID","GARRISON","BUILD BARRACKS"]
 	for i in range(labels.size()):
-		var b := Button.new()
+		var b = Button.new()
 		b.text = labels[i]
 		b.position = Vector2(12 + (i % 2) * 150, 215 + (i / 2) * 35)
 		b.size = Vector2(140, 30)
@@ -47,15 +47,15 @@ func _action(action: String) -> void:
 	if action == "NEXT ARMY":
 		selected_army = (selected_army + 1) % max(1, world.armies.size())
 	elif action in ["FORM LINE","SHIELD WALL","WEDGE","SKIRMISH"]:
-		var f := {"FORM LINE":"line","SHIELD WALL":"shield_wall","WEDGE":"wedge","SKIRMISH":"skirmish"}[action]
+		var f = {"FORM LINE":"line","SHIELD WALL":"shield_wall","WEDGE":"wedge","SKIRMISH":"skirmish"}[action]
 		world.set_army_formation(selected_army, f)
 	elif action in ["HOLD","ATTACK","DEFEND","RAID"]:
 		world.set_army_order(selected_army, action.to_lower())
 	elif action == "GARRISON":
-		var sid := _owned_settlement()
+		var sid = _owned_settlement()
 		world.garrison_army_in_settlement(selected_army, sid)
 	elif action == "BUILD BARRACKS":
-		var sid := _owned_settlement()
+		var sid = _owned_settlement()
 		world.upgrade_settlement_building(sid, "barracks")
 	_update()
 
@@ -71,8 +71,8 @@ func _update() -> void:
 		return
 	selected_army = clamp(selected_army, 0, world.armies.size()-1)
 	var a: Dictionary = world.armies[selected_army]
-	var sid := _owned_settlement()
-	var sname := "None"
+	var sid = _owned_settlement()
+	var sname = "None"
 	if sid >= 0 and sid < world.settlements.size():
 		sname = String(world.settlements[sid].get("name",""))
 	info.text = "Army: %s\\nTroops: %d\\nMorale: %d\\nRegion: %s\\nFormation: %s\\nOrder: %s\\n\\nOwned settlement: %s" % [
