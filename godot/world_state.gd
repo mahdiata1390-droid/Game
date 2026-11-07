@@ -401,7 +401,11 @@ func resolve_auto_battle(settlement_id:int,attacker:Dictionary,defender:Dictiona
 	settlements[settlement_id]["garrison"]=max(0,int(settlements[settlement_id]["garrison"])-defender_losses)
 	var captured:=false
 	if attacker_won and int(settlements[settlement_id]["garrison"])<=0:
-		var attacker_faction:=String(siege.get("attacker",a.get("owner",player_faction)))
+		var attacker_faction: String = player_faction
+		if siege.has("attacker"):
+			attacker_faction = String(siege["attacker"])
+		else:
+			attacker_faction = String(a.get("owner", player_faction))
 		captured=capture_settlement_for_faction(settlement_id,attacker_faction)
 	add_player_xp(max(10,defender_losses))
 	return {"attacker_won":attacker_won,"attacker_losses":attacker_losses,"defender_losses":defender_losses,"rounds":rounds,"captured":captured,"settlement":String(settlements[settlement_id]["name"])}
