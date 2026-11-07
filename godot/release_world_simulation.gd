@@ -56,11 +56,11 @@ func _simulate_armies() -> void:
         var owner := String(army.get("owner",""))
         if owner == "" or owner == String(world.get("player_faction")):
             continue
+        var current_region := int(army.get("region",0))
         var target := _enemy_settlement(owner,current_region)
         if target < 0:
             continue
         var target_region := int(world.settlements[target].get("region",0))
-        var current_region := int(army.get("region",0))
         if current_region != target_region:
             army["region"] = _step_toward(current_region,target_region)
             army["morale"] = max(20,int(army.get("morale",60))-1)
