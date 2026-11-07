@@ -581,7 +581,7 @@ func _build_player() -> void:
 	player = CharacterBody3D.new()
 	player.name = "Player"
 	add_child(player)
-	player.position = Vector3(0, 1, 8)
+	player.position = Vector3(0, 1, -28)
 
 	var body = MeshInstance3D.new()
 	var capsule = CapsuleMesh.new()
@@ -601,9 +601,9 @@ func _build_player() -> void:
 	player.add_child(collision)
 
 	camera = Camera3D.new()
-	camera.position = Vector3(0, 4.2, 7.5)
+	camera.position = Vector3(0, 4.8, 7.5)
 	# Camera sits behind the player and therefore looks toward -Z.
-	camera.rotation_degrees = Vector3(-12, 0, 0)
+	camera.rotation_degrees = Vector3(-16, 0, 0)
 	player.add_child(camera)
 	camera.current = true
 
