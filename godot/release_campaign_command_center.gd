@@ -18,7 +18,7 @@ func build(root: Node) -> void:
 	_build_panel()
 
 func _button(text_value: String, pos: Vector2, size: Vector2, action: Callable) -> void:
-	var b := Button.new()
+	var b = Button.new()
 	b.text = text_value
 	b.position = pos
 	b.size = size
@@ -30,7 +30,7 @@ func _build_panel() -> void:
 	panel.position = Vector2(28, 520)
 	panel.size = Vector2(1220, 175)
 	layer.add_child(panel)
-	var title := Label.new()
+	var title = Label.new()
 	title.text = "CAMPAIGN COMMAND • ECONOMY • DIPLOMACY • FAMILY"
 	title.position = Vector2(12, 8)
 	title.add_theme_font_size_override("font_size", 16)
@@ -50,7 +50,7 @@ func _build_panel() -> void:
 	panel.add_child(log_label)
 
 func _player_settlement() -> int:
-	var region := int(world.player_region_id)
+	var region = int(world.player_region_id)
 	for s in world.settlements:
 		if int(s.get("region",-1)) == region and String(s.get("owner","")) == String(world.player_faction):
 			return int(s.get("id",-1))
@@ -66,26 +66,26 @@ func _show(result: Dictionary) -> void:
 	log_label.text = " • ".join([str(result.get("ok", false)), str(result.get("reason", result.get("message", result.get("count", ""))))])
 
 func _recruit() -> void:
-	var sid := _player_settlement()
+	var sid = _player_settlement()
 	if sid < 0:
 		_show({"ok":false,"reason":"No owned settlement in this region"})
 		return
 	_show(world.recruit_from_settlement(sid, "spearman", 10))
 
 func _farm() -> void:
-	var sid := _player_settlement()
+	var sid = _player_settlement()
 	_show(world.upgrade_settlement_building(sid, "farm"))
 
 func _market() -> void:
-	var sid := _player_settlement()
+	var sid = _player_settlement()
 	_show(world.upgrade_settlement_building(sid, "market"))
 
 func _trade() -> void:
-	var sid := _player_settlement()
+	var sid = _player_settlement()
 	if sid < 0:
 		_show({"ok":false,"reason":"No owned settlement"})
 		return
-	var destination := -1
+	var destination = -1
 	for s in world.settlements:
 		if int(s.get("id",-1)) != sid and int(s.get("region",-1)) != int(world.player_region_id):
 			destination = int(s.get("id",-1))
@@ -97,11 +97,11 @@ func _trade() -> void:
 
 func _naval_move() -> void:
 	for i in range(world.ships.size()):
-		var ship := world.ships[i]
+		var ship = world.ships[i]
 		if String(ship.get("owner","")) == String(world.player_faction):
 			var neighbors: Array = world.get_region_neighbors(int(ship.get("region",0)))
 			for n in neighbors:
-				var resource := String(world.regions[int(n)].get("resource",""))
+				var resource = String(world.regions[int(n)].get("resource",""))
 				if resource == "fish" or resource == "salt":
 					_show(world.issue_ship_move(i, int(n)))
 					return
