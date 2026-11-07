@@ -49,15 +49,15 @@ func _refresh() -> void:
 	if not host.world_state:
 		return
 	var s: Dictionary = host.world_state.get_world_status()
-	var lines: Array[String] = ["Gold: %d" % int(s.get("gold",0)), "Caravans active: %d" % int(s.get("caravans",0)), "Ships: %d" % int(s.get("ships",0)), "Day %d • %s • %s" % [int(s.get("day",1)), String(s.get("weather","clear")), String(s.get("time","day"))]]
+	var lines: Array[String] = ["Gold: %d" % int(s.get("gold",0)), "Caravans active: %d" % int(s.get("caravans",0)), "Ships: %d" % int(s.get("ships",0)), "Day %d • %s • %s" % [int(s.get("day",1)), str(s.get("weather","clear")), str(s.get("time","day"))]]
 	for c in host.world_state.caravans:
-		lines.append("• %s → %s • cargo %s" % [String(c.get("from","?")), String(c.get("to","?")), String(c.get("cargo","?"))])
+		lines.append("• %s → %s • cargo %s" % [str(c.get("from","?")), str(c.get("to","?")), str(c.get("cargo","?"))])
 	label.text = "\n".join(lines.slice(0, 8))
 
 func _create() -> void:
 	var owned := -1
 	for i in range(host.world_state.settlements.size()):
-		if String(host.world_state.settlements[i].get("owner","")) == host.world_state.player_faction:
+		if str(host.world_state.settlements[i].get("owner","")) == host.world_state.player_faction:
 			owned = i
 			break
 	if owned < 0:
@@ -68,7 +68,7 @@ func _create() -> void:
 		host._show_status("NO TRADE ROUTE", 2.0)
 		return
 	var result: Dictionary = host.world_state.create_caravan(owned, int(neighbors[0]))
-	host._show_status("CARAVAN • " + ("CREATED" if result.get("ok",false) else String(result.get("reason","FAILED"))), 2.0)
+	host._show_status("CARAVAN • " + ("CREATED" if result.get("ok",false) else str(result.get("reason","FAILED"))), 2.0)
 	_refresh()
 
 func _next_day() -> void:
