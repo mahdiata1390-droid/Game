@@ -11,7 +11,7 @@ var tick := 0.0
 var day_clock := 0.0
 var actions := 0
 var last_event := "WORLD SIMULATION READY"
-var state: Dictionary = {"actions":0,"wars_started":0,"settlements_captured":0,"trade_runs":0}
+var state: Dictionary = {"actions":0,"wars_started":0,"settlements_captured":0,"trade_runs":0,"npc_battles":0}
 
 func build(main_node: Node3D) -> void:
     game = main_node
@@ -56,7 +56,7 @@ func _simulate_armies() -> void:
         var owner := String(army.get("owner",""))
         if owner == "" or owner == String(world.get("player_faction")):
             continue
-        var target := _enemy_settlement(owner)
+        var target := _enemy_settlement(owner,current_region)
         if target < 0:
             continue
         var target_region := int(world.settlements[target].get("region",0))
@@ -69,7 +69,7 @@ func _simulate_armies() -> void:
             last_event = "%s army marches toward %s" % [String(army.get("name","Army")),String(world.settlements[target].get("name","Settlement"))]
             continue
         if not world.sieges.has(target):
-            var siege_result: Dictionary = world.start_siege(target,i)
+            var siege_result: Dictionary = world.start_siege_for_faction(target,i)
             if bool(siege_result.get("ok",false)):
                 actions += 1
                 last_event = "%s besieges %s" % [owner,String(world.settlements[target].get("name","Settlement"))]
@@ -84,7 +84,7 @@ func _simulate_recovery() -> void:
     for i in range(world.armies.size()):
         var army: Dictionary = world.armies[i]
         var soldiers := int(army.get("soldiers",0))
-        var max_soldiers := int(army.get("max_soldiers",soldiers))
+        var max_soldiers := max(soldiers,int(army.get("max_soldiers",soldiers)))
         if soldiers > 0 and max_soldiers > soldiers:
             army["soldiers"] = min(max_soldiers,soldiers+2)
             army["morale"] = min(100,int(army.get("morale",50))+1)
@@ -115,7 +115,7 @@ func _choose_enemy(faction:String) -> String:
             best = other
     return best
 
-func _enemy_settlement(faction:String) -> int:
+func _enemy_settlement(faction:String,from_region:int) -> int:
     var best := -1
     var best_distance := INF
     for i in range(world.settlements.size()):
@@ -125,7 +125,7 @@ func _enemy_settlement(faction:String) -> int:
             continue
         if world.get_diplomacy(faction,owner) != "war":
             continue
-        var distance := abs(int(settlement.get("region",0)) - int(world.get("player_region_id")))
+        var distance := abs(int(settlement.get("region",0)) - from_region)
         if distance < best_distance:
             best_distance = distance
             best = i
