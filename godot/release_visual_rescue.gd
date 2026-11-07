@@ -199,16 +199,16 @@ func _build_forest() -> void:
 func _build_banners() -> void:
     for data in [
         [Vector3(-8,0,-12),_mat("blue")],
-        [Vector3(10,0,-14),_mat("red")],
-        [Vector3(0,0,0),_mat("gold")]
+        [Vector3(10,0,-14),_mat("red", Color("#9d3030"))],
+        [Vector3(0,0,0),_mat("gold", Color("#d6a43a"))]
     ]:
         var p: Vector3 = data[0]
         var pole := Node3D.new()
         pole.position = p
         root.add_child(pole)
-        _mesh_cylinder(0.09, 4.0, Vector3(0,2,0), _mat("wood_dark"), pole, 8)
+        _mesh_cylinder(0.09, 4.0, Vector3(0,2,0), _mat("wood_dark", Color("#3e2618")), pole, 8)
         _mesh_box(Vector3(1.2,0.8,0.08), Vector3(0.55,3.35,0), data[1], pole)
-        _mesh_cylinder(0.16,0.22,Vector3(0,4.1,0),_mat("gold"),pole,8)
+        _mesh_cylinder(0.16,0.22,Vector3(0,4.1,0),_mat("gold", Color("#d6a43a")),pole,8)
 
 func _build_lighting_accents() -> void:
     for p in [Vector3(-8,0,-7),Vector3(10,0,-10),Vector3(0,0,13)]:
