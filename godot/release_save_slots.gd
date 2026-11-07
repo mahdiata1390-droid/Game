@@ -7,9 +7,9 @@ var label:Label
 
 func build(main:Node)->void:
 	host=main
-	var layer:=CanvasLayer.new()
+	var layer=CanvasLayer.new()
 	host.add_child(layer)
-	var open:=Button.new()
+	var open=Button.new()
 	open.text="SAVE SLOTS"
 	open.position=Vector2(1020,525)
 	open.size=Vector2(180,48)
@@ -20,7 +20,7 @@ func build(main:Node)->void:
 	panel.size=Vector2(520,370)
 	panel.visible=false
 	layer.add_child(panel)
-	var title:=Label.new()
+	var title=Label.new()
 	title.text="CAMPAIGN SAVE"
 	title.position=Vector2(24,20)
 	title.add_theme_font_size_override("font_size",24)
@@ -29,13 +29,13 @@ func build(main:Node)->void:
 	label.position=Vector2(24,70)
 	label.size=Vector2(470,150)
 	panel.add_child(label)
-	var save:=Button.new()
+	var save=Button.new()
 	save.text="SAVE CAMPAIGN"
 	save.position=Vector2(24,240)
 	save.size=Vector2(210,50)
 	save.pressed.connect(_save)
 	panel.add_child(save)
-	var load:=Button.new()
+	var load=Button.new()
 	load.text="LOAD CAMPAIGN"
 	load.position=Vector2(260,240)
 	load.size=Vector2(210,50)
@@ -49,12 +49,12 @@ func _refresh()->void:
 		label.text="Day %d\nGold %d\nSettlements %d\nArmies %d\nSieges %d" % [int(s.get("day",1)),int(s.get("gold",0)),int(s.get("settlements",0)),int(s.get("armies",0)),int(s.get("sieges",0))]
 
 func _save()->void:
-	var ok:=host.world_state.save_game()
+	var ok=host.world_state.save_game()
 	host._show_status("SAVE • "+("SUCCESS" if ok else "FAILED"),2.0)
 	_refresh()
 
 func _load()->void:
-	var ok:=host.world_state.load_game()
+	var ok=host.world_state.load_game()
 	host._show_status("LOAD • "+("SUCCESS" if ok else "NO SAVE"),2.0)
 	_refresh()
 
