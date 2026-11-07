@@ -9,8 +9,8 @@ class_name ReleaseFinalCompletion
 var game: Node3D
 var world: Node
 var player: CharacterBody3D
-var rng := RandomNumberGenerator.new()
-var combat := {"cooldown":0.0,"parry_window":0.0,"stamina":100.0,"max_stamina":100.0,"combo":0,"weapon":"iron_sword"}
+var rng = RandomNumberGenerator.new()
+var combat = {"cooldown":0.0,"parry_window":0.0,"stamina":100.0,"max_stamina":100.0,"combo":0,"weapon":"iron_sword"}
 var projectiles:Array[Node3D] = []
 var npc_jobs:Array[Dictionary] = []
 var npc_visuals:Array[Node3D] = []
@@ -19,9 +19,9 @@ var animation_nodes:Array[Node] = []
 var siege_runtime:Dictionary = {}
 var naval_runtime:Dictionary = {}
 var qa:Dictionary = {"checks":0,"warnings":0,"errors":0,"last":[]}
-var tick:=0.0
-var strategic_tick:=0.0
-var life_tick:=0.0
+var tick=0.0
+var strategic_tick=0.0
+var life_tick=0.0
 
 func _restore_state() -> void:
 	if world == null:
@@ -92,8 +92,8 @@ func attack(weapon:String="")->Dictionary:
 	combat["cooldown"]=0.42*float(w[1])
 	combat["parry_window"]=0.16
 	combat["combo"]=(int(combat["combo"])+1)%3
-	var target:=_nearest_enemy(float(w[2])+0.8)
-	var damage:=int(round(float(w[0])*(1.0+float(combat["combo"])*0.12)))
+	var target=_nearest_enemy(float(w[2])+0.8)
+	var damage=int(round(float(w[0])*(1.0+float(combat["combo"])*0.12)))
 	if target!=null:
 		play_attack_animation()
 		if game.has_method("_damage_troop"):
@@ -125,12 +125,12 @@ func receive_attack(raw_damage:int)->int:
 func ranged_attack()->Dictionary:
 	if player==null or float(combat["stamina"])<18.0:
 		return {"ok":false,"reason":"stamina"}
-	var target:=_nearest_enemy(24.0)
+	var target=_nearest_enemy(24.0)
 	if target==null:
 		return {"ok":true,"hit":false}
 	combat["stamina"]-=18.0
-	var p:=MeshInstance3D.new()
-	var mesh:=BoxMesh.new()
+	var p=MeshInstance3D.new()
+	var mesh=BoxMesh.new()
 	mesh.size=Vector3(0.06,0.06,0.42)
 	p.mesh=mesh
 	p.global_position=player.global_position+Vector3(0,1.25,0)
@@ -143,14 +143,14 @@ func ranged_attack()->Dictionary:
 
 func _update_projectiles(delta:float)->void:
 	for i in range(projectiles.size()-1,-1,-1):
-		var p:=projectiles[i]
+		var p=projectiles[i]
 		if not is_instance_valid(p):
 			projectiles.remove_at(i)
 			continue
-		var target:=p.get_meta("target") as Node3D
+		var target=p.get_meta("target") as Node3D
 		if not is_instance_valid(target):
 			p.queue_free(); projectiles.remove_at(i); continue
-		var dst:=target.global_position+Vector3(0,1.0,0)
+		var dst=target.global_position+Vector3(0,1.0,0)
 		p.global_position=p.global_position.move_toward(dst,22.0*delta)
 		if p.global_position.distance_to(dst)<0.35:
 			if game.has_method("_damage_troop"):
@@ -160,15 +160,15 @@ func _update_projectiles(delta:float)->void:
 
 func _nearest_enemy(max_distance:float)->Node3D:
 	var best:Node3D
-	var best_distance:=max_distance
+	var best_distance=max_distance
 	var troops:Array=game.get("troops") if game.get("troops")!=null else []
 	for entry in troops:
 		if String(entry.get("team",""))!="ENEMY":
 			continue
-		var node:=entry.get("node") as Node3D
+		var node=entry.get("node") as Node3D
 		if not is_instance_valid(node):
 			continue
-		var d:=player.global_position.distance_to(node.global_position)
+		var d=player.global_position.distance_to(node.global_position)
 		if d<best_distance:
 			best_distance=d
 			best=node
@@ -179,15 +179,15 @@ func _setup_runtime_animation()->void:
 	# asset is required and the character gets visible attack/hit locomotion.
 	if player==null:
 		return
-	var ap:=player.get_node_or_null("FinalAnimationPlayer") as AnimationPlayer
+	var ap=player.get_node_or_null("FinalAnimationPlayer") as AnimationPlayer
 	if ap==null:
 		ap=AnimationPlayer.new()
 		ap.name="FinalAnimationPlayer"
 		player.add_child(ap)
-	var lib:=AnimationLibrary.new()
-	var attack_anim:=Animation.new()
+	var lib=AnimationLibrary.new()
+	var attack_anim=Animation.new()
 	attack_anim.length=0.36
-	var track:=attack_anim.add_track(Animation.TYPE_ROTATION_3D)
+	var track=attack_anim.add_track(Animation.TYPE_ROTATION_3D)
 	attack_anim.track_set_path(track,NodePath("."))
 	attack_anim.track_insert_key(track,0.0,Quaternion.from_euler(Vector3(0,0,0)))
 	attack_anim.track_insert_key(track,0.12,Quaternion.from_euler(Vector3(-0.08,0.25,0)))
@@ -198,7 +198,7 @@ func _setup_runtime_animation()->void:
 	animation_nodes.append(ap)
 
 func play_attack_animation()->void:
-	var ap:=player.get_node_or_null("FinalAnimationPlayer") as AnimationPlayer
+	var ap=player.get_node_or_null("FinalAnimationPlayer") as AnimationPlayer
 	if ap!=null:
 		ap.play("attack")
 
@@ -209,7 +209,7 @@ func play_attack_animation()->void:
 func start_siege(settlement_id:int)->Dictionary:
 	if world==null or settlement_id<0 or settlement_id>=world.settlements.size():
 		return {"ok":false,"reason":"invalid_settlement"}
-	var army_id:=_player_army_id()
+	var army_id=_player_army_id()
 	if army_id<0 or not world.has_method("start_siege"):
 		return {"ok":false,"reason":"no_army"}
 	var result:Dictionary=world.start_siege(settlement_id,army_id)
@@ -240,16 +240,16 @@ func use_siege_equipment(kind:String)->Dictionary:
 	return {"ok":true,"breach":bool(siege_runtime["breach"]),"wall_hp":int(siege_runtime["wall_hp"]),"gate_hp":int(siege_runtime["gate_hp"])}
 
 func _spawn_siege_equipment()->void:
-	var root:=Node3D.new()
+	var root=Node3D.new()
 	root.name="FinalSiegeEquipment"
 	game.add_child(root)
 	for spec in [["Ram",Vector3(2,0.7,1),Vector3(-3,0.35,-2)],["Catapult",Vector3(1.5,1.0,1.2),Vector3(3,0.5,-2)],["Tower",Vector3(1.6,4.0,1.6),Vector3(0,2,-4)]]:
-		var n:=MeshInstance3D.new()
-		var m:=BoxMesh.new()
+		var n=MeshInstance3D.new()
+		var m=BoxMesh.new()
 		m.size=spec[1]
 		n.mesh=m
 		n.position=spec[2]
-		var mat:=StandardMaterial3D.new()
+		var mat=StandardMaterial3D.new()
 		mat.albedo_color=Color(0.28,0.18,0.10)
 		n.material_override=mat
 		root.add_child(n)
@@ -277,19 +277,19 @@ func _strategic_ai_tick()->void:
 		return
 	for i in range(world.armies.size()):
 		var army:Dictionary=world.armies[i]
-		var owner:=String(army.get("owner",""))
+		var owner=String(army.get("owner",""))
 		if owner==String(world.player_faction):
 			continue
-		var morale:=int(army.get("morale",50))
-		var food:=int(army.get("food",0))
-		var region_id:=int(army.get("region",0))
+		var morale=int(army.get("morale",50))
+		var food=int(army.get("food",0))
+		var region_id=int(army.get("region",0))
 		if morale<30 or food<15:
 			army["order"]="retreat"
 			var neighbors:Array=world.get_region_neighbors(region_id)
 			if not neighbors.is_empty():
 				army["region"]=neighbors[rng.randi_range(0,neighbors.size()-1)]
 			continue
-		var target:=_best_hostile_region(owner,region_id)
+		var target=_best_hostile_region(owner,region_id)
 		if target>=0 and int(army.get("soldiers",0))>=70:
 			army["order"]="attack"
 			army["target_region"]=target
@@ -299,23 +299,23 @@ func _strategic_ai_tick()->void:
 			army["order"]="patrol"
 	# Diplomatic drift makes the sandbox evolve even when the player does nothing.
 	for key in world.diplomacy.keys():
-		var state:=String(world.diplomacy[key])
+		var state=String(world.diplomacy[key])
 		if state=="war" and rng.randf()<0.08:
 			world.diplomacy[key]="peace"
 		elif state=="peace" and rng.randf()<0.035:
 			world.diplomacy[key]="war"
 
 func _best_hostile_region(owner:String,region_id:int)->int:
-	var best:=-1
-	var best_score:=-99999
+	var best=-1
+	var best_score=-99999
 	for rid in world.get_region_neighbors(region_id):
-		var other:=String(world.regions[rid].get("owner",""))
+		var other=String(world.regions[rid].get("owner",""))
 		if other==owner:
 			continue
-		var relation:=_relation(owner,other)
+		var relation=_relation(owner,other)
 		if relation>=0:
 			continue
-		var score:=int(world.regions[rid].get("prosperity",0))+int(world.regions[rid].get("population",0))/100
+		var score=int(world.regions[rid].get("prosperity",0))+int(world.regions[rid].get("population",0))/100
 		if score>best_score:
 			best_score=score
 			best=rid
@@ -324,7 +324,7 @@ func _best_hostile_region(owner:String,region_id:int)->int:
 func _relation(a:String,b:String)->int:
 	if a==b:
 		return 100
-	var fa:=world._get_faction(a)
+	var fa=world._get_faction(a)
 	if fa.is_empty():
 		return 0
 	return int(fa.get("relations",{}).get(b,0))
@@ -340,21 +340,21 @@ func trade_with_settlement(settlement_id:int,resource:String,amount:int,buy:bool
 		return {"ok":false}
 	var s:Dictionary=world.settlements[settlement_id]
 	var stock:Dictionary=s.get("stockpile",{})
-	var prosperity:=int(s.get("prosperity",50))
-	var base:=float({"food":1.0,"wood":1.4,"iron":2.2,"horses":4.0,"spice":3.0}.get(resource,1.0))
-	var scarcity:=clamp(1.0+(float(60-int(stock.get(resource,0)))/100.0),0.65,2.2)
-	var price:=max(1.0,base*scarcity*(1.0+(50.0-float(prosperity))/300.0))
+	var prosperity=int(s.get("prosperity",50))
+	var base=float({"food":1.0,"wood":1.4,"iron":2.2,"horses":4.0,"spice":3.0}.get(resource,1.0))
+	var scarcity=clamp(1.0+(float(60-int(stock.get(resource,0)))/100.0),0.65,2.2)
+	var price=max(1.0,base*scarcity*(1.0+(50.0-float(prosperity))/300.0))
 	if buy:
-		var available:=min(amount,int(stock.get(resource,0)))
-		var cost:=int(ceil(price*available))
+		var available=min(amount,int(stock.get(resource,0)))
+		var cost=int(ceil(price*available))
 		if available<=0 or world.gold<cost:
 			return {"ok":false,"reason":"unavailable","price":price}
 		world.gold-=cost
 		stock[resource]=int(stock.get(resource,0))-available
 		world.player_inventory[resource]=int(world.player_inventory.get(resource,0))+available
 		return {"ok":true,"amount":available,"cost":cost,"price":price}
-	var owned:=min(amount,int(world.player_inventory.get(resource,0)))
-	var gain:=int(floor(price*0.82*owned))
+	var owned=min(amount,int(world.player_inventory.get(resource,0)))
+	var gain=int(floor(price*0.82*owned))
 	if owned<=0:
 		return {"ok":false,"reason":"no_stock"}
 	world.player_inventory[resource]=int(world.player_inventory.get(resource,0))-owned
@@ -371,9 +371,9 @@ func board_ship(attacker_id:int,target_id:int)->Dictionary:
 		return {"ok":false}
 	var a:Dictionary=world.ships[attacker_id]
 	var b:Dictionary=world.ships[target_id]
-	var attack_power:=int(a.get("crew",0))+int(a.get("cargo",{}).get("iron",0))*2
-	var defense_power:=int(b.get("crew",0))+int(b.get("cargo",{}).get("iron",0))
-	var win:=attack_power>=defense_power
+	var attack_power=int(a.get("crew",0))+int(a.get("cargo",{}).get("iron",0))*2
+	var defense_power=int(b.get("crew",0))+int(b.get("cargo",{}).get("iron",0))
+	var win=attack_power>=defense_power
 	naval_runtime["boarding"]={"attacker":attacker_id,"target":target_id,"won":win}
 	if win:
 		var loot:Dictionary=b.get("cargo",{}).duplicate(true)
@@ -389,12 +389,12 @@ func resolve_ship_travel(ship_id:int)->Dictionary:
 	var ship:Dictionary=world.ships[ship_id]
 	if not bool(ship.get("moving",false)):
 		return {"ok":true,"moving":false}
-	var target:=int(ship.get("target_region",ship.get("region",0)))
+	var target=int(ship.get("target_region",ship.get("region",0)))
 	ship["region"]=target
 	ship["moving"]=false
 	ship["fatigue"]=min(100,int(ship.get("fatigue",0))+12)
 	if ship.has("cargo") and ship["cargo"].has("army"):
-		var army_id:=int(ship["cargo"]["army"])
+		var army_id=int(ship["cargo"]["army"])
 		if army_id>=0 and army_id<world.armies.size():
 			world.armies[army_id]["region"]=target
 			world.armies[army_id]["transported_by"]=-1
@@ -418,8 +418,8 @@ func advance_family_day()->void:
 	_update_heir()
 
 func _update_heir()->void:
-	var best_name:="Unnamed Heir"
-	var best_age:=-1
+	var best_name="Unnamed Heir"
+	var best_age=-1
 	for member in world.family_members:
 		if String(member.get("role",""))=="adult" and int(member.get("age",0))>best_age:
 			best_age=int(member["age"])
@@ -452,7 +452,7 @@ func _add_xp(amount:int)->void:
 func spend_skill(skill:String)->Dictionary:
 	if not ["combat","command","trade","diplomacy","survival"].has(skill):
 		return {"ok":false}
-	var points:=int(world.get_meta("final_skill_points",0))
+	var points=int(world.get_meta("final_skill_points",0))
 	if points<=0:
 		return {"ok":false,"reason":"no_points"}
 	world.set_meta("final_skill_points",points-1)
@@ -472,22 +472,22 @@ func _setup_npc_jobs()->void:
 		return
 	for i in range(min(60,world.settlements.size()*3)):
 		var s:Dictionary=world.settlements[i%world.settlements.size()]
-		var job := ["farmer","merchant","guard","craftsman"][i%4]
+		var job = ["farmer","merchant","guard","craftsman"][i%4]
 		npc_jobs.append({"settlement":int(s["id"]),"job":job,"shift":i%3,"x":float(s["position"].x)+rng.randf_range(-3,3),"z":float(s["position"].y)+rng.randf_range(-3,3),"target":"farm" if job=="farmer" else ("market" if job=="merchant" else ("gate" if job=="guard" else "workshop"))})
 
 func _update_npc_jobs()->void:
 	for npc in npc_jobs:
-		var sid:=int(npc["settlement"])
+		var sid=int(npc["settlement"])
 		if sid<0 or sid>=world.settlements.size():
 			continue
 		var s:Dictionary=world.settlements[sid]
 		var center:Vector2=s.get("position",Vector2.ZERO)
-		var job:=String(npc["job"])
-		var hour:=world.time_of_day
-		var danger:=_settlement_is_in_danger(sid)
-		var target:=_job_target(s,job,hour,danger)
-		var current:=Vector2(float(npc["x"]),float(npc["z"]))
-		var next:=current.move_toward(target,0.9)
+		var job=String(npc["job"])
+		var hour=world.time_of_day
+		var danger=_settlement_is_in_danger(sid)
+		var target=_job_target(s,job,hour,danger)
+		var current=Vector2(float(npc["x"]),float(npc["z"]))
+		var next=current.move_toward(target,0.9)
 		npc["x"]=clamp(next.x,float(center.x)-12.0,float(center.x)+12.0)
 		npc["z"]=clamp(next.y,float(center.y)-12.0,float(center.y)+12.0)
 		npc["state"]="flee" if danger and job!="guard" else ("work" if not danger else "defend")
@@ -507,11 +507,11 @@ func _update_npc_jobs()->void:
 
 func _settlement_is_in_danger(sid:int)->bool:
 	for army in world.armies:
-		var rid:=int(army.get("region",-1))
+		var rid=int(army.get("region",-1))
 		if rid<0 or rid>=world.regions.size():
 			continue
-		var owner:=String(world.regions[rid].get("owner",""))
-		var settlement_owner:=String(world.settlements[sid].get("owner",""))
+		var owner=String(world.regions[rid].get("owner",""))
+		var settlement_owner=String(world.settlements[sid].get("owner",""))
 		if owner!=settlement_owner and _relation(owner,settlement_owner)<0:
 			return true
 	return false
@@ -522,7 +522,7 @@ func _job_target(s:Dictionary,job:String,hour:float,danger:bool)->Vector2:
 		if job=="guard":
 			return center+Vector2(0,-5)
 		return center+Vector2(0,6)
-	var phase:=int(floor(hour/4.0))%6
+	var phase=int(floor(hour/4.0))%6
 	if job=="farmer":
 		return center+Vector2(-7,5) if phase%2==0 else center+Vector2(-5,7)
 	if job=="merchant":
@@ -534,8 +534,8 @@ func _job_target(s:Dictionary,job:String,hour:float,danger:bool)->Vector2:
 func _setup_settlement_runtime()->void:
 	settlement_runtime.clear()
 	for s in world.settlements:
-		var sid:=int(s.get("id",settlement_runtime.size()))
-		var kind:=String(s.get("type","village"))
+		var sid=int(s.get("id",settlement_runtime.size()))
+		var kind=String(s.get("type","village"))
 		settlement_runtime[sid]={
 			"services":["well","market","farm","workshop"] if kind=="village" else (["well","inn","market","guild","blacksmith","barracks"] if kind=="town" else (["market","guild","tavern","blacksmith","barracks","keep","armory","training_yard"] if kind=="castle" else ["market","guild","tavern","blacksmith","barracks","keep","armory","training_yard","farm","workshop"])),
 			"port": kind=="town" and (sid%5==0 or sid==11),
@@ -549,7 +549,7 @@ func _update_settlement_runtime()->void:
 			continue
 		var s:Dictionary=world.settlements[int(sid)]
 		var rt:Dictionary=settlement_runtime[sid]
-		var night:=world.time_of_day>=22.0 or world.time_of_day<6.0
+		var night=world.time_of_day>=22.0 or world.time_of_day<6.0
 		rt["open"]=not night or rt["services"].has("tavern")
 		if bool(rt["port"]):
 			s["prosperity"]=clamp(int(s.get("prosperity",50))+(1 if world.weather!="storm" else -2),0,100)
@@ -563,7 +563,7 @@ func bind_npc_visuals(nodes:Array)->void:
 			npc_visuals.append(node)
 	for i in range(min(npc_visuals.size(),npc_jobs.size())):
 		npc_jobs[i]["visual"]=npc_visuals[i]
-		var s:=world.settlements[int(npc_jobs[i]["settlement"])]
+		var s=world.settlements[int(npc_jobs[i]["settlement"])]
 		npc_visuals[i].position=Vector3(float(npc_jobs[i]["x"]),0.0,float(npc_jobs[i]["z"]))
 
 func get_settlement_services(settlement_id:int)->Dictionary:
@@ -579,8 +579,8 @@ func get_settlement_status(settlement_id:int)->Dictionary:
 func _life_world_tick()->void:
 	advance_family_day()
 	for s in world.settlements:
-		var pop:=int(s.get("population",100))
-		var prosperity:=int(s.get("prosperity",50))
+		var pop=int(s.get("population",100))
+		var prosperity=int(s.get("prosperity",50))
 		s["population"]=pop+max(1,int(pop*0.0015*(0.5+float(prosperity)/100.0)))
 		if prosperity<20:
 			s["population"]=max(20,int(s["population"])-1)
@@ -612,7 +612,7 @@ func route_to_region(from_id:int,to_id:int)->Array:
 			previous[n]=current
 			if n==to_id:
 				var path:Array=[to_id]
-				var c:=to_id
+				var c=to_id
 				while int(previous[c])!=-1:
 					c=int(previous[c])
 					path.push_front(c)
@@ -621,7 +621,7 @@ func route_to_region(from_id:int,to_id:int)->Array:
 	return []
 
 func travel_route(to_id:int)->Dictionary:
-	var path:=route_to_region(int(world.player_region_id),to_id)
+	var path=route_to_region(int(world.player_region_id),to_id)
 	if path.is_empty():
 		return {"ok":false,"reason":"no_route"}
 	for i in range(1,path.size()):
