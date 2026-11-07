@@ -71,6 +71,7 @@ var final_game_pass: ReleaseFinalGamePass
 var playable_world: Node
 var final_qa: ReleaseFinalQA
 var campaign_loop: ReleaseCampaignLoop
+var war_loop: ReleaseWarLoop
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -173,6 +174,10 @@ func _boot_gameplay() -> void:
 	campaign_loop.name = "CampaignLoop"
 	add_child(campaign_loop)
 	campaign_loop.build(self)
+	war_loop = ReleaseWarLoop.new()
+	war_loop.name = "WarLoop"
+	add_child(war_loop)
+	war_loop.build(self)
 	playable_world = preload("res://release_playable_world.gd").new()
 	playable_world.name = "PlayableWorld"
 	add_child(playable_world)
