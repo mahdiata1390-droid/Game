@@ -397,7 +397,7 @@ func _rebuild_cargo_trade_controls() -> void:
     for i in range(min(ids.size(), 2)):
         var ship_id := ids[i]
         for j in range(resources.size()):
-            var resource := resources[j]
+            var resource: String = String(resources[j])
             var b := Button.new()
             b.text = "SELL %s • SHIP %d" % [resource.to_upper(), ship_id + 1]
             b.position = Vector2(28 + j * 250, 672 + i * 24)
