@@ -3,7 +3,7 @@ class_name ReleaseCombatFeedback
 
 var game: Node3D
 var world: Node
-var tick := 0.0
+var tick = 0.0
 
 func build(main_node: Node3D) -> void:
     game = main_node
@@ -29,8 +29,8 @@ func _refresh_bars() -> void:
         var node_value: Variant = troop_value.get("node")
         if not (node_value is Node3D) or not is_instance_valid(node_value):
             continue
-        var hp := int(troop_value.get("hp", troop_value.get("health", 100)))
-        var label := node_value.get_node_or_null("CombatHP") as Label3D
+        var hp = int(troop_value.get("hp", troop_value.get("health", 100)))
+        var label = node_value.get_node_or_null("CombatHP") as Label3D
         if label == null:
             label = Label3D.new()
             label.name = "CombatHP"
