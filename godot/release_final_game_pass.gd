@@ -4,13 +4,13 @@ class_name ReleaseFinalGamePass
 # Final integration pass: turns the existing systems into a coherent playable loop.
 var game:Node3D
 var world:Node
-var tick:=0.0
-var day_accumulator:=0.0
-var save_interval:=90.0
-var save_timer:=0.0
+var tick=0.0
+var day_accumulator=0.0
+var save_interval=90.0
+var save_timer=0.0
 var settings:Dictionary={"quality":"balanced","fps":60}
 var qa:Dictionary={"checks":0,"errors":0,"last":"not_run"}
-var mounted:=false
+var mounted=false
 var current_target:Dictionary={}
 var status:Label
 
@@ -50,9 +50,9 @@ func select_target(target_id:String,target_type:String)->void:
 
 # Unified world-map presentation
 func get_world_snapshot()->Dictionary:
-    var settlements_count:=world.settlements.size() if world != null else 0
-    var armies_count:=world.armies.size() if world != null else 0
-    var ships_count:=world.ships.size() if world != null and world.get("ships") is Array else 0
+    var settlements_count=world.settlements.size() if world != null else 0
+    var armies_count=world.armies.size() if world != null else 0
+    var ships_count=world.ships.size() if world != null and world.get("ships") is Array else 0
     return {"day":int(world.get("day")),"settlements":settlements_count,"armies":armies_count,"ships":ships_count,
         "player_region":String(world.get("player_region_id"))}
 
@@ -70,7 +70,7 @@ func _autosave()->void:
 
 # Mobile quality
 func set_quality(preset:String)->void:
-    var fps:=60
+    var fps=60
     if preset=="performance": fps=30
     elif preset=="balanced": fps=45
     settings={"quality":preset,"fps":fps}
@@ -79,17 +79,17 @@ func set_quality(preset:String)->void:
     _save_settings()
 
 func _apply_fps_cap()->void:
-    var cap:=int(settings.get("fps",60))
+    var cap=int(settings.get("fps",60))
     Engine.max_fps=cap
 
 func _save_settings()->void:
-    var file:=FileAccess.open("user://final_game_settings.json",FileAccess.WRITE)
+    var file=FileAccess.open("user://final_game_settings.json",FileAccess.WRITE)
     if file:
         file.store_string(JSON.stringify(settings))
 
 func _load_settings()->void:
     if not FileAccess.file_exists("user://final_game_settings.json"): return
-    var file:=FileAccess.open("user://final_game_settings.json",FileAccess.READ)
+    var file=FileAccess.open("user://final_game_settings.json",FileAccess.READ)
     if file:
         var parsed=JSON.parse_string(file.get_as_text())
         if parsed is Dictionary:
@@ -114,10 +114,10 @@ func _check(value:bool,name:String)->void:
         qa["last"]=name
 
 func _build_ui()->void:
-    var layer:=CanvasLayer.new()
+    var layer=CanvasLayer.new()
     layer.name="FinalGamePassUI"
     game.add_child(layer)
-    var panel:=Panel.new()
+    var panel=Panel.new()
     panel.position=Vector2(18,675)
     panel.size=Vector2(430,70)
     panel.modulate.a=0.88
@@ -130,7 +130,7 @@ func _build_ui()->void:
 
 func _update_status()->void:
     if not is_instance_valid(status): return
-    var s:=get_world_snapshot()
+    var s=get_world_snapshot()
     status.text="WORLD DAY %d • S:%d A:%d • Mount:%s • QA:%s" % [int(s.get("day",0)),int(s.get("settlements",0)),int(s.get("armies",0)),str(mounted),String(qa.get("last",""))]
 
 func get_save_state()->Dictionary:
