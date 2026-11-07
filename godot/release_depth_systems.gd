@@ -8,9 +8,9 @@ var world: Node
 var combat: Dictionary = {}
 var siege: Dictionary = {}
 var naval: Dictionary = {}
-var ai_clock := 0.0
-var perf_clock := 0.0
-var battle_clock := 0.0
+var ai_clock = 0.0
+var perf_clock = 0.0
+var battle_clock = 0.0
 var panel: Panel
 var label: Label
 
@@ -36,10 +36,10 @@ func _process(delta: float) -> void:
 	_update_panel()
 
 func _build_panel() -> void:
-	var layer := CanvasLayer.new()
+	var layer = CanvasLayer.new()
 	layer.name = "DepthSystemsLayer"
 	host.add_child(layer)
-	var button := Button.new()
+	var button = Button.new()
 	button.text = "DEPTH SYSTEMS"
 	button.position = Vector2(1010, 515)
 	button.size = Vector2(190, 42)
@@ -56,7 +56,7 @@ func _build_panel() -> void:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", 17)
 	panel.add_child(label)
-	var close := Button.new()
+	var close = Button.new()
 	close.text = "CLOSE"
 	close.position = Vector2(500, 445)
 	close.size = Vector2(120, 36)
@@ -75,20 +75,20 @@ func _update_panel() -> void:
 func player_strike() -> Dictionary:
 	if not is_instance_valid(host.player):
 		return {"ok":false,"reason":"no_player"}
-	var stamina := float(combat.get("stamina",100.0))
+	var stamina = float(combat.get("stamina",100.0))
 	if stamina < 12.0:
 		return {"ok":false,"reason":"exhausted"}
-	var weapon := String(host.world_state.player_equipment.get("weapon","iron_sword"))
-	var stats := _weapon_stats(weapon)
-	var combo := int(combat.get("combo",0))
+	var weapon = String(host.world_state.player_equipment.get("weapon","iron_sword"))
+	var stats = _weapon_stats(weapon)
+	var combo = int(combat.get("combo",0))
 	combo = (combo % 3) + 1
 	combat["combo"] = combo
 	combat["stamina"] = stamina - float(stats.stamina)
 	combat["weapon"] = weapon
-	var target := _nearest_enemy(stats.range)
+	var target = _nearest_enemy(stats.range)
 	if target == null:
 		return {"ok":false,"reason":"miss"}
-	var damage := int(float(stats.damage) * (1.0 + float(combo-1) * 0.12))
+	var damage = int(float(stats.damage) * (1.0 + float(combo-1) * 0.12))
 	host._damage_troop(target, damage)
 	_apply_hit_reaction(target, stats.knockback)
 	return {"ok":true,"damage":damage,"combo":combo,"weapon":weapon}
@@ -108,14 +108,14 @@ func _weapon_stats(name: String) -> Dictionary:
 
 func _nearest_enemy(max_range: float) -> Node3D:
 	var best: Node3D
-	var best_d := max_range
+	var best_d = max_range
 	for data in host.troops:
 		if String(data.get("team","")) != "ENEMY":
 			continue
-		var node := data.get("node") as Node3D
+		var node = data.get("node") as Node3D
 		if not is_instance_valid(node):
 			continue
-		var d := host.player.global_position.distance_to(node.global_position)
+		var d = host.player.global_position.distance_to(node.global_position)
 		if d <= best_d:
 			best_d = d
 			best = node
@@ -124,8 +124,8 @@ func _nearest_enemy(max_range: float) -> Node3D:
 func _apply_hit_reaction(target: Node3D, amount: float) -> void:
 	if not is_instance_valid(target):
 		return
-	var start := target.position
-	var tween := create_tween()
+	var start = target.position
+	var tween = create_tween()
 	tween.tween_property(target,"position",start + Vector3(0,0,amount),0.08)
 	tween.tween_property(target,"position",start,0.12)
 
@@ -134,11 +134,11 @@ func _tick_army_ai() -> void:
 	for army in world.armies:
 		if int(army.get("soldiers",0)) <= 0:
 			continue
-		var owner := String(army.get("owner",""))
-		var region := int(army.get("region",0))
-		var order := String(army.get("order","hold"))
-		var morale := int(army.get("morale",70))
-		var food := int(army.get("food",100))
+		var owner = String(army.get("owner",""))
+		var region = int(army.get("region",0))
+		var order = String(army.get("order","hold"))
+		var morale = int(army.get("morale",70))
+		var food = int(army.get("food",100))
 		if food < 15:
 			army["order"] = "retreat"
 			continue
@@ -149,7 +149,7 @@ func _tick_army_ai() -> void:
 		for n in world.get_region_neighbors(region):
 			if n < 0 or n >= world.regions.size():
 				continue
-			var target_owner := String(world.regions[n].get("owner",""))
+			var target_owner = String(world.regions[n].get("owner",""))
 			if _is_war(owner,target_owner):
 				enemies.append(n)
 		if not enemies.is_empty() and order == "hold":
@@ -162,8 +162,8 @@ func _tick_army_ai() -> void:
 func _is_war(a: String,b: String) -> bool:
 	if a == b or a == "" or b == "":
 		return false
-	var k := a + "|" + b
-	var r := b + "|" + a
+	var k = a + "|" + b
+	var r = b + "|" + a
 	return String(world.diplomacy.get(k,world.diplomacy.get(r,"peace"))) == "war"
 
 func start_siege(settlement_id: int) -> Dictionary:
@@ -203,8 +203,8 @@ func damage_siege_wall(amount: int) -> Dictionary:
 func _tick_sieges() -> void:
 	if String(siege.get("state","idle")) == "idle":
 		return
-	var supply := int(siege.get("attacker_supply",100))
-	var morale := int(siege.get("defender_morale",100))
+	var supply = int(siege.get("attacker_supply",100))
+	var morale = int(siege.get("defender_morale",100))
 	supply = max(0,supply-1)
 	if supply < 25:
 		siege["state"] = "starving"
@@ -224,9 +224,9 @@ func naval_attack(ship_id: int, target_id: int) -> Dictionary:
 		return {"ok":false,"reason":"invalid_ship"}
 	var a: Dictionary = world.ships[ship_id]
 	var b: Dictionary = world.ships[target_id]
-	var ap := int(a.get("combat_power",int(a.get("crew",10))*2))
-	var bp := int(b.get("combat_power",int(b.get("crew",10))*2))
-	var damage := randi_range(8,20) + int(ap/10)
+	var ap = int(a.get("combat_power",int(a.get("crew",10))*2))
+	var bp = int(b.get("combat_power",int(b.get("crew",10))*2))
+	var damage = randi_range(8,20) + int(ap/10)
 	b["health"] = max(0,int(b.get("health",100))-damage)
 	b["fatigue"] = min(100,int(b.get("fatigue",0))+8)
 	world.ships[target_id] = b
@@ -240,8 +240,8 @@ func transport_army(ship_id: int, army_id: int) -> Dictionary:
 		return {"ok":false}
 	var ship: Dictionary = world.ships[ship_id]
 	var army: Dictionary = world.armies[army_id]
-	var capacity := int(ship.get("capacity",ship.get("crew",20)*3))
-	var soldiers := int(army.get("soldiers",0))
+	var capacity = int(ship.get("capacity",ship.get("crew",20)*3))
+	var soldiers = int(army.get("soldiers",0))
 	if soldiers > capacity:
 		return {"ok":false,"reason":"capacity"}
 	army["transported_by"] = ship_id
@@ -251,8 +251,8 @@ func transport_army(ship_id: int, army_id: int) -> Dictionary:
 
 func _tick_naval() -> void:
 	for ship in world.ships:
-		var fatigue := int(ship.get("fatigue",0))
-		var health := int(ship.get("health",100))
+		var fatigue = int(ship.get("fatigue",0))
+		var health = int(ship.get("health",100))
 		if String(world.weather) == "storm":
 			fatigue = min(100,fatigue+2)
 			health = max(0,health-1)
@@ -266,10 +266,10 @@ func _tick_naval() -> void:
 func _apply_mobile_lod() -> void:
 	if not is_instance_valid(host.player):
 		return
-	var p := host.player.global_position
+	var p = host.player.global_position
 	for child in host.get_children():
 		if child is MeshInstance3D:
-			var d := p.distance_to(child.global_position)
+			var d = p.distance_to(child.global_position)
 			child.visible = d < 85.0
 
 func get_state() -> Dictionary:
