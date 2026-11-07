@@ -6,7 +6,7 @@ class_name ReleaseCombatTactics
 ## tactical state that can be consumed by UI, AI and future real-time combat.
 
 var game:Node3D
-var world:Node
+var world
 var tick:=0.0
 var last_event:="COMBAT TACTICS READY"
 
