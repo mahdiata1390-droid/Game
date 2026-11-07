@@ -6,7 +6,7 @@ class_name ReleaseWorldSimulation
 ## sieges, settlement capture, recovery and simple trade activity.
 
 var game: Node3D
-var world: Node
+var world
 var tick := 0.0
 var day_clock := 0.0
 var actions := 0
