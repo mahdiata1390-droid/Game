@@ -116,7 +116,7 @@ func _seed_memory() -> void:
 		settlement_memory[int(settlement.get("id",0))] = int(settlement.get("prosperity",50))
 	for faction in world.factions:
 		var id = String(faction.get("id",""))
-		diplomacy_memory[id] = int(faction.get("relations",0))
+		diplomacy_memory[id] = faction.get("relations", {}).duplicate(true)
 		faction["stability"] = int(faction.get("stability",70))
 	for army in world.armies:
 		morale_memory[int(army.get("id",0))] = int(army.get("morale",70))
