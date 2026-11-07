@@ -23,7 +23,7 @@ func build(root: Node) -> void:
 	label = Label.new()
 	label.position = Vector2(12, 10)
 	label.size = Vector2(516, 125)
-	label.text = "WORLD EVENTS\\nNo events yet."
+	label.text = "WORLD EVENTS\nNo events yet."
 	panel.add_child(label)
 
 func _process(_delta: float) -> void:
@@ -37,4 +37,4 @@ func _process(_delta: float) -> void:
 	var lines: Array[String] = ["WORLD EVENTS"]
 	for i in range(start, events.size()):
 		lines.append("• " + String(events[i]))
-	label.text = "\\n".join(lines)
+	label.text = "\n".join(lines)
