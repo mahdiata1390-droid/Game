@@ -75,6 +75,7 @@ var war_loop: ReleaseWarLoop
 var world_simulation: ReleaseWorldSimulation
 var lord_intelligence: ReleaseLordIntelligence
 var economy_growth: ReleaseEconomyGrowth
+var combat_tactics: ReleaseCombatTactics
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -193,6 +194,10 @@ func _boot_gameplay() -> void:
 	economy_growth.name = "EconomyGrowth"
 	add_child(economy_growth)
 	economy_growth.build(self)
+	combat_tactics = ReleaseCombatTactics.new()
+	combat_tactics.name = "CombatTactics"
+	add_child(combat_tactics)
+	combat_tactics.build(self)
 	playable_world = preload("res://release_playable_world.gd").new()
 	playable_world.name = "PlayableWorld"
 	add_child(playable_world)
