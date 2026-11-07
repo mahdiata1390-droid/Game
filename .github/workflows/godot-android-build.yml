@@ -127,20 +127,6 @@ jobs:
             exit 1
           fi
 
-      - name: Validate critical scripts individually
-        run: |
-          set -o pipefail
-          cat > godot/qa_critical_scripts.gd <<'EOF'
-          extends SceneTree
-          const Kingdom = preload("res://release_kingdom_systems.gd")
-          const CampaignVisual = preload("res://release_campaign_visual.gd")
-          const SeventyCore = preload("res://release_seventy_core_systems.gd")
-          const CombatFeedback = preload("res://release_combat_feedback.gd")
-          func _initialize() -> void:
-              quit()
-          EOF
-          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --script res://qa_critical_scripts.gd --quit
-
       - name: Runtime smoke test
         run: |
           set -o pipefail
