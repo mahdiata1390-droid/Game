@@ -6,7 +6,7 @@ class_name ReleaseLordIntelligence
 ## armies receive defend/attack/raid/retreat decisions before marching.
 
 var game: Node3D
-var world: Node
+var world
 var tick := 0.0
 var lords: Dictionary = {}
 var last_decision := "LORD INTELLIGENCE READY"
