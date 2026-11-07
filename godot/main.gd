@@ -84,6 +84,12 @@ var settlement_management: ReleaseSettlementManagement
 var strategic_layer: ReleaseStrategicLayer
 var reinforcement_system: ReleaseReinforcementSystem
 var aftermath_recovery: ReleaseAftermathRecovery
+var world_map_polish: ReleaseWorldMapPolish
+var combat_polish: ReleaseCombatPolish
+var kingdom_politics: ReleaseKingdomPolitics
+var economy_balance: ReleaseEconomyBalance
+var presentation_polish: ReleasePresentationPolish
+var release_hardening: ReleaseReleaseHardening
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -238,6 +244,30 @@ func _boot_gameplay() -> void:
 	aftermath_recovery.name = "AftermathRecovery"
 	add_child(aftermath_recovery)
 	aftermath_recovery.build(self)
+	world_map_polish = ReleaseWorldMapPolish.new()
+	world_map_polish.name = "WorldMapPolish"
+	add_child(world_map_polish)
+	world_map_polish.build(self)
+	combat_polish = ReleaseCombatPolish.new()
+	combat_polish.name = "CombatPolish"
+	add_child(combat_polish)
+	combat_polish.build(self)
+	kingdom_politics = ReleaseKingdomPolitics.new()
+	kingdom_politics.name = "KingdomPolitics"
+	add_child(kingdom_politics)
+	kingdom_politics.build(self)
+	economy_balance = ReleaseEconomyBalance.new()
+	economy_balance.name = "EconomyBalance"
+	add_child(economy_balance)
+	economy_balance.build(self)
+	presentation_polish = ReleasePresentationPolish.new()
+	presentation_polish.name = "PresentationPolish"
+	add_child(presentation_polish)
+	presentation_polish.build(self)
+	release_hardening = ReleaseReleaseHardening.new()
+	release_hardening.name = "ReleaseHardening"
+	add_child(release_hardening)
+	release_hardening.build(self)
 	playable_world = preload("res://release_playable_world.gd").new()
 	playable_world.name = "PlayableWorld"
 	add_child(playable_world)
