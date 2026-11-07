@@ -8,10 +8,12 @@ var panel: Panel
 var info: Label
 var selected_army = 0
 var selected_settlement = 0
+var campaign: Node
 
 func build(root: Node) -> void:
 	host = root
 	world = root.get_node_or_null("WorldState")
+	campaign = root.get_node_or_null("CampaignLoop")
 	if world == null:
 		return
 	layer = CanvasLayer.new()
@@ -67,7 +69,7 @@ func _owned_settlement() -> int:
 
 func _update() -> void:
 	if world.armies.is_empty():
-		info.text = "No armies."
+		info.text = "No armies. Objective: "+(String(campaign.get_progress().get("next_objective","Raise your first army")) if campaign != null else "Raise your first army")
 		return
 	selected_army = clamp(selected_army, 0, world.armies.size()-1)
 	var a: Dictionary = world.armies[selected_army]
@@ -75,7 +77,8 @@ func _update() -> void:
 	var sname = "None"
 	if sid >= 0 and sid < world.settlements.size():
 		sname = String(world.settlements[sid].get("name",""))
-	info.text = "Army: %s\\nTroops: %d\\nMorale: %d\\nRegion: %s\\nFormation: %s\\nOrder: %s\\n\\nOwned settlement: %s" % [
+	var objective := String(campaign.get_progress().get("next_objective","")) if campaign != null else ""
+	info.text = "Objective: %s\\n\\nArmy: %s\\nTroops: %d\\nMorale: %d\\nRegion: %s\\nFormation: %s\\nOrder: %s\\n\\nOwned settlement: %s" % [
 		String(a.get("name","")), int(a.get("soldiers",0)), int(a.get("morale",0)),
 		String(world.regions[int(a.get("region",0))].get("name","")), String(a.get("formation","line")),
-		String(a.get("order","hold")), sname]
+		String(a.get("order","hold")), sname] + "\n\nCampaign: " + objective
