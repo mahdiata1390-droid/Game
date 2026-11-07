@@ -9,10 +9,10 @@ var action_option: OptionButton
 
 func build(main: Node) -> void:
 	host = main
-	var layer := CanvasLayer.new()
+	var layer = CanvasLayer.new()
 	layer.name = "DiplomacyBoardUI"
 	host.add_child(layer)
-	var button := Button.new()
+	var button = Button.new()
 	button.text = "DIPLOMACY"
 	button.position = Vector2(420, 345)
 	button.size = Vector2(180, 48)
@@ -23,7 +23,7 @@ func build(main: Node) -> void:
 	panel.size = Vector2(680, 540)
 	panel.visible = false
 	layer.add_child(panel)
-	var title := Label.new()
+	var title = Label.new()
 	title.text = "DIPLOMACY • FACTIONS"
 	title.position = Vector2(25, 20)
 	title.add_theme_font_size_override("font_size", 25)
@@ -43,13 +43,13 @@ func build(main: Node) -> void:
 	action_option.position = Vector2(345, 205)
 	action_option.size = Vector2(260, 48)
 	panel.add_child(action_option)
-	var apply := Button.new()
+	var apply = Button.new()
 	apply.text = "SET RELATION"
 	apply.position = Vector2(25, 275)
 	apply.size = Vector2(300, 50)
 	apply.pressed.connect(_apply)
 	panel.add_child(apply)
-	var refresh := Button.new()
+	var refresh = Button.new()
 	refresh.text = "REFRESH"
 	refresh.position = Vector2(345, 275)
 	refresh.size = Vector2(260, 50)
@@ -62,24 +62,24 @@ func _refresh() -> void:
 		return
 	faction_option.clear()
 	for f in host.world_state.factions:
-		var id := String(f.get("id",""))
+		var id = String(f.get("id",""))
 		if id != host.world_state.player_faction:
 			faction_option.add_item(String(f.get("name",id)))
 			faction_option.set_item_metadata(faction_option.item_count - 1, id)
 	var lines: Array[String] = ["Your faction: %s" % host.world_state.get_faction_name(host.world_state.player_faction)]
 	for f in host.world_state.factions:
-		var id := String(f.get("id",""))
+		var id = String(f.get("id",""))
 		if id == host.world_state.player_faction:
 			continue
-		var relation := host.world_state.get_diplomacy(host.world_state.player_faction, id)
+		var relation = host.world_state.get_diplomacy(host.world_state.player_faction, id)
 		lines.append("• %s: %s" % [String(f.get("name",id)), String(relation)])
 	label.text = "\n".join(lines.slice(0, 7))
 
 func _apply() -> void:
 	if faction_option.item_count == 0:
 		return
-	var id := String(faction_option.get_item_metadata(faction_option.selected))
-	var action := action_option.get_item_text(action_option.selected)
+	var id = String(faction_option.get_item_metadata(faction_option.selected))
+	var action = action_option.get_item_text(action_option.selected)
 	var result: Dictionary = host.world_state.set_diplomacy(host.world_state.player_faction, id, action)
 	host._show_status("DIPLOMACY • " + ("UPDATED" if result.get("ok",false) else String(result.get("reason","FAILED"))), 2.0)
 	_refresh()
