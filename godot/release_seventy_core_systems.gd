@@ -5,15 +5,15 @@ class_name ReleaseSeventyCoreSystems
 
 var host: Node
 var world: Node
-var tick := 0
+var tick = 0
 var morale_memory: Dictionary = {}
 var settlement_memory: Dictionary = {}
 var diplomacy_memory: Dictionary = {}
 var relation_memory: Dictionary = {}
 var character_memory: Dictionary = {}
 var quest_memory: Array[Dictionary] = []
-var weather_memory := "clear"
-var ui_report := "70 CORE SYSTEMS ONLINE"
+var weather_memory = "clear"
+var ui_report = "70 CORE SYSTEMS ONLINE"
 
 func build(main: Node) -> void:
 	host = main
@@ -115,41 +115,41 @@ func _seed_memory() -> void:
 	for settlement in world.settlements:
 		settlement_memory[int(settlement.get("id",0))] = int(settlement.get("prosperity",50))
 	for faction in world.factions:
-		var id := String(faction.get("id",""))
+		var id = String(faction.get("id",""))
 		diplomacy_memory[id] = int(faction.get("relations",0))
 		faction["stability"] = int(faction.get("stability",70))
 	for army in world.armies:
 		morale_memory[int(army.get("id",0))] = int(army.get("morale",70))
 
 func _build_ui() -> void:
-	var layer := CanvasLayer.new()
+	var layer = CanvasLayer.new()
 	layer.name = "Core100Layer"
 	host.add_child(layer)
-	var button := Button.new()
+	var button = Button.new()
 	button.text = "100 CORE"
 	button.position = Vector2(1010, 515)
 	button.size = Vector2(190, 44)
 	button.pressed.connect(_toggle)
 	layer.add_child(button)
-	var panel := Panel.new()
+	var panel = Panel.new()
 	panel.name = "Panel"
 	panel.position = Vector2(185, 55)
 	panel.size = Vector2(910, 610)
 	panel.visible = false
 	layer.add_child(panel)
-	var title := Label.new()
+	var title = Label.new()
 	title.name = "Title"
 	title.text = "MEDIEVAL SANDBOX • 100 CORE SYSTEMS"
 	title.position = Vector2(22,16)
 	title.add_theme_font_size_override("font_size",22)
 	panel.add_child(title)
-	var info := Label.new()
+	var info = Label.new()
 	info.name = "Info"
 	info.position = Vector2(22,58)
 	info.size = Vector2(850,450)
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(info)
-	var close := Button.new()
+	var close = Button.new()
 	close.text = "CLOSE"
 	close.position = Vector2(760,550)
 	close.size = Vector2(120,34)
@@ -158,13 +158,13 @@ func _build_ui() -> void:
 	_refresh_ui()
 
 func _toggle() -> void:
-	var p := get_node_or_null("Core100Layer/Panel") as Panel
+	var p = get_node_or_null("Core100Layer/Panel") as Panel
 	if p:
 		p.visible = not p.visible
 		_refresh_ui()
 
 func _refresh_ui() -> void:
-	var info := get_node_or_null("Core100Layer/Panel/Info") as Label
+	var info = get_node_or_null("Core100Layer/Panel/Info") as Label
 	if not info or not is_instance_valid(world):
 		return
 	info.text = "%s\n\n31-40  CHARACTER / ARMY\n41-50  SETTLEMENT / ECONOMY\n51-60  DIPLOMACY / FACTION AI\n61-70  EXPLORATION / ROADS / EVENTS\n71-80  SIEGE / BATTLE\n81-90  NAVAL / TRADE\n91-100 FAMILY / SUCCESSION / SANDBOX\n\nSettlements: %d   Armies: %d   Ships: %d\nFactions: %d   Sieges: %d\nWorld events: %d\n\nThese are live simulation systems attached to WorldState." % [ui_report,world.settlements.size(),world.armies.size(),world.ships.size(),world.factions.size(),world.sieges.size(),world.world_events.size()]
@@ -175,7 +175,7 @@ func _event(s: String) -> void:
 		world.world_events.pop_front()
 
 func _s31_character_stats() -> void:
-	var level := int(world.player_level)
+	var level = int(world.player_level)
 	character_memory["level"] = level
 	character_memory["combat"] = 10 + level * 2
 	character_memory["leadership"] = 5 + level
@@ -185,8 +185,8 @@ func _s32_experience_progression() -> void:
 		character_memory["xp"] = int(world.player_xp)
 
 func _s33_level_rewards() -> void:
-	var level := int(world.player_level)
-	var last := int(character_memory.get("reward_level",0))
+	var level = int(world.player_level)
+	var last = int(character_memory.get("reward_level",0))
 	if level > last:
 		world.gold += (level - last) * 15
 		character_memory["reward_level"] = level
@@ -194,15 +194,15 @@ func _s33_level_rewards() -> void:
 
 func _s34_army_command_readiness() -> void:
 	for army in world.armies:
-		var readiness := int(army.get("readiness",70))
+		var readiness = int(army.get("readiness",70))
 		if int(army.get("food",100)) < 30: readiness -= 5
 		if int(army.get("morale",70)) > 80: readiness += 3
 		army["readiness"] = clamp(readiness,0,100)
 
 func _s35_formation_cohesion() -> void:
 	for army in world.armies:
-		var formation := String(army.get("formation","line"))
-		var cohesion := int(army.get("cohesion",70))
+		var formation = String(army.get("formation","line"))
+		var cohesion = int(army.get("cohesion",70))
 		if formation == "shield_wall": cohesion += 2
 		elif formation == "wedge": cohesion += 1
 		else: cohesion -= 1
@@ -210,8 +210,8 @@ func _s35_formation_cohesion() -> void:
 
 func _s36_morale_memory() -> void:
 	for army in world.armies:
-		var id := int(army.get("id",0))
-		var morale := int(army.get("morale",70))
+		var id = int(army.get("id",0))
+		var morale = int(army.get("morale",70))
 		morale_memory[id] = morale
 		if morale < 30: army["readiness"] = max(0,int(army.get("readiness",50))-3)
 
@@ -223,11 +223,11 @@ func _s37_desertion_pressure() -> void:
 
 func _s38_reinforcement_priority() -> void:
 	for settlement in world.settlements:
-		var pool := int(settlement.get("recruitment_pool",0))
+		var pool = int(settlement.get("recruitment_pool",0))
 		settlement["reinforcement_priority"] = clamp(pool + int(settlement.get("prosperity",50))/10,0,100)
 
 func _s39_hero_party_supply() -> void:
-	var food := int(world.player_inventory.get("food",0))
+	var food = int(world.player_inventory.get("food",0))
 	if food > 0:
 		world.player_inventory["food"] = max(0,food-1)
 	else:
@@ -242,13 +242,13 @@ func _s40_hero_party_recovery() -> void:
 
 func _s41_settlement_specialization() -> void:
 	for s in world.settlements:
-		var rid := int(s.get("region",0))
+		var rid = int(s.get("region",0))
 		if rid < 0 or rid >= world.regions.size(): continue
 		s["specialization"] = String(world.regions[rid].get("resource","grain"))
 
 func _s42_food_reserve() -> void:
 	for s in world.settlements:
-		var stock := s.get("stockpile",{}) as Dictionary
+		var stock = s.get("stockpile",{}) as Dictionary
 		s["food_reserve_days"] = int(stock.get("food",0)) / max(1,int(s.get("population",100))/20)
 
 func _s43_famine() -> void:
@@ -265,12 +265,12 @@ func _s44_festival() -> void:
 
 func _s45_building_maintenance() -> void:
 	for s in world.settlements:
-		var b := s.get("buildings",{}) as Dictionary
+		var b = s.get("buildings",{}) as Dictionary
 		s["maintenance"] = b.size()
 
 func _s46_fortification_integrity() -> void:
 	for s in world.settlements:
-		var wall := int(s.get("wall_level",1))
+		var wall = int(s.get("wall_level",1))
 		if bool(s.get("under_siege",false)):
 			s["wall_integrity"] = max(0,int(s.get("wall_integrity",wall*25))-1)
 		else:
@@ -278,14 +278,14 @@ func _s46_fortification_integrity() -> void:
 
 func _s47_workshop_output() -> void:
 	for s in world.settlements:
-		var stock := s.get("stockpile",{}) as Dictionary
-		var b := s.get("buildings",{}) as Dictionary
+		var stock = s.get("stockpile",{}) as Dictionary
+		var b = s.get("buildings",{}) as Dictionary
 		stock["iron"] = int(stock.get("iron",0)) + int(b.get("workshop",1))
 		s["stockpile"] = stock
 
 func _s48_market_demand() -> void:
 	for s in world.settlements:
-		var stock := s.get("stockpile",{}) as Dictionary
+		var stock = s.get("stockpile",{}) as Dictionary
 		s["demand"] = max(0,100-int(stock.get("food",0))/2)
 
 func _s49_price_pressure() -> void:
@@ -294,7 +294,7 @@ func _s49_price_pressure() -> void:
 
 func _s50_tax_efficiency() -> void:
 	for s in world.settlements:
-		var efficiency := 0.5 + float(s.get("prosperity",50))/200.0
+		var efficiency = 0.5 + float(s.get("prosperity",50))/200.0
 		s["tax_efficiency"] = efficiency
 
 func _s51_faction_relations() -> void:
@@ -308,8 +308,8 @@ func _s52_alliance_stability() -> void:
 
 func _s53_war_exhaustion() -> void:
 	for faction in world.factions:
-		var id := String(faction.get("id",""))
-		var wars := 0
+		var id = String(faction.get("id",""))
+		var wars = 0
 		for key in world.diplomacy.keys():
 			if String(world.diplomacy[key]) == "war" and String(key).contains(id): wars += 1
 		faction["war_exhaustion"] = clamp(wars*8,0,100)
@@ -321,13 +321,13 @@ func _s54_peace_pressure() -> void:
 
 func _s55_vassal_loyalty() -> void:
 	for faction in world.factions:
-		var stability := int(faction.get("stability",70))
+		var stability = int(faction.get("stability",70))
 		if int(faction.get("war_exhaustion",0)) > 50: stability -= 1
 		faction["stability"] = clamp(stability,0,100)
 
 func _s56_rebellion_risk() -> void:
 	for faction in world.factions:
-		var stability := int(faction.get("stability",70))
+		var stability = int(faction.get("stability",70))
 		faction["rebellion_risk"] = clamp(100-stability,0,100)
 
 func _s57_faction_leadership() -> void:
@@ -336,7 +336,7 @@ func _s57_faction_leadership() -> void:
 
 func _s58_faction_military_budget() -> void:
 	for faction in world.factions:
-		var army_count := 0
+		var army_count = 0
 		for army in world.armies:
 			if String(army.get("owner","")) == String(faction.get("id","")):
 				army_count += int(army.get("soldiers",0))
@@ -344,15 +344,15 @@ func _s58_faction_military_budget() -> void:
 
 func _s59_faction_recruitment() -> void:
 	for faction in world.factions:
-		var id := String(faction.get("id",""))
+		var id = String(faction.get("id",""))
 		for s in world.settlements:
 			if String(s.get("owner","")) == id and int(s.get("recruitment_pool",0)) > 10:
 				s["recruitment_priority"] = min(100,int(s.get("recruitment_priority",0))+2)
 
 func _s60_faction_border_pressure() -> void:
 	for region in world.regions:
-		var pressure := 0
-		var owner := String(region.get("owner",""))
+		var pressure = 0
+		var owner = String(region.get("owner",""))
 		for n in world.get_region_neighbors(int(region.get("id",0))):
 			if String(world.regions[n].get("owner","")) != owner: pressure += 1
 		region["border_pressure"] = pressure
@@ -365,7 +365,7 @@ func _s61_discovery() -> void:
 
 func _s62_frontier_visibility() -> void:
 	for region in world.regions:
-		var visible := String(region.get("owner","")) == String(world.player_faction)
+		var visible = String(region.get("owner","")) == String(world.player_faction)
 		for n in world.get_region_neighbors(int(region.get("id",0))):
 			if String(world.regions[n].get("owner","")) == String(world.player_faction): visible = true
 		region["visible_to_player"] = visible
@@ -392,7 +392,7 @@ func _s66_bandit_encounters() -> void:
 
 func _s67_patrol_effect() -> void:
 	for region in world.regions:
-		var patrolled := false
+		var patrolled = false
 		for army in world.armies:
 			if String(army.get("owner","")) == String(world.player_faction) and int(army.get("region",0)) == int(region.get("id",0)) and String(army.get("order","")) == "defend":
 				patrolled = true
@@ -410,34 +410,34 @@ func _s69_contract_rewards() -> void:
 
 func _s70_dynamic_world_events() -> void:
 	if randf() < 0.05:
-		var events := ["A merchant guild offers fair prices.","A border lord requests aid.","A harvest improves local supplies.","Travelers report an unknown road."]
+		var events = ["A merchant guild offers fair prices.","A border lord requests aid.","A harvest improves local supplies.","Travelers report an unknown road."]
 		_event(events[randi_range(0,events.size()-1)])
 
 func _s71_siege_supply() -> void:
 	for sid in world.sieges.keys():
-		var siege := world.sieges[sid] as Dictionary
+		var siege = world.sieges[sid] as Dictionary
 		siege["supply"] = max(0,int(siege.get("supply",100))-2)
 
 func _s72_siege_morale() -> void:
 	for sid in world.sieges.keys():
-		var siege := world.sieges[sid] as Dictionary
+		var siege = world.sieges[sid] as Dictionary
 		siege["morale"] = clamp(int(siege.get("morale",70)) + (-2 if int(siege.get("supply",50)) < 20 else 1),0,100)
 
 func _s73_siege_engineering() -> void:
 	for sid in world.sieges.keys():
-		var siege := world.sieges[sid] as Dictionary
+		var siege = world.sieges[sid] as Dictionary
 		siege["engineering"] = min(100,int(siege.get("engineering",0))+3)
 
 func _s74_siege_defender_reserves() -> void:
 	for sid in world.sieges.keys():
-		var settlement_id := int(sid)
+		var settlement_id = int(sid)
 		if settlement_id >= 0 and settlement_id < world.settlements.size():
-			var s := world.settlements[settlement_id]
+			var s = world.settlements[settlement_id]
 			s["reserve_pool"] = max(0,int(s.get("population",100))/20-int(s.get("garrison",0))/10)
 
 func _s75_battle_readiness() -> void:
 	for army in world.armies:
-		var readiness := int(army.get("readiness",70))
+		var readiness = int(army.get("readiness",70))
 		if int(army.get("morale",70)) >= 70: readiness += 1
 		army["readiness"] = clamp(readiness,0,100)
 
@@ -448,7 +448,7 @@ func _s76_battle_casualty_recovery() -> void:
 
 func _s77_battle_veterans() -> void:
 	for army in world.armies:
-		var veterans := int(army.get("veterans",0))
+		var veterans = int(army.get("veterans",0))
 		if int(army.get("morale",70)) > 85:
 			veterans += 1
 		army["veterans"] = min(veterans,int(army.get("soldiers",0)))
@@ -470,25 +470,25 @@ func _s80_frontline_warning() -> void:
 
 func _s81_ship_crew() -> void:
 	for ship in world.ships:
-		var crew := int(ship.get("crew",10))
+		var crew = int(ship.get("crew",10))
 		ship["crew_morale"] = clamp(50 + crew,0,100)
 
 func _s82_ship_cargo() -> void:
 	for ship in world.ships:
-		var cargo := ship.get("cargo",{}) as Dictionary
+		var cargo = ship.get("cargo",{}) as Dictionary
 		ship["cargo_value"] = int(cargo.get("food",0))+int(cargo.get("wood",0))*2+int(cargo.get("iron",0))*3
 
 func _s83_ship_fatigue() -> void:
 	for ship in world.ships:
-		var fatigue := int(ship.get("fatigue",0))
+		var fatigue = int(ship.get("fatigue",0))
 		fatigue += 2 if bool(ship.get("moving",false)) else -1
 		ship["fatigue"] = clamp(fatigue,0,100)
 
 func _s84_port_prosperity() -> void:
 	for s in world.settlements:
-		var rid := int(s.get("region",0))
+		var rid = int(s.get("region",0))
 		if rid >= 0 and rid < world.regions.size():
-			var res := String(world.regions[rid].get("resource",""))
+			var res = String(world.regions[rid].get("resource",""))
 			if res == "fish" or res == "salt":
 				s["prosperity"] = min(100,int(s.get("prosperity",50))+1)
 
@@ -499,11 +499,11 @@ func _s85_sea_trade() -> void:
 
 func _s86_fishing_output() -> void:
 	for s in world.settlements:
-		var rid := int(s.get("region",0))
+		var rid = int(s.get("region",0))
 		if rid >= 0 and rid < world.regions.size():
-			var res := String(world.regions[rid].get("resource",""))
+			var res = String(world.regions[rid].get("resource",""))
 			if res == "fish":
-				var stock := s.get("stockpile",{}) as Dictionary
+				var stock = s.get("stockpile",{}) as Dictionary
 				stock["food"] = int(stock.get("food",0))+3
 				s["stockpile"] = stock
 
@@ -533,13 +533,13 @@ func _s91_family_relations() -> void:
 		member["relationship_score"] = clamp(int(member.get("relationship_score",50)),0,100)
 
 func _s92_family_reputation() -> void:
-	var total := 0
+	var total = 0
 	for member in world.family_members:
 		total += int(member.get("relationship_score",50))
 	world.family["family_reputation"] = total / max(1,world.family_members.size())
 
 func _s93_heir_readiness() -> void:
-	var heir_age := int(world.family.get("heir_age",0))
+	var heir_age = int(world.family.get("heir_age",0))
 	world.family["heir_ready"] = heir_age >= 18
 
 func _s94_succession_support() -> void:
@@ -549,7 +549,7 @@ func _s95_house_wealth() -> void:
 	world.family["house_wealth"] = int(world.gold) + int(world.family.get("family_reputation",50))*2
 
 func _s96_player_renown() -> void:
-	var renown := int(world.get_meta("player_renown",0))
+	var renown = int(world.get_meta("player_renown",0))
 	if int(world.day)%7==0: renown += 1
 	world.set_meta("player_renown",max(0,renown))
 
