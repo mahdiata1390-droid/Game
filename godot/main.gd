@@ -58,6 +58,7 @@ var ten_complete: ReleaseTenComplete
 var final_completion: ReleaseFinalCompletion
 var asset_registry: ReleaseAssetRegistry
 var production_asset_integration: ReleaseProductionAssetIntegration
+var visual_rescue: ReleaseVisualRescue
 var combat_system: ReleaseCombatSystem
 var npc_ai_system: ReleaseNpcAiSystem
 var siege_stage: ReleaseSiegeStage
@@ -148,6 +149,10 @@ func _boot_gameplay() -> void:
 	add_child(production_asset_integration)
 	production_asset_integration.setup(asset_registry)
 	production_asset_integration.bind_world(world_state)
+	visual_rescue = ReleaseVisualRescue.new()
+	visual_rescue.name = "VisualRescue"
+	add_child(visual_rescue)
+	visual_rescue.build(self)
 	combat_system = ReleaseCombatSystem.new()
 	combat_system.name = "CombatSystem"
 	add_child(combat_system)
@@ -462,11 +467,26 @@ func _build_world() -> void:
 	# Detailed content is added only after a valid player camera exists.
 	var world_env = WorldEnvironment.new()
 	var environment = Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.055, 0.075, 0.10)
+	environment.background_mode = Environment.BG_SKY
+	var sky = Sky.new()
+	var sky_material = ProceduralSkyMaterial.new()
+	sky_material.sky_top_color = Color(0.16, 0.28, 0.48)
+	sky_material.sky_horizon_color = Color(0.72, 0.78, 0.72)
+	sky_material.ground_bottom_color = Color(0.07, 0.10, 0.06)
+	sky_material.ground_horizon_color = Color(0.42, 0.46, 0.34)
+	sky_material.sun_angle_max = 18.0
+	sky.sky_material = sky_material
+	environment.sky = sky
+	environment.background_energy_multiplier = 0.9
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.55, 0.62, 0.72)
-	environment.ambient_light_energy = 0.8
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	environment.ambient_light_color = Color(0.72, 0.76, 0.70)
+	environment.ambient_light_energy = 1.0
+	environment.fog_enabled = true
+	environment.fog_light_color = Color(0.52, 0.60, 0.52)
+	environment.fog_light_energy = 0.35
+	environment.fog_density = 0.006
+
 	world_env.environment = environment
 	add_child(world_env)
 
