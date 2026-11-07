@@ -401,7 +401,8 @@ func resolve_auto_battle(settlement_id:int,attacker:Dictionary,defender:Dictiona
 	settlements[settlement_id]["garrison"]=max(0,int(settlements[settlement_id]["garrison"])-defender_losses)
 	var captured:=false
 	if attacker_won and int(settlements[settlement_id]["garrison"])<=0:
-		captured=capture_settlement(settlement_id)
+		var attacker_faction:=String(siege.get("attacker",a.get("owner",player_faction)))
+		captured=capture_settlement_for_faction(settlement_id,attacker_faction)
 	add_player_xp(max(10,defender_losses))
 	return {"attacker_won":attacker_won,"attacker_losses":attacker_losses,"defender_losses":defender_losses,"rounds":rounds,"captured":captured,"settlement":String(settlements[settlement_id]["name"])}
 
@@ -431,12 +432,36 @@ func _battle_quality(troops:Dictionary)->float:
 	return weighted/float(total)
 
 func capture_settlement(settlement_id:int)->bool:
-	if settlement_id<0 or settlement_id>=settlements.size(): return false
-	var s:Dictionary=settlements[settlement_id]; var region_id:=int(s["region"]); var old_owner:=String(s["owner"])
-	if old_owner==player_faction: return false
-	s["owner"]=player_faction; s["garrison"]=max(20,int(s["garrison"])/3)
-	var new_garrison := int(s["garrison"]); s["garrison_troops"]={"levy":int(new_garrison*0.55),"spearman":int(new_garrison*0.20),"archer":int(new_garrison*0.20),"horseman":max(0,new_garrison-int(new_garrison*0.95))}
-	return transfer_region(region_id,player_faction)
+	return capture_settlement_for_faction(settlement_id,player_faction)
+
+func capture_settlement_for_faction(settlement_id:int,faction_id:String)->bool:
+	if settlement_id<0 or settlement_id>=settlements.size() or _get_faction(faction_id).is_empty(): return false
+	var s:Dictionary=settlements[settlement_id]
+	var region_id:=int(s["region"])
+	var old_owner:=String(s["owner"])
+	if old_owner==faction_id: return false
+	s["owner"]=faction_id
+	s["garrison"]=max(20,int(s["garrison"])/3)
+	var new_garrison:=int(s["garrison"])
+	s["garrison_troops"]={"levy":int(new_garrison*0.55),"spearman":int(new_garrison*0.20),"archer":int(new_garrison*0.20),"horseman":max(0,new_garrison-int(new_garrison*0.95))}
+	s["siege"]=false
+	var transferred:=transfer_region(region_id,faction_id)
+	if transferred:
+		world_events.append("%s captured %s for %s." % [faction_id,String(s["name"]),faction_id])
+	return transferred
+
+func start_siege_for_faction(settlement_id:int,army_id:int)->Dictionary:
+	if settlement_id<0 or settlement_id>=settlements.size() or army_id<0 or army_id>=armies.size(): return {"ok":false,"reason":"invalid"}
+	var s:Dictionary=settlements[settlement_id]
+	var a:Dictionary=armies[army_id]
+	var owner:=String(a.get("owner",""))
+	if owner=="" or owner==player_faction or int(a.get("region",-1))!=int(s.get("region",-2)) or String(s.get("owner",""))==owner:
+		return {"ok":false,"reason":"invalid_siege"}
+	if not _are_at_war(owner,String(s.get("owner",""))): return {"ok":false,"reason":"not_at_war"}
+	sieges[settlement_id]={"army_id":army_id,"attacker":owner,"progress":0,"days":0,"breach":false,"phase":"approach","wall_hp":int(s.get("wall_level",1))*100,"gate_hp":120,"gate_breached":false}
+	s["siege"]=true
+	world_events.append("%s began a siege of %s." % [a.get("name","Army"),s.get("name","Settlement")])
+	return {"ok":true,"settlement":String(s["name"]),"attacker":owner}
 
 func apply_manual_battle_result(settlement_id:int,attacker_losses:int,defender_losses:int,attacker_types:Dictionary,defender_types:Dictionary,allow_capture:bool=true)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size():
