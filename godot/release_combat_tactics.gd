@@ -7,8 +7,8 @@ class_name ReleaseCombatTactics
 
 var game:Node3D
 var world
-var tick:=0.0
-var last_event:="COMBAT TACTICS READY"
+var tick =0.0
+var last_event ="COMBAT TACTICS READY"
 
 const FORMATIONS:=["line","shield_wall","wedge","skirmish"]
 const ORDERS:=["hold","attack","defend","raid","escort"]
@@ -31,15 +31,15 @@ func _process(delta:float)->void:
 func _refresh_all()->void:
 	for i in range(world.armies.size()):
 		var army:Dictionary=world.armies[i]
-		var soldiers:=int(army.get("soldiers",0))
+		var soldiers =int(army.get("soldiers",0))
 		if soldiers<=0: continue
 		var troops:Dictionary=army.get("troops",{})
-		var cavalry:=int(troops.get("horseman",0))
-		var archers:=int(troops.get("archer",0))
-		var spears:=int(troops.get("spearman",0))
-		var morale:=clampi(int(army.get("morale",60)),0,100)
-		var formation:=String(army.get("formation","line"))
-		var order:=String(army.get("order","hold"))
+		var cavalry =int(troops.get("horseman",0))
+		var archers =int(troops.get("archer",0))
+		var spears =int(troops.get("spearman",0))
+		var morale =clampi(int(army.get("morale",60)),0,100)
+		var formation =String(army.get("formation","line"))
+		var order =String(army.get("order","hold"))
 
 		if morale<30:
 			formation="shield_wall"
@@ -66,10 +66,10 @@ func _refresh_all()->void:
 	last_event="Combat formations, morale and battlefield roles updated"
 
 func _readiness(army:Dictionary)->int:
-	var soldiers:=int(army.get("soldiers",0))
-	var morale:=int(army.get("morale",60))
+	var soldiers =int(army.get("soldiers",0))
+	var morale =int(army.get("morale",60))
 	if soldiers<=0: return 0
-	var readiness:=morale
+	var readiness =morale
 	if String(army.get("formation","line"))=="shield_wall": readiness+=10
 	elif String(army.get("formation","line"))=="wedge": readiness+=8
 	elif String(army.get("formation","line"))=="skirmish": readiness+=5
