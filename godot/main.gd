@@ -81,6 +81,9 @@ var trade_network: ReleaseTradeNetwork
 var army_logistics: ReleaseArmyLogistics
 var battle_aftermath: ReleaseBattleAftermath
 var settlement_management: ReleaseSettlementManagement
+var strategic_layer: ReleaseStrategicLayer
+var reinforcement_system: ReleaseReinforcementSystem
+var aftermath_recovery: ReleaseAftermathRecovery
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -223,6 +226,18 @@ func _boot_gameplay() -> void:
 	settlement_management.name = "SettlementManagement"
 	add_child(settlement_management)
 	settlement_management.build(self)
+	strategic_layer = ReleaseStrategicLayer.new()
+	strategic_layer.name = "StrategicLayer"
+	add_child(strategic_layer)
+	strategic_layer.build(self)
+	reinforcement_system = ReleaseReinforcementSystem.new()
+	reinforcement_system.name = "ReinforcementSystem"
+	add_child(reinforcement_system)
+	reinforcement_system.build(self)
+	aftermath_recovery = ReleaseAftermathRecovery.new()
+	aftermath_recovery.name = "AftermathRecovery"
+	add_child(aftermath_recovery)
+	aftermath_recovery.build(self)
 	playable_world = preload("res://release_playable_world.gd").new()
 	playable_world.name = "PlayableWorld"
 	add_child(playable_world)
