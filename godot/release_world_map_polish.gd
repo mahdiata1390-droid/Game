@@ -41,7 +41,7 @@ func _refresh() -> void:
         world = game.get("world_state")
     if world == null or info == null:
         return
-    var faction := String(world.get("player_faction"))
+    var faction := String(world.player_faction)
     var owned := 0
     var enemy_armies := 0
     var sieges := 0
@@ -60,6 +60,6 @@ Weather: %s
 Gold: %d
 
 Map markers, army status and strategic alerts are live." % [
-        int(world.get("day",1)), owned, enemy_armies, sieges,
-        String(world.get("weather","clear")), int(world.get("gold",0))
+        int(world.day), owned, enemy_armies, sieges,
+        String(world.weather), int(world.gold)
     ]
