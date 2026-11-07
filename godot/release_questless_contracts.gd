@@ -3,7 +3,7 @@ class_name ReleaseContracts
 
 var host:Node
 var active:Dictionary={}
-var timer:=0.0
+var timer=0.0
 
 func build(main:Node)->void:
 	host=main
@@ -16,7 +16,7 @@ func _process(delta:float)->void:
 	if not host or not host.world_state:return
 	if active.is_empty():
 		var options=["Trade convoy","Guard settlement","Scout frontier","Escort caravan"]
-		var kind:=options[randi()%options.size()]
+		var kind=options[randi()%options.size()]
 		active={"type":kind,"reward":randi_range(60,180),"expires":host.world_state.day+3}
 		host.world_state.world_events.append("New contract: %s. Reward %dg." % [kind,int(active["reward"])])
 
