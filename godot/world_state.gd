@@ -756,7 +756,8 @@ func assault_siege(settlement_id:int)->Dictionary:
 	if int(s["garrison"])<=0 and bool(siege.get("breach",false)):
 		s["wall_level"]=max(0,wall-1)
 		s["siege"]=false
-		captured=capture_settlement(settlement_id)
+		var attacker_faction:=String(siege.get("attacker",a.get("owner",player_faction)))
+		captured=capture_settlement_for_faction(settlement_id,attacker_faction)
 		sieges.erase(settlement_id)
 		add_player_xp(defender_loss+50)
 		return {"ok":true,"won":true,"attacker_losses":attacker_loss,"defender_losses":defender_loss,"captured":captured,"progress":100,"phase":"captured","gate_breached":true}
