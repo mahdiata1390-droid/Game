@@ -30,7 +30,7 @@ func build(main_node:Node3D)->void:
 
 func _process(delta:float)->void:
     if world==null:
-        world = game.get("world_state") as WorldState
+        world = game.get("world_state") as Node
         return
     sim_timer+=delta
     if sim_timer>=5.0:
