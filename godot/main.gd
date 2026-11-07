@@ -73,6 +73,8 @@ var final_qa: ReleaseFinalQA
 var campaign_loop: ReleaseCampaignLoop
 var war_loop: ReleaseWarLoop
 var world_simulation: ReleaseWorldSimulation
+var lord_intelligence: ReleaseLordIntelligence
+var economy_growth: ReleaseEconomyGrowth
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -183,6 +185,14 @@ func _boot_gameplay() -> void:
 	world_simulation.name = "WorldSimulation"
 	add_child(world_simulation)
 	world_simulation.build(self)
+	lord_intelligence = ReleaseLordIntelligence.new()
+	lord_intelligence.name = "LordIntelligence"
+	add_child(lord_intelligence)
+	lord_intelligence.build(self)
+	economy_growth = ReleaseEconomyGrowth.new()
+	economy_growth.name = "EconomyGrowth"
+	add_child(economy_growth)
+	economy_growth.build(self)
 	playable_world = preload("res://release_playable_world.gd").new()
 	playable_world.name = "PlayableWorld"
 	add_child(playable_world)
