@@ -1,15 +1,15 @@
 extends Node
 var game:Node3D
-var world:Node
+var world: WorldState
 var map_panel:Panel
 var info:Label
 var target_label:Label
-var mounted:=false
-var map_open:=false
+var mounted: bool = false
+var map_open: bool = false
 var selected_settlement:Dictionary={}
-var sim_timer:=0.0
+var sim_timer: float = 0.0
 var battle_fx:Node3D
-var rng:=RandomNumberGenerator.new()
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 func _build_interaction_fx() -> void:
 	battle_fx = Node3D.new()
@@ -19,7 +19,7 @@ func _build_interaction_fx() -> void:
 
 func build(main_node:Node3D)->void:
     game=main_node
-    world=game.get("world_state")
+    world = game.get("world_state") as WorldState
     rng.seed=912734
     _build_campaign_hud()
     _build_world_map()
@@ -30,7 +30,7 @@ func build(main_node:Node3D)->void:
 
 func _process(delta:float)->void:
     if world==null:
-        world=game.get("world_state")
+        world = game.get("world_state") as WorldState
         return
     sim_timer+=delta
     if sim_timer>=5.0:
@@ -39,10 +39,10 @@ func _process(delta:float)->void:
         _update_hud()
 
 func _build_campaign_hud()->void:
-    var layer:=CanvasLayer.new()
+    var layer: CanvasLayer = CanvasLayer.new()
     layer.name="PlayableWorldHUD"
     game.add_child(layer)
-    var bar:=Panel.new()
+    var bar: Panel = Panel.new()
     bar.position=Vector2(18,80)
     bar.size=Vector2(500,86)
     bar.modulate.a=0.9
@@ -52,13 +52,13 @@ func _build_campaign_hud()->void:
     info.size=Vector2(475,65)
     info.text="CAMPAIGN • loading"
     bar.add_child(info)
-    var map_btn:=Button.new()
+    var map_btn: Button = Button.new()
     map_btn.text="WORLD MAP"
     map_btn.position=Vector2(350,45)
     map_btn.size=Vector2(130,32)
     map_btn.pressed.connect(toggle_map)
     bar.add_child(map_btn)
-    var mount_btn:=Button.new()
+    var mount_btn: Button = Button.new()
     mount_btn.text="MOUNT"
     mount_btn.position=Vector2(215,45)
     mount_btn.size=Vector2(125,32)
@@ -66,7 +66,7 @@ func _build_campaign_hud()->void:
     bar.add_child(mount_btn)
 
 func _build_world_map()->void:
-    var layer:=CanvasLayer.new()
+    var layer: CanvasLayer = CanvasLayer.new()
     layer.name="PlayableWorldMap"
     game.add_child(layer)
     map_panel=Panel.new()
@@ -74,12 +74,12 @@ func _build_world_map()->void:
     map_panel.size=Vector2(860,560)
     map_panel.visible=false
     layer.add_child(map_panel)
-    var title:=Label.new()
+    var title: Label = Label.new()
     title.text="CONTINENT • STRATEGIC MAP"
     title.position=Vector2(22,16)
     title.add_theme_font_size_override("font_size",22)
     map_panel.add_child(title)
-    var close:=Button.new()
+    var close: Button = Button.new()
     close.text="CLOSE"
     close.position=Vector2(765,15)
     close.size=Vector2(75,32)
@@ -94,7 +94,7 @@ func _build_world_map()->void:
 
 func _add_map_settlement(id:int)->void:
     var s:Dictionary=world.settlements[id]
-    var b:=Button.new()
+    var b: Button = Button.new()
     b.text=String(s["name"])
     var p:Vector2=s["position"]
     var x=35.0+(p.x+22.0)*18.0
@@ -129,17 +129,17 @@ func _ensure_mount_visual()->void:
     if not is_instance_valid(player): return
     var old=player.get_node_or_null("CampaignMount")
     if mounted and old==null:
-        var horse:=Node3D.new()
+        var horse: Node3D = Node3D.new()
         horse.name="CampaignMount"
-        var body:=MeshInstance3D.new()
-        var mesh:=CapsuleMesh.new()
+        var body: MeshInstance3D = MeshInstance3D.new()
+        var mesh: CapsuleMesh = CapsuleMesh.new()
         mesh.height=1.7
         mesh.radius=0.38
         body.mesh=mesh
         body.position=Vector3(0,-0.15,-0.35)
         horse.add_child(body)
-        var neck:=MeshInstance3D.new()
-        var neck_mesh:=CapsuleMesh.new()
+        var neck: MeshInstance3D = MeshInstance3D.new()
+        var neck_mesh: CapsuleMesh = CapsuleMesh.new()
         neck_mesh.height=1.0
         neck_mesh.radius=0.18
         neck.mesh=neck_mesh
@@ -159,10 +159,10 @@ func _simulate_factions()->void:
     for i in range(world.armies.size()):
         var army:Dictionary=world.armies[i]
         if String(army.get("owner",""))=="Free Company": continue
-        var owner:=String(army.get("owner",""))
-        var region_id:=int(army.get("region",0))
+        var owner: String = String(army.get("owner",""))
+        var region_id: int = int(army.get("region",0))
         var region:Dictionary=world.regions[region_id]
-        var danger:=0
+        var danger: int = 0
         for other in world.armies:
             if String(other.get("owner",""))!=owner and int(other.get("region",0))==region_id:
                 danger+=int(other.get("soldiers",0))
@@ -180,10 +180,10 @@ func _simulate_factions()->void:
 func _apply_settlement_life()->void:
     for i in range(world.settlements.size()):
         var s:Dictionary=world.settlements[i]
-        var pop:=int(s.get("population",100))
-        var prosperity:=int(s.get("prosperity",50))
+        var pop: int = int(s.get("population",100))
+        var prosperity: int = int(s.get("prosperity",50))
         var stock:Dictionary=s.get("stockpile",{})
-        var food:=int(stock.get("food",0))
+        var food: int = int(stock.get("food",0))
         food=max(0,food+4+int(prosperity/25)-int(pop/250))
         if food<25: prosperity=max(0,prosperity-2)
         elif food>100: prosperity=min(100,prosperity+1)
@@ -197,7 +197,7 @@ func _apply_settlement_life()->void:
 func _update_hud()->void:
     if not is_instance_valid(info): return
     var player=game.get("player")
-    var pos:=player.global_position if is_instance_valid(player) else Vector3.ZERO
+    var pos: Vector3 = player.global_position if is_instance_valid(player) else Vector3.ZERO
     info.text="DAY %d • GOLD %d • REGION %s\nPosition %.0f, %.0f • Mounted %s • Factions autonomous" % [
         int(world.day),int(world.gold),String(world.player_region_id),pos.x,pos.z,str(mounted)]
 
