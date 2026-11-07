@@ -54,7 +54,7 @@ func get_world_snapshot()->Dictionary:
     var armies_count=world.armies.size() if world != null else 0
     var ships_count=world.ships.size() if world != null and world.get("ships") is Array else 0
     return {"day":int(world.get("day")),"settlements":settlements_count,"armies":armies_count,"ships":ships_count,
-        "player_region":String(world.get("player_region_id"))}
+        "player_region":str(world.get("player_region_id"))}
 
 # Save recovery
 func save_now()->bool:
@@ -131,7 +131,7 @@ func _build_ui()->void:
 func _update_status()->void:
     if not is_instance_valid(status): return
     var s=get_world_snapshot()
-    status.text="WORLD DAY %d • S:%d A:%d • Mount:%s • QA:%s" % [int(s.get("day",0)),int(s.get("settlements",0)),int(s.get("armies",0)),str(mounted),String(qa.get("last",""))]
+    status.text="WORLD DAY %d • S:%d A:%d • Mount:%s • QA:%s" % [int(s.get("day",0)),int(s.get("settlements",0)),int(s.get("armies",0)),str(mounted),str(qa.get("last",""))]
 
 func get_save_state()->Dictionary:
     return {"mounted":mounted,"settings":settings.duplicate(true),"target":current_target.duplicate(true)}
