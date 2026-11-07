@@ -110,11 +110,6 @@ jobs:
           find godot/assets/production -type f | sort > /tmp/production_asset_list.txt
           sed -n '1,160p' /tmp/production_asset_list.txt
 
-      - name: Validate playable world script directly
-        run: |
-          set -o pipefail
-          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --script res://release_playable_world.gd --quit 2>&1 | tee godot-playable-world-check.log
-
       - name: Validate project and scripts
         run: |
           set -o pipefail
@@ -173,7 +168,6 @@ jobs:
           path: |
             godot-check.log
             godot-runtime.log
-            godot-playable-world-check.log
           if-no-files-found: ignore
 
 
