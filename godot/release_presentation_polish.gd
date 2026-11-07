@@ -42,5 +42,5 @@ func _refresh() -> void:
     label.text = "MEDIEVAL SANDBOX
 PHASE: %s  •  STABILITY: %d
 Day %d  •  Weather: %s" % [
-        phase.to_upper(), stability, int(world.get("day",1)), String(world.get("weather","clear"))
+        phase.to_upper(), stability, int(world.day), String(world.weather)
     ]
