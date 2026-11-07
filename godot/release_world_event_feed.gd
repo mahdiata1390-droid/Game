@@ -6,7 +6,7 @@ var world: Node
 var layer: CanvasLayer
 var panel: Panel
 var label: Label
-var last_count := -1
+var last_count = -1
 
 func build(root: Node) -> void:
 	host = root
@@ -32,8 +32,8 @@ func _process(_delta: float) -> void:
 	if last_count == world.world_events.size():
 		return
 	last_count = world.world_events.size()
-	var events := world.world_events
-	var start := max(0, events.size() - 5)
+	var events = world.world_events
+	var start = max(0, events.size() - 5)
 	var lines: Array[String] = ["WORLD EVENTS"]
 	for i in range(start, events.size()):
 		lines.append("• " + String(events[i]))
