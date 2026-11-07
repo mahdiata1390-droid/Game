@@ -78,7 +78,7 @@ func _action(action: String) -> void:
 	elif action in ["FARM","MARKET","WORKSHOP","BARRACKS"]:
 		world.upgrade_settlement_building(_current_id(), action.to_lower())
 	elif action in ["LEVY","ARCHER","SPEARMAN"]:
-		var troop := {"LEVY":"levy","ARCHER":"archer","SPEARMAN":"spearman"}[action]
+		var troop: String = String({"LEVY":"levy","ARCHER":"archer","SPEARMAN":"spearman"}[action])
 		world.recruit_from_settlement(_current_id(), troop, 5)
 	_update()
 
