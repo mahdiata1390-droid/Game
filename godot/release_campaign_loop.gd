@@ -21,7 +21,10 @@ var campaign_state: Dictionary = {
     "owned_settlements": 0,
     "armies": 0,
     "treasury": 0,
-    "power": 0
+    "power": 0,
+    "tax_income": 0,
+    "caravans": 0,
+    "next_objective": "Secure your first settlement"
 }
 
 func build(root: Node3D) -> void:
@@ -75,7 +78,10 @@ func _sync_campaign_state() -> void:
     campaign_state["armies"] = armies
     campaign_state["treasury"] = treasury
     campaign_state["power"] = power
+    campaign_state["tax_income"] = _estimate_tax_income(faction)
+    campaign_state["caravans"] = world.caravans.size()
     campaign_state["phase"] = _get_phase(owned, armies, power)
+    campaign_state["next_objective"] = _get_objective(owned, armies, power)
 
     game.set_meta("campaign_phase", campaign_state["phase"])
     game.set_meta("campaign_owned_settlements", owned)
@@ -128,3 +134,38 @@ func load_save_state(data: Dictionary) -> void:
     campaign_state = data.duplicate(true)
     if world != null:
         _sync_campaign_state()
+
+
+func _estimate_tax_income(faction: String) -> int:
+    var income := 0
+    var settlements: Array = world.get("settlements")
+    for settlement in settlements:
+        if String(settlement.get("owner", "")) == faction:
+            var population := int(settlement.get("population", 0))
+            var tax_rate := float(settlement.get("tax_rate", 0.10))
+            income += max(1, int(population * tax_rate / 100.0))
+    return income
+
+func _get_objective(owned: int, armies: int, power: int) -> String:
+    if owned <= 0:
+        return "Secure your first settlement"
+    if armies <= 0:
+        return "Raise your first army"
+    if owned < 3:
+        return "Expand to 3 settlements"
+    if armies < 2:
+        return "Raise a second army"
+    if owned < 8:
+        return "Build a regional kingdom"
+    return "Dominate the world through war, trade and diplomacy"
+
+func advance_campaign_day() -> Dictionary:
+    if world == null:
+        return {"ok": false, "reason": "world_not_ready"}
+    world.advance_day()
+    _sync_campaign_state()
+    return {"ok": true, "day": int(world.get("day")), "phase": campaign_state["phase"], "objective": campaign_state["next_objective"]}
+
+func get_progress() -> Dictionary:
+    _sync_campaign_state()
+    return campaign_state.duplicate(true)
