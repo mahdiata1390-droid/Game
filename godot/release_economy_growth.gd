@@ -7,8 +7,8 @@ class_name ReleaseEconomyGrowth
 
 var game:Node3D
 var world
-var tick:=0.0
-var last_event:="ECONOMY ONLINE"
+var tick =0.0
+var last_event ="ECONOMY ONLINE"
 
 func build(main_node:Node3D)->void:
 	game=main_node
@@ -26,12 +26,12 @@ func _process(delta:float)->void:
 
 func _simulate_economy()->void:
 	for settlement in world.settlements:
-		var prosperity:=int(settlement.get("prosperity",50))
+		var prosperity =int(settlement.get("prosperity",50))
 		var buildings:Dictionary=settlement.get("buildings",{})
 		var stock:Dictionary=settlement.get("stockpile",{})
-		var region:=int(settlement.get("region",0))
-		var resource:=String(world.regions[region].get("resource","grain"))
-		var output:=max(1,int(prosperity/20))
+		var region =int(settlement.get("region",0))
+		var resource =String(world.regions[region].get("resource","grain"))
+		var output =max(1,int(prosperity/20))
 		if resource=="grain": stock["food"]=int(stock.get("food",0))+output
 		elif resource=="wood": stock["wood"]=int(stock.get("wood",0))+output
 		elif resource=="iron": stock["iron"]=int(stock.get("iron",0))+output
@@ -47,18 +47,18 @@ func _simulate_economy()->void:
 	last_event="Markets, production and settlement growth updated"
 
 func _try_upgrade(settlement:Dictionary,buildings:Dictionary)->void:
-	var order:=["farm","workshop","market","barracks"]
+	var order =["farm","workshop","market","barracks"]
 	for building in order:
-		var level:=int(buildings.get(building,1))
+		var level =int(buildings.get(building,1))
 		if level<5:
 			buildings[building]=level+1
 			settlement["buildings"]=buildings
 			return
 
 func _update_prices(settlement:Dictionary)->void:
-	var prosperity:=int(settlement.get("prosperity",50))
+	var prosperity =int(settlement.get("prosperity",50))
 	var stock:Dictionary=settlement.get("stockpile",{})
-	var prices:=settlement.get("dynamic_prices",{})
+	var prices =settlement.get("dynamic_prices",{})
 	prices["food"]=clampi(12+int((60-prosperity)/4)-int(stock.get("food",0)/50),2,30)
 	prices["wood"]=clampi(14+int((60-prosperity)/5)-int(stock.get("wood",0)/35),3,35)
 	prices["iron"]=clampi(20+int((60-prosperity)/6)-int(stock.get("iron",0)/25),5,45)
