@@ -79,6 +79,7 @@ var combat_tactics: ReleaseCombatTactics
 var settlement_life: ReleaseSettlementLife
 var trade_network: ReleaseTradeNetwork
 var army_logistics: ReleaseArmyLogistics
+var battle_aftermath: ReleaseBattleAftermath
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -213,6 +214,10 @@ func _boot_gameplay() -> void:
 	army_logistics.name = "ArmyLogistics"
 	add_child(army_logistics)
 	army_logistics.build(self)
+	battle_aftermath = ReleaseBattleAftermath.new()
+	battle_aftermath.name = "BattleAftermath"
+	add_child(battle_aftermath)
+	battle_aftermath.build(self)
 	playable_world = preload("res://release_playable_world.gd").new()
 	playable_world.name = "PlayableWorld"
 	add_child(playable_world)
