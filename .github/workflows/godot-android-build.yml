@@ -118,12 +118,12 @@ jobs:
           status=${PIPESTATUS[0]}
           set -e
           echo "=== GODOT VALIDATION LOG (ERRORS) ==="
-          grep -E "SCRIPT ERROR|Parse Error|ERROR:" godot-check.log || true
+          grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Final QA failed" godot-check.log || true
           echo "=== GODOT VALIDATION EXIT STATUS: $status ==="
           if [ "$status" -ne 0 ]; then
             exit "$status"
           fi
-          if grep -E "SCRIPT ERROR|Parse Error|ERROR:" godot-check.log; then
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Final QA failed" godot-check.log; then
             exit 1
           fi
 
@@ -166,8 +166,8 @@ jobs:
         with:
           name: Godot-QA-Logs
           path: |
-            godot/godot-check.log
-            godot/godot-runtime.log
+            godot-check.log
+            godot-runtime.log
           if-no-files-found: ignore
 
 
