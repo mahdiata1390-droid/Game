@@ -118,7 +118,7 @@ func _simulate_trade_contracts(day: int) -> void:
         if bool(contract.get("complete",false)): continue
         contract["days_left"] = int(contract.get("days_left",1)) - 1
         if int(contract["days_left"]) <= 0:
-            var reward := int(contract.get("reward",0))
+            var reward: int = int(contract.get("reward",0))
             world.gold += reward
             contract["complete"] = true
             naval_events.push_front("Trade contract completed: %d gold earned." % reward)
@@ -129,7 +129,7 @@ func _simulate_trade_contracts(day: int) -> void:
 func _simulate_naval_missions(day: int) -> void:
     for mission in naval_missions:
         if bool(mission.get("complete",false)): continue
-        var ship_id := int(mission.get("ship_id",-1))
+        var ship_id: int = int(mission.get("ship_id",-1))
         if ship_id < 0 or ship_id >= world.ships.size():
             mission["complete"] = true
             mission["failed"] = true
@@ -143,7 +143,7 @@ func _simulate_naval_missions(day: int) -> void:
             mission["failed"] = true
             continue
         if int(ship.get("region",-1)) == destination:
-            var reward := int(mission.get("reward",0))
+            var reward: int = int(mission.get("reward",0))
             world.gold += reward
             mission["complete"] = true
             naval_events.push_front("Naval mission completed at %s: %d gold earned." % [String(world.regions[destination].get("name","Region")), reward])
@@ -161,7 +161,7 @@ func create_naval_mission(resource: String, amount: int, destination_region: int
         return {"ok":false,"reason":"invalid_region"}
     var player_ships := get_player_ship_ids()
     if player_ships.is_empty(): return {"ok":false,"reason":"no_ship"}
-    var ship_id := int(player_ships[0])
+    var ship_id: int = int(player_ships[0])
     var ship: Dictionary = world.ships[ship_id]
     if bool(ship.get("disabled",false)) or int(ship.get("crew",0)) <= 0:
         return {"ok":false,"reason":"ship_unavailable"}
@@ -171,7 +171,7 @@ func create_naval_mission(resource: String, amount: int, destination_region: int
     var moved := min(amount, stock)
     if moved <= 0: return {"ok":false,"reason":"no_stock"}
     world.production_stock[resource] = stock - moved
-    var reward := moved * (4 if resource == "food" else (7 if resource == "wood" else 11))
+    var reward: int = moved * (4 if resource == "food" else (7 if resource == "wood" else 11))
     var id := 0
     for existing in naval_missions:
         id = max(id, int(existing.get("id",-1)) + 1)
@@ -284,11 +284,11 @@ func resolve_pending_naval_encounter(mode: String) -> Dictionary:
 func acquire_player_ship() -> Dictionary:
     if world == null:
         return {"ok":false,"reason":"world_unavailable"}
-    var cost := 300
+    var cost: int = 300
     if int(world.gold) < cost:
         return {"ok":false,"reason":"not_enough_gold","cost":cost}
     var region := int(world.player_region_id)
-    var ship_id := world.ships.size()
+    var ship_id: int = world.ships.size()
     world.gold -= cost
     world.ships.append({
         "id":ship_id,
@@ -331,7 +331,7 @@ func upgrade_ship(ship_id: int, stat: String) -> Dictionary:
     var level := int(ship.get(level_key, 0))
     if level >= 3:
         return {"ok":false,"reason":"max_level"}
-    var cost := 150 + level * 100
+    var cost: int = 150 + level * 100
     if int(world.gold) < cost:
         return {"ok":false,"reason":"not_enough_gold","cost":cost}
     world.gold -= cost
@@ -382,7 +382,7 @@ func recruit_ship_crew(ship_id: int, amount: int) -> Dictionary:
     if current_crew >= max_crew:
         return {"ok":false,"reason":"crew_full","max_crew":max_crew}
     var moved := min(amount, max_crew - current_crew)
-    var cost := moved * 4
+    var cost: int = moved * 4
     if int(world.gold) < cost:
         return {"ok":false,"reason":"not_enough_gold","cost":cost}
     world.gold -= cost
@@ -620,7 +620,7 @@ func repair_ship(ship_id: int) -> Dictionary:
     var missing := max_hull - int(ship.get("hull",50))
     if missing <= 0:
         return {"ok":false,"reason":"already_repaired"}
-    var cost := max(5, missing * 2)
+    var cost: int = max(5, missing * 2)
     if int(world.gold) < cost:
         return {"ok":false,"reason":"not_enough_gold","cost":cost}
     world.gold -= cost
