@@ -107,7 +107,7 @@ func recruit_from_settlement(settlement_id:int,troop_type:String,count:int)->Dic
 	if recruit_count<=0: return {"ok":false,"reason":"no_recruits"}
 	var costs={"levy":5,"spearman":9,"archer":11,"horseman":18}
 	if not costs.has(troop_type): return {"ok":false,"reason":"invalid_troop_type"}
-	var total_cost:=recruit_count*int(costs[troop_type])
+	var total_cost: int = recruit_count * int(costs[troop_type])
 	if gold<total_cost: return {"ok":false,"reason":"not_enough_gold"}
 	gold-=total_cost; settlement["garrison"]=int(settlement["garrison"])+recruit_count
 	for army in armies:
