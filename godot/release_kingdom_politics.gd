@@ -24,7 +24,7 @@ func _refresh() -> void:
         world = game.get("world_state")
     if world == null:
         return
-    var player := String(world.get("player_faction"))
+    var player := String(world.player_faction)
     for faction in world.factions:
         var id := String(faction.get("id",""))
         if id == "" or id == player:
