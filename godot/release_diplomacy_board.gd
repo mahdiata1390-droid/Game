@@ -38,7 +38,7 @@ func build(main: Node) -> void:
 	faction_option.size = Vector2(300, 48)
 	panel.add_child(faction_option)
 	action_option = OptionButton.new()
-	for action in ["peace","war","alliance","vassal"]:
+	for action in ["peace","war","alliance","trade"]:
 		action_option.add_item(action)
 	action_option.position = Vector2(345, 205)
 	action_option.size = Vector2(260, 48)
