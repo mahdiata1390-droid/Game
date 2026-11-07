@@ -537,6 +537,9 @@ func naval_battle(ship_a_id:int,ship_b_id:int)->Dictionary:
 	ships.remove_at(loser)
 	return {"ok":true,"winner":winner,"loser":loser}
 
+func get_diplomacy(a:String,b:String)->String:
+	return String(diplomacy.get("%s|%s" % [a,b], "neutral"))
+
 func set_diplomacy(a:String,b:String,state:String)->Dictionary:
 	if _get_faction(a).is_empty() or _get_faction(b).is_empty() or a==b or not ["war","peace","alliance","trade"].has(state): return {"ok":false}
 	diplomacy["%s|%s"%[a,b]]=state; diplomacy["%s|%s"%[b,a]]=state
