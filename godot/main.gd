@@ -77,6 +77,7 @@ var lord_intelligence: ReleaseLordIntelligence
 var economy_growth: ReleaseEconomyGrowth
 var combat_tactics: ReleaseCombatTactics
 var settlement_life: ReleaseSettlementLife
+var trade_network: ReleaseTradeNetwork
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -203,6 +204,10 @@ func _boot_gameplay() -> void:
 	settlement_life.name = "SettlementLife"
 	add_child(settlement_life)
 	settlement_life.build(self)
+	trade_network = ReleaseTradeNetwork.new()
+	trade_network.name = "TradeNetwork"
+	add_child(trade_network)
+	trade_network.build(self)
 	playable_world = preload("res://release_playable_world.gd").new()
 	playable_world.name = "PlayableWorld"
 	add_child(playable_world)
