@@ -6,7 +6,7 @@ class_name ReleaseEconomyGrowth
 ## evolve automatically while the sandbox is running.
 
 var game:Node3D
-var world:Node
+var world
 var tick:=0.0
 var last_event:="ECONOMY ONLINE"
 
