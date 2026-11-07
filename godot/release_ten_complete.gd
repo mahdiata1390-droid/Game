@@ -10,23 +10,23 @@ class_name ReleaseTenComplete
 var game: Node3D
 var world: Node
 var player: CharacterBody3D
-var stamina := 100.0
-var max_stamina := 100.0
-var combo_step := 0
-var combo_timer := 0.0
-var block_active := false
-var combat_xp := 0
+var stamina = 100.0
+var max_stamina = 100.0
+var combo_step = 0
+var combo_timer = 0.0
+var block_active = false
+var combat_xp = 0
 var projectiles: Array[Node3D] = []
-var ai_clock := 0.0
-var economy_clock := 0.0
-var life_clock := 0.0
-var world_clock := 0.0
-var visual_clock := 0.0
+var ai_clock = 0.0
+var economy_clock = 0.0
+var life_clock = 0.0
+var world_clock = 0.0
+var visual_clock = 0.0
 var map_panel: Panel
 var map_label: Label
-var map_open := false
-var selected_settlement := -1
-var selected_army := -1
+var map_open = false
+var selected_settlement = -1
+var selected_army = -1
 var siege_state: Dictionary = {}
 var naval_state: Dictionary = {}
 var family_state: Dictionary = {}
@@ -34,7 +34,7 @@ var progression_state: Dictionary = {}
 var living_npcs: Array[Node3D] = []
 var world_animals: Array[Node3D] = []
 var visual_roots: Array[Node3D] = []
-var rng := RandomNumberGenerator.new()
+var rng = RandomNumberGenerator.new()
 
 func build(main_node: Node3D) -> void:
 	game = main_node
@@ -48,7 +48,7 @@ func build(main_node: Node3D) -> void:
 	set_process(true)
 
 func _init_state() -> void:
-	var state := _state()
+	var state = _state()
 	if not state.has("ten_complete"):
 		state["ten_complete"] = true
 		state["combat"] = {"stamina":100.0,"combo":0,"weapon":"iron_sword","block":false}
@@ -109,7 +109,7 @@ func _build_visual_content() -> void:
 	for i in range(world.settlements.size()):
 		var s: Dictionary = world.settlements[i]
 		var p: Vector2 = s.get("position", Vector2.ZERO)
-		var root := Node3D.new()
+		var root = Node3D.new()
 		root.name = "LifeContent_%s" % String(s.get("name","Settlement"))
 		root.position = Vector3(p.x, 0.02, p.y)
 		game.add_child(root)
@@ -121,12 +121,12 @@ func _build_visual_content() -> void:
 	_state()["visual"]["animal_count"] = world_animals.size()
 
 func _build_settlement_props(root: Node3D, kind: String, owner: String) -> void:
-	var accent := world.get_faction_accent(owner)
-	var service_count := 3
+	var accent = world.get_faction_accent(owner)
+	var service_count = 3
 	if kind == "city": service_count = 7
 	elif kind == "castle": service_count = 5
 	for i in range(service_count):
-		var prop := Node3D.new()
+		var prop = Node3D.new()
 		prop.name = "Service_%d" % i
 		prop.position = Vector3(-3.2 + float(i % 4) * 2.1, 0, 2.3 + float(i / 4) * 1.8)
 		root.add_child(prop)
@@ -134,7 +134,7 @@ func _build_settlement_props(root: Node3D, kind: String, owner: String) -> void:
 		_make_box(prop, Vector3(1.0,0.12,0.82), Vector3(0,0.72,0), accent)
 		_make_box(prop, Vector3(0.16,1.25,0.16), Vector3(0.38,0.62,0.28), Color(0.20,0.12,0.07))
 	for i in range(3 if kind == "village" else 6):
-		var tree := Node3D.new()
+		var tree = Node3D.new()
 		tree.position = Vector3(-4.0 + i * 1.7, 0, -2.8)
 		root.add_child(tree)
 		_make_cylinder(tree, 0.11, 1.3, Vector3(0,0.65,0), Color(0.20,0.11,0.06))
@@ -142,7 +142,7 @@ func _build_settlement_props(root: Node3D, kind: String, owner: String) -> void:
 
 func _spawn_living_population() -> void:
 	for i in range(min(36, world.settlements.size() * 2)):
-		var npc := Node3D.new()
+		var npc = Node3D.new()
 		npc.name = "WorldNPC_%d" % i
 		var s: Dictionary = world.settlements[i % world.settlements.size()]
 		var p: Vector2 = s.get("position",Vector2.ZERO)
@@ -154,7 +154,7 @@ func _spawn_living_population() -> void:
 
 func _spawn_world_animals() -> void:
 	for i in range(12):
-		var animal := Node3D.new()
+		var animal = Node3D.new()
 		animal.name = "WildAnimal_%d" % i
 		animal.position = Vector3(rng.randf_range(-20,20),0.15,rng.randf_range(-16,16))
 		game.add_child(animal)
@@ -163,12 +163,12 @@ func _spawn_world_animals() -> void:
 		world_animals.append(animal)
 
 func _make_box(parent: Node3D, size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
-	var n := MeshInstance3D.new()
-	var m := BoxMesh.new()
+	var n = MeshInstance3D.new()
+	var m = BoxMesh.new()
 	m.size = size
 	n.mesh = m
 	n.position = pos
-	var mat := StandardMaterial3D.new()
+	var mat = StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.roughness = 0.82
 	n.material_override = mat
@@ -176,27 +176,27 @@ func _make_box(parent: Node3D, size: Vector3, pos: Vector3, color: Color) -> Mes
 	return n
 
 func _make_cylinder(parent: Node3D, radius: float, height: float, pos: Vector3, color: Color) -> MeshInstance3D:
-	var n := MeshInstance3D.new()
-	var m := CylinderMesh.new()
+	var n = MeshInstance3D.new()
+	var m = CylinderMesh.new()
 	m.top_radius = radius
 	m.bottom_radius = radius
 	m.height = height
 	n.mesh = m
 	n.position = pos
-	var mat := StandardMaterial3D.new()
+	var mat = StandardMaterial3D.new()
 	mat.albedo_color = color
 	n.material_override = mat
 	parent.add_child(n)
 	return n
 
 func _make_sphere(parent: Node3D, radius: float, pos: Vector3, color: Color) -> MeshInstance3D:
-	var n := MeshInstance3D.new()
-	var m := SphereMesh.new()
+	var n = MeshInstance3D.new()
+	var m = SphereMesh.new()
 	m.radius = radius
 	m.height = radius * 2.0
 	n.mesh = m
 	n.position = pos
-	var mat := StandardMaterial3D.new()
+	var mat = StandardMaterial3D.new()
 	mat.albedo_color = color
 	n.material_override = mat
 	parent.add_child(n)
@@ -209,17 +209,17 @@ func _make_sphere(parent: Node3D, radius: float, pos: Vector3, color: Color) -> 
 func player_strike() -> Dictionary:
 	if player == null or stamina < 12.0:
 		return {"ok":false,"reason":"stamina"}
-	var weapon := String(_state()["combat"].get("weapon","iron_sword"))
-	var stats := {"iron_sword":[22,2.0],"steel_sword":[30,2.1],"axe":[34,1.7],"mace":[32,1.6],"spear":[26,2.8]}
+	var weapon = String(_state()["combat"].get("weapon","iron_sword"))
+	var stats = {"iron_sword":[22,2.0],"steel_sword":[30,2.1],"axe":[34,1.7],"mace":[32,1.6],"spear":[26,2.8]}
 	var w: Array = stats.get(weapon,stats["iron_sword"])
 	stamina -= 12.0
 	combo_step = (combo_step + 1) % 3
 	combo_timer = 1.0
-	var combo_bonus := 1.0 + float(combo_step) * 0.14
+	var combo_bonus = 1.0 + float(combo_step) * 0.14
 	var target: Node3D = _nearest_enemy(3.2)
 	if target == null:
 		return {"ok":true,"hit":false,"damage":0,"weapon":weapon,"combo":combo_step}
-	var damage := int(round(float(w[0]) * combo_bonus))
+	var damage = int(round(float(w[0]) * combo_bonus))
 	if block_active:
 		damage = int(round(float(damage) * 0.35))
 	_apply_damage_to_node(target, damage)
@@ -241,11 +241,11 @@ func ranged_attack() -> Dictionary:
 	if player == null or stamina < 18.0:
 		return {"ok":false,"reason":"stamina"}
 	stamina -= 18.0
-	var target := _nearest_enemy(22.0)
+	var target = _nearest_enemy(22.0)
 	if target == null:
 		return {"ok":true,"hit":false}
-	var bolt := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
+	var bolt = MeshInstance3D.new()
+	var mesh = BoxMesh.new()
 	mesh.size = Vector3(0.06,0.06,0.45)
 	bolt.mesh = mesh
 	bolt.position = player.global_position + Vector3(0,1.3,0)
@@ -258,14 +258,14 @@ func ranged_attack() -> Dictionary:
 
 func _update_projectiles(delta: float) -> void:
 	for i in range(projectiles.size()-1,-1,-1):
-		var p := projectiles[i]
+		var p = projectiles[i]
 		if not is_instance_valid(p):
 			projectiles.remove_at(i)
 			continue
-		var target := p.get_meta("target") as Node3D
+		var target = p.get_meta("target") as Node3D
 		if not is_instance_valid(target):
 			p.queue_free(); projectiles.remove_at(i); continue
-		var destination := target.global_position + Vector3(0,1.0,0)
+		var destination = target.global_position + Vector3(0,1.0,0)
 		p.global_position = p.global_position.move_toward(destination,18.0*delta)
 		if p.global_position.distance_to(destination) < 0.45:
 			_apply_damage_to_node(target,int(p.get_meta("damage")))
@@ -274,15 +274,15 @@ func _update_projectiles(delta: float) -> void:
 
 func _nearest_enemy(max_distance: float) -> Node3D:
 	var best: Node3D
-	var best_d := max_distance
+	var best_d = max_distance
 	var troop_array: Array = game.get("troops") if game.get("troops") != null else []
 	for d in troop_array:
 		if String(d.get("team","")) != "ENEMY":
 			continue
-		var n := d.get("node") as Node3D
+		var n = d.get("node") as Node3D
 		if not is_instance_valid(n):
 			continue
-		var dist := player.global_position.distance_to(n.global_position)
+		var dist = player.global_position.distance_to(n.global_position)
 		if dist < best_d:
 			best_d = dist
 			best = n
@@ -299,7 +299,7 @@ func _apply_damage_to_node(target: Node3D, damage: int) -> void:
 func begin_siege(settlement_id: int) -> Dictionary:
 	if world == null or settlement_id < 0 or settlement_id >= world.settlements.size():
 		return {"ok":false}
-	var result := world.start_siege(settlement_id, _player_army_id())
+	var result = world.start_siege(settlement_id, _player_army_id())
 	if not bool(result.get("ok",false)):
 		return result
 	var s: Dictionary = world.settlements[settlement_id]
@@ -312,7 +312,7 @@ func begin_siege(settlement_id: int) -> Dictionary:
 func use_siege_equipment(kind: String) -> Dictionary:
 	if not bool(siege_state.get("active",false)):
 		return {"ok":false,"reason":"no_siege"}
-	var damage := {"ram":28,"catapult":45,"tower":18,"ladder":12}.get(kind,0)
+	var damage = {"ram":28,"catapult":45,"tower":18,"ladder":12}.get(kind,0)
 	if damage == 0:
 		return {"ok":false,"reason":"invalid_equipment"}
 	if kind == "ram":
@@ -332,8 +332,8 @@ func use_siege_equipment(kind: String) -> Dictionary:
 func assault_siege() -> Dictionary:
 	if not bool(siege_state.get("active",false)):
 		return {"ok":false,"reason":"no_siege"}
-	var sid := int(siege_state["settlement"])
-	var result := world.assault_siege(sid)
+	var sid = int(siege_state["settlement"])
+	var result = world.assault_siege(sid)
 	if bool(result.get("captured",false)):
 		siege_state["active"] = false
 		siege_state["phase"] = "captured"
@@ -350,14 +350,14 @@ func assault_siege() -> Dictionary:
 func _simulate_ai() -> void:
 	if world == null or world.armies.is_empty():
 		return
-	var decisions := 0
+	var decisions = 0
 	for i in range(world.armies.size()):
 		var army: Dictionary = world.armies[i]
 		if String(army.get("owner","")) == world.player_faction:
 			continue
-		var soldiers := int(army.get("soldiers",0))
-		var morale := int(army.get("morale",50))
-		var food := int(army.get("food",0))
+		var soldiers = int(army.get("soldiers",0))
+		var morale = int(army.get("morale",50))
+		var food = int(army.get("food",0))
 		if soldiers <= 0:
 			continue
 		if food < 15 or morale < 30:
@@ -367,7 +367,7 @@ func _simulate_ai() -> void:
 				army["region"] = neighbors[rng.randi_range(0,neighbors.size()-1)]
 			decisions += 1
 			continue
-		var hostile := _find_hostile_neighbor(String(army.get("owner","")),int(army.get("region",0)))
+		var hostile = _find_hostile_neighbor(String(army.get("owner","")),int(army.get("region",0)))
 		if hostile >= 0 and soldiers >= 70:
 			army["order"] = "attack"
 			army["target_region"] = hostile
@@ -387,7 +387,7 @@ func _find_hostile_neighbor(owner: String, region_id: int) -> int:
 	for rid in world.get_region_neighbors(region_id):
 		if rid < 0 or rid >= world.regions.size():
 			continue
-		var other := String(world.regions[rid].get("owner",""))
+		var other = String(world.regions[rid].get("owner",""))
 		if other != owner and world.has_method("_are_at_war") and world.call("_are_at_war",owner,other):
 			return rid
 	return -1
@@ -399,24 +399,24 @@ func _find_hostile_neighbor(owner: String, region_id: int) -> int:
 func _simulate_economy() -> void:
 	if world == null:
 		return
-	var totals := {"food":0,"wood":0,"iron":0,"horses":0,"spice":0}
+	var totals = {"food":0,"wood":0,"iron":0,"horses":0,"spice":0}
 	for s in world.settlements:
 		var stock: Dictionary = s.get("stockpile",{})
 		for key in totals.keys():
 			totals[key] += int(stock.get(key,0))
 	var prices: Dictionary = _state()["economy"]["prices"]
 	for key in prices.keys():
-		var amount := int(totals.get(key,0))
-		var target := 80
-		var pressure := clamp((float(target)-float(amount))/float(target),-0.45,0.65)
+		var amount = int(totals.get(key,0))
+		var target = 80
+		var pressure = clamp((float(target)-float(amount))/float(target),-0.45,0.65)
 		prices[key] = clamp(1.0 + pressure,0.55,4.0)
 	_state()["economy"]["prices"] = prices
 	_state()["economy"]["inflation"] = float(prices.get("food",1.0))-1.0
 	# Produce and consume resources at settlement level.
 	for s in world.settlements:
 		var stock: Dictionary = s.get("stockpile",{})
-		var prosperity := int(s.get("prosperity",40))
-		var farm := int(s.get("buildings",{}).get("farm",1))
+		var prosperity = int(s.get("prosperity",40))
+		var farm = int(s.get("buildings",{}).get("farm",1))
 		stock["food"] = int(stock.get("food",0)) + max(1,farm + prosperity/30)
 		stock["wood"] = int(stock.get("wood",0)) + 1
 		if String(s.get("type","")) == "city":
@@ -430,8 +430,8 @@ func _simulate_economy() -> void:
 func buy_resource(resource: String, amount: int) -> Dictionary:
 	if not ["food","wood","iron","horses","spice"].has(resource) or amount <= 0:
 		return {"ok":false}
-	var price := float(_state()["economy"]["prices"].get(resource,1.0))
-	var cost := int(ceil(price * amount))
+	var price = float(_state()["economy"]["prices"].get(resource,1.0))
+	var cost = int(ceil(price * amount))
 	if world.gold < cost:
 		return {"ok":false,"reason":"gold","cost":cost}
 	world.gold -= cost
@@ -441,8 +441,8 @@ func buy_resource(resource: String, amount: int) -> Dictionary:
 func sell_resource(resource: String, amount: int) -> Dictionary:
 	if amount <= 0 or int(world.player_inventory.get(resource,0)) < amount:
 		return {"ok":false}
-	var price := float(_state()["economy"]["prices"].get(resource,1.0))
-	var gain := int(floor(price * amount * 0.9))
+	var price = float(_state()["economy"]["prices"].get(resource,1.0))
+	var gain = int(floor(price * amount * 0.9))
 	world.player_inventory[resource] = int(world.player_inventory.get(resource,0)) - amount
 	world.gold += gain
 	return {"ok":true,"gold":gain}
@@ -456,13 +456,13 @@ func naval_attack(ship_id: int, target_ship_id: int) -> Dictionary:
 		return {"ok":false}
 	var a: Dictionary = world.ships[ship_id]
 	var b: Dictionary = world.ships[target_ship_id]
-	var ap := int(a.get("crew",0)) + int(a.get("cargo",{}).get("iron",0))*2
-	var bp := int(b.get("crew",0)) + int(b.get("cargo",{}).get("iron",0))*2
-	var won := ap >= bp
+	var ap = int(a.get("crew",0)) + int(a.get("cargo",{}).get("iron",0))*2
+	var bp = int(b.get("crew",0)) + int(b.get("cargo",{}).get("iron",0))*2
+	var won = ap >= bp
 	_state()["naval"]["encounters"] = int(_state()["naval"].get("encounters",0)) + 1
 	if won:
 		_state()["naval"]["victories"] = int(_state()["naval"].get("victories",0)) + 1
-		var loot := 0
+		var loot = 0
 		for v in b.get("cargo",{}).values(): loot += int(v)
 		world.gold += loot
 		world.ships.remove_at(target_ship_id)
@@ -474,7 +474,7 @@ func transport_army(ship_id: int, army_id: int, target_region: int) -> Dictionar
 		return {"ok":false}
 	var ship: Dictionary = world.ships[ship_id]
 	var army: Dictionary = world.armies[army_id]
-	var capacity := int(ship.get("crew",0))*3
+	var capacity = int(ship.get("crew",0))*3
 	if int(army.get("soldiers",0)) > capacity:
 		return {"ok":false,"reason":"capacity","capacity":capacity}
 	if target_region < 0 or target_region >= world.regions.size():
@@ -493,7 +493,7 @@ func transport_army(ship_id: int, army_id: int, target_region: int) -> Dictionar
 func _simulate_life() -> void:
 	if world == null:
 		return
-	var fam := _state()["family"]
+	var fam = _state()["family"]
 	fam["age"] = int(fam.get("age",18))
 	if world.day % 30 == 0:
 		fam["age"] += 1
@@ -529,10 +529,10 @@ func set_career(career: String) -> Dictionary:
 func _add_progression_xp(amount: int) -> void:
 	if amount <= 0:
 		return
-	var p := _state()["progression"]
+	var p = _state()["progression"]
 	p["xp"] = int(p.get("xp",0)) + amount
-	var old_level := int(p.get("level",1))
-	var level := old_level
+	var old_level = int(p.get("level",1))
+	var level = old_level
 	while int(p["xp"]) >= level * 120:
 		p["xp"] = int(p["xp"]) - level * 120
 		level += 1
@@ -543,14 +543,14 @@ func _add_progression_xp(amount: int) -> void:
 	world.player_xp = int(p["xp"])
 
 func add_renown(amount: int) -> void:
-	var p := _state()["progression"]
+	var p = _state()["progression"]
 	p["renown"] = max(0,int(p.get("renown",0))+amount)
 	p["reputation"] = clamp(int(p.get("reputation",0))+int(amount/2),-100,100)
 
 func spend_skill_point(skill: String) -> Dictionary:
 	if not ["combat","command","trade","diplomacy","survival"].has(skill):
 		return {"ok":false}
-	var p := _state()["progression"]
+	var p = _state()["progression"]
 	if int(p.get("skill_points",0)) <= 0:
 		return {"ok":false,"reason":"no_points"}
 	p["skill_points"] = int(p["skill_points"])-1
@@ -573,7 +573,7 @@ func _simulate_living_world() -> void:
 			c["risk"] = min(0.65,float(c["risk"])+0.03)
 	# Small, deterministic world events that alter actual campaign values.
 	if rng.randf() < 0.10 and not world.settlements.is_empty():
-		var sid := rng.randi_range(0,world.settlements.size()-1)
+		var sid = rng.randi_range(0,world.settlements.size()-1)
 		var s: Dictionary = world.settlements[sid]
 		s["prosperity"] = clamp(int(s.get("prosperity",40))+rng.randi_range(-3,5),0,100)
 		_state()["world"]["events"] = int(_state()["world"].get("events",0))+1
@@ -586,7 +586,7 @@ func _update_visual_npcs() -> void:
 	for npc in living_npcs:
 		if not is_instance_valid(npc):
 			continue
-		var offset := Vector3(rng.randf_range(-1.0,1.0),0,rng.randf_range(-1.0,1.0))
+		var offset = Vector3(rng.randf_range(-1.0,1.0),0,rng.randf_range(-1.0,1.0))
 		npc.position += offset * 0.12
 		if npc.position.distance_to(player.position) > 80.0:
 			npc.visible = false
@@ -603,16 +603,16 @@ func _update_visual_npcs() -> void:
 # ---------------------------------------------------------------------------
 
 func _build_mobile_hud() -> void:
-	var layer := CanvasLayer.new()
+	var layer = CanvasLayer.new()
 	layer.name = "TenCompleteHUD"
 	game.add_child(layer)
-	var toggle := Button.new()
+	var toggle = Button.new()
 	toggle.text = "WORLD MAP"
 	toggle.position = Vector2(18,210)
 	toggle.size = Vector2(150,48)
 	toggle.pressed.connect(toggle_map)
 	layer.add_child(toggle)
-	var status := Label.new()
+	var status = Label.new()
 	status.name = "TenStatus"
 	status.position = Vector2(18,265)
 	status.size = Vector2(340,110)
@@ -646,13 +646,13 @@ func _refresh_map() -> void:
 	map_panel.add_child(map_label)
 	for i in range(min(world.settlements.size(),18)):
 		var s: Dictionary = world.settlements[i]
-		var b := Button.new()
+		var b = Button.new()
 		b.text = "%s • %s • P%d" % [String(s.get("name","Settlement")),String(s.get("owner","")),int(s.get("prosperity",0))]
 		b.position = Vector2(16 + (i%2)*245,88 + (i/2)*43)
 		b.size = Vector2(235,38)
 		b.pressed.connect(_select_settlement.bind(i))
 		map_panel.add_child(b)
-	var close := Button.new()
+	var close = Button.new()
 	close.text = "CLOSE"
 	close.position = Vector2(410,515)
 	close.size = Vector2(90,32)
@@ -683,6 +683,6 @@ func load_save_state(data: Dictionary) -> void:
 	if world == null or data.is_empty():
 		return
 	world.set_meta("ten_complete_state",data.duplicate(true))
-	var loaded := _state()
+	var loaded = _state()
 	stamina = float(loaded.get("combat",{}).get("stamina",100.0))
 	siege_state = loaded.get("siege",{}).duplicate(true)
