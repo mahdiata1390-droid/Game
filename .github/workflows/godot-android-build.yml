@@ -173,6 +173,7 @@ jobs:
           path: |
             godot-check.log
             godot-runtime.log
+            godot-playable-world-check.log
           if-no-files-found: ignore
 
 
