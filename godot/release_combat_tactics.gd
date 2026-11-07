@@ -50,7 +50,7 @@ func _refresh_all()->void:
 		elif archers>max(10,int(soldiers*0.22)):
 			formation="skirmish"
 			if order=="hold": order="defend"
-		elif spears>max(10,int(soldiers*0.25):
+		elif spears>max(10,int(soldiers*0.25)):
 			formation="shield_wall"
 
 		if not FORMATIONS.has(formation): formation="line"
