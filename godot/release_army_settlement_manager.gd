@@ -81,4 +81,4 @@ func _update() -> void:
 	info.text = "Objective: %s\n\nArmy: %s\nTroops: %d\nMorale: %d\nRegion: %s\nFormation: %s\nOrder: %s\n\nOwned settlement: %s" % [
 		String(a.get("name","")), int(a.get("soldiers",0)), int(a.get("morale",0)),
 		String(world.regions[int(a.get("region",0))].get("name","")), String(a.get("formation","line")),
-		String(a.get("order","hold")), sname] + "\n\nCampaign: " + objective
+		String(a.get("order","hold")), sname, objective]
