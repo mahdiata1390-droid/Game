@@ -149,10 +149,8 @@ func _boot_gameplay() -> void:
 	add_child(production_asset_integration)
 	production_asset_integration.setup(asset_registry)
 	production_asset_integration.bind_world(world_state)
-	visual_rescue = ReleaseVisualRescue.new()
-	visual_rescue.name = "VisualRescue"
-	add_child(visual_rescue)
-	visual_rescue.build(self)
+	# Do not inject primitive rescue geometry when the production art pipeline is active.
+	# The Android build contains the real medieval asset packs and they are bound to WorldState.
 	combat_system = ReleaseCombatSystem.new()
 	combat_system.name = "CombatSystem"
 	add_child(combat_system)
@@ -513,10 +511,9 @@ func _build_world() -> void:
 	ground.add_child(shape)
 	add_child(ground)
 
-	_create_settlement(Vector3(-8, 0, -7))
-	_create_settlement(Vector3(10, 0, -10))
-	_create_tree_cluster()
-	_create_rocks_and_paths()
+	# Production art packs provide the actual settlement/nature meshes.
+	# Keep only the terrain/collision fallback here so placeholder geometry cannot
+	# cover or visually compete with the production assets.
 
 func _mat(color: Color) -> StandardMaterial3D:
 	var m = StandardMaterial3D.new()
@@ -601,7 +598,7 @@ func _build_player() -> void:
 	player = CharacterBody3D.new()
 	player.name = "Player"
 	add_child(player)
-	player.position = Vector3(0, 1, -28)
+	player.position = Vector3(-18, 1, -5)
 
 	var body = MeshInstance3D.new()
 	var capsule = CapsuleMesh.new()
@@ -621,7 +618,7 @@ func _build_player() -> void:
 	player.add_child(collision)
 
 	camera = Camera3D.new()
-	camera.position = Vector3(0, 4.8, 7.5)
+	camera.position = Vector3(0, 4.6, 7.5)
 	# Camera sits behind the player and therefore looks toward -Z.
 	camera.rotation_degrees = Vector3(-16, 0, 0)
 	player.add_child(camera)
