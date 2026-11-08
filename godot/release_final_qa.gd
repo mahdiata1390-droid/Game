@@ -34,14 +34,12 @@ func run_checks() -> Dictionary:
         "CombatSystem", "NpcAiSystem", "SiegeStage", "ExpansionStages",
         "KingdomSystems", "Stages15to19", "Stages20to29", "Stages30to39",
         "Stages40to49", "FinalGamePass", "PlayableWorld",
-        "ProductionAssetRegistry", "ProductionAssetIntegration"
+        "VisualWorld"
     ]
     for node_name in required_nodes:
         _check(game.get_node_or_null(node_name) != null, "Connected: " + node_name)
-    var registry = game.get_node_or_null("ProductionAssetRegistry")
-    if registry != null and registry.has_method("get_status"):
-        var status: Dictionary = registry.get_status()
-        _check(status.size() > 0, "Production asset registry scanned")
+    var visual = game.get_node_or_null("VisualWorld")
+    _check(visual != null, "Authored visual world connected")
     return {
         "ok": failed == 0,
         "passed": passed,
