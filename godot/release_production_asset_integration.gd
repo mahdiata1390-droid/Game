@@ -38,6 +38,10 @@ func _populate() -> void:
     _populate_creatures()
     _bind_world_content()
     _apply_live_actor_visuals()
+    var status := get_status()
+    print("PRODUCTION_ART_READY spawned=%d environment=%d nature=%d characters=%d buildings=%d" % [int(status.get("spawned", 0)), int(status.get("environment", 0)), int(status.get("nature", 0)), int(status.get("characters", 0)), int(status.get("buildings_extra", 0))])
+    if int(status.get("spawned", 0)) < 10:
+        push_error("PRODUCTION_ART_FAILED: too few runtime-loaded production assets")
 
 func _clear_previous() -> void:
     for node in spawned:
