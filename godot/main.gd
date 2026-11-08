@@ -91,7 +91,7 @@ var kingdom_politics: ReleaseKingdomPolitics
 var economy_balance: ReleaseEconomyBalance
 var presentation_polish: ReleasePresentationPolish
 var release_hardening: ReleaseReleaseHardening
-var visual_world: ReleaseVisualWorld
+var visual_world: Node3D
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -287,7 +287,7 @@ func _build_visual_world() -> void:
 	# Gameplay systems remain authoritative and are not replaced by this layer.
 	if is_instance_valid(visual_world):
 		return
-	visual_world = ReleaseVisualWorld.new()
+	visual_world = preload("res://release_visual_world.gd").new()
 	visual_world.name = "VisualWorld"
 	add_child(visual_world)
 	visual_world.build(self)
