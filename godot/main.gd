@@ -1319,17 +1319,17 @@ func _player_attack() -> void:
 
 
 func _spawn_continent_labels() -> void:
-    # Settlement geometry comes exclusively from production GLB/GLTF assets.
-    # Keep lightweight labels only; no primitive settlement blocks in the world.
-    for settlement in world_state.settlements:
-        var p: Vector2 = settlement["position"]
-        var label := Label3D.new()
-        label.name = "SettlementLabel_%s" % String(settlement["name"])
-        label.text = String(settlement["name"])
-        label.position = Vector3(p.x, 3.2, p.y)
-        label.font_size = 22
-        label.outline_size = 6
-        add_child(label)
+	# Settlement geometry comes exclusively from production GLB/GLTF assets.
+	# Keep lightweight labels only; no primitive settlement blocks in the world.
+	for settlement in world_state.settlements:
+		var p: Vector2 = settlement["position"]
+		var label := Label3D.new()
+		label.name = "SettlementLabel_%s" % String(settlement["name"])
+		label.text = String(settlement["name"])
+		label.position = Vector3(p.x, 3.2, p.y)
+		label.font_size = 22
+		label.outline_size = 6
+		add_child(label)
 
 func _build_village_visual(root: Node3D, faction_color: Color, owner: String) -> void:
 	_mesh_box(Vector3(1.8, 0.8, 1.5), Vector3(0, 0.4, 0), Color(0.38, 0.27, 0.18), root)
