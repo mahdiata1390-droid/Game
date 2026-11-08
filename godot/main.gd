@@ -118,7 +118,7 @@ func _boot_gameplay() -> void:
 	_build_ui()
 	_build_interaction_ui()
 	_spawn_extra_banners()
-	_spawn_continent_world()
+	_spawn_continent_labels()
 	_build_visual_content_upgrade()
 	_build_campaign_visuals()
 	_build_siege_layer()
@@ -598,7 +598,7 @@ func _build_player() -> void:
 	player = CharacterBody3D.new()
 	player.name = "Player"
 	add_child(player)
-	player.position = Vector3(-18, 1, -5)
+	player.position = Vector3(-18, 1, -7)
 
 	var body = MeshInstance3D.new()
 	var capsule = CapsuleMesh.new()
@@ -1318,34 +1318,18 @@ func _player_attack() -> void:
 		_show_status("No enemy in range.", 0.8)
 
 
-func _spawn_continent_world() -> void:
-	for settlement in world_state.settlements:
-		var p: Vector2 = settlement["position"]
-		var owner: String = settlement["owner"]
-		var marker = Node3D.new()
-		marker.name = "Settlement_%s" % settlement["name"]
-		marker.position = Vector3(p.x, 0, p.y)
-		add_child(marker)
-		var color = world_state.get_faction_color(owner)
-		var kind: String = settlement["type"]
-		var height = 0.9
-		if kind == "city":
-			height = 1.5
-		elif kind == "castle":
-			height = 1.3
-		if kind == "castle":
-			_build_castle_visual(marker, color, owner)
-		elif kind == "city":
-			_build_city_visual(marker, color, owner)
-		else:
-			_build_village_visual(marker, color, owner)
-		_create_settlement_heraldry(marker, owner, kind)
-		var label = Label3D.new()
-		label.text = String(settlement["name"])
-		label.font_size = 24
-		label.outline_size = 6
-		label.position = Vector3(0, height + 2.35, 0)
-		marker.add_child(label)
+func _spawn_continent_labels() -> void:
+    # Settlement geometry comes exclusively from production GLB/GLTF assets.
+    # Keep lightweight labels only; no primitive settlement blocks in the world.
+    for settlement in world_state.settlements:
+        var p: Vector2 = settlement["position"]
+        var label := Label3D.new()
+        label.name = "SettlementLabel_%s" % String(settlement["name"])
+        label.text = String(settlement["name"])
+        label.position = Vector3(p.x, 3.2, p.y)
+        label.font_size = 22
+        label.outline_size = 6
+        add_child(label)
 
 func _build_village_visual(root: Node3D, faction_color: Color, owner: String) -> void:
 	_mesh_box(Vector3(1.8, 0.8, 1.5), Vector3(0, 0.4, 0), Color(0.38, 0.27, 0.18), root)
