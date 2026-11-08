@@ -94,7 +94,7 @@ func _collect_models(path: String, out: Array[String]) -> void:
 			_collect_models(full, out)
 		else:
 			var lower := item.to_lower()
-			if lower.ends_with(".glb") or lower.ends_with(".gltf") or lower.ends_with(".obj") or lower.ends_with(".fbx"):
+			if lower.ends_with(".glb") or lower.ends_with(".gltf"):
 				out.append(full)
 		item = dir.get_next()
 	dir.list_dir_end()
