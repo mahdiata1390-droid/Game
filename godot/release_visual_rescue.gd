@@ -22,7 +22,7 @@ func build(host: Node) -> void:
     _build_banners()
     _build_lighting_accents()
 
-func _mat(id: String, color: Color, metallic: float = 0.0, roughness: float = 0.8) -> StandardMaterial3D:
+func _mat(id: String, color: Color = Color.WHITE, metallic: float = 0.0, roughness: float = 0.8) -> StandardMaterial3D:
     if materials.has(id):
         return materials[id]
     var m := StandardMaterial3D.new()
