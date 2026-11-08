@@ -273,7 +273,7 @@ func _boot_gameplay() -> void:
 	var qa_result: Dictionary = final_qa.run_checks()
 	if not bool(qa_result.get("ok", false)):
 		_set_boot_status("WORLD QA FAILED • check debug log")
-		push_error("Final QA failed: %s" % String(qa_result.get("results", [])))
+		push_error("Final QA failed: %s" % str(qa_result.get("results", [])))
 	else:
 		_set_boot_status("WORLD READY • sandbox systems online")
 	var boot = get_node_or_null("BootStatus") as CanvasLayer
