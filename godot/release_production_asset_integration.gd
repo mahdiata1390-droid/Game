@@ -11,12 +11,12 @@ var asset_nodes_by_role: Dictionary = {}
 var world_state_ref: Node = null
 var host_ref: Node = null
 
-const MAX_WORLD_PROPS = 96
-const MAX_NATURE = 180
-const MAX_CHARACTERS = 18
-const MAX_EXTRA_CHARACTERS = 24
-const MAX_CREATURES = 12
-const MAX_CROPS = 48
+const MAX_WORLD_PROPS = 24
+const MAX_NATURE = 48
+const MAX_CHARACTERS = 6
+const MAX_EXTRA_CHARACTERS = 8
+const MAX_CREATURES = 4
+const MAX_CROPS = 12
 
 func setup(asset_registry: ReleaseAssetRegistry) -> void:
     registry = asset_registry
@@ -50,19 +50,14 @@ func _clear_previous() -> void:
     spawned.clear()
 
 func _load_scene(path: String) -> Node:
-    var resource = ResourceLoader.load(path)
-    if resource != null and resource is PackedScene:
-        var instance = (resource as PackedScene).instantiate()
-        if instance is Node3D:
-            return instance
-        instance.queue_free()
-
-    # Direct GLTF fallback for Android/CI where editor import cache is unavailable.
+    # Use direct GLTF loading so the exported Android PCK does not depend on
+    # editor-only imported-resource paths.
     var lower := path.to_lower()
     if not (lower.ends_with(".glb") or lower.ends_with(".gltf")):
         return null
     var document := GLTFDocument.new()
     var state := GLTFState.new()
+    state.base_path = path.get_base_dir()
     var err := document.append_from_file(path, state)
     if err != OK:
         return null
