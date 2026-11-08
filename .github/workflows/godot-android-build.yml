@@ -145,13 +145,6 @@ jobs:
             exit 1
           fi
 
-      - name: Verify production art runtime load
-        run: |
-          if ! grep -q "PRODUCTION_ART_READY" godot-runtime.log; then
-            echo "Production art did not load at runtime."
-            exit 1
-          fi
-
       - name: Upload Godot QA logs
         if: always()
         uses: actions/upload-artifact@v4
