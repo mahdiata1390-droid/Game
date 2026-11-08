@@ -47,12 +47,26 @@ func _clear_previous() -> void:
 
 func _load_scene(path: String) -> Node:
     var resource = ResourceLoader.load(path)
-    if resource == null or not resource is PackedScene:
+    if resource != null and resource is PackedScene:
+        var instance = (resource as PackedScene).instantiate()
+        if instance is Node3D:
+            return instance
+        instance.queue_free()
+
+    # Direct GLTF fallback for Android/CI where editor import cache is unavailable.
+    var lower := path.to_lower()
+    if not (lower.ends_with(".glb") or lower.ends_with(".gltf")):
         return null
-    var instance = (resource as PackedScene).instantiate()
-    if instance is Node3D:
-        return instance
-    instance.queue_free()
+    var document := GLTFDocument.new()
+    var state := GLTFState.new()
+    var err := document.append_from_file(path, state)
+    if err != OK:
+        return null
+    var generated = document.generate_scene(state)
+    if generated is Node3D:
+        return generated
+    if generated != null:
+        generated.queue_free()
     return null
 
 func _models(pack_id: String) -> Array:
@@ -67,7 +81,7 @@ func _populate_environment() -> void:
         var path: String = models[i]
         var lower = path.to_lower()
         # Skip obviously tiny/duplicate technical files.
-        if not (lower.ends_with(".glb") or lower.ends_with(".gltf") or lower.ends_with(".fbx")):
+        if not (lower.ends_with(".glb") or lower.ends_with(".gltf")):
             continue
         var node = _load_scene(path)
         if node == null:
@@ -192,7 +206,7 @@ func _populate_ring(pack_id: String, limit: int, radius: float, spacing: float, 
     for i in range(models.size()):
         var path: String = models[i]
         var lower = path.to_lower()
-        if not (lower.ends_with(".glb") or lower.ends_with(".gltf") or lower.ends_with(".fbx")):
+        if not (lower.ends_with(".glb") or lower.ends_with(".gltf")):
             continue
         var node = _load_scene(path)
         if node == null:
