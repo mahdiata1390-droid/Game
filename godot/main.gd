@@ -91,6 +91,7 @@ var kingdom_politics: ReleaseKingdomPolitics
 var economy_balance: ReleaseEconomyBalance
 var presentation_polish: ReleasePresentationPolish
 var release_hardening: ReleaseReleaseHardening
+var visual_world: ReleaseVisualWorld
 
 func _ready() -> void:
 	# Start the player/camera first. The scene already contains a guaranteed
@@ -108,6 +109,7 @@ func _boot_gameplay() -> void:
 	_build_player()
 	_set_boot_status("Building terrain and settlements…")
 	_build_world()
+	_build_visual_world()
 	_set_boot_status("Loading campaign world…")
 	world_state = WorldState.new()
 	world_state.name = "WorldState"
@@ -140,17 +142,12 @@ func _boot_gameplay() -> void:
 	_build_world_life_mobile()
 	_build_ten_complete()
 	_build_final_completion()
-	asset_registry = ReleaseAssetRegistry.new()
-	asset_registry.name = "ProductionAssetRegistry"
-	add_child(asset_registry)
-	asset_registry.scan()
-	production_asset_integration = ReleaseProductionAssetIntegration.new()
-	production_asset_integration.name = "ProductionAssetIntegration"
-	add_child(production_asset_integration)
-	production_asset_integration.setup(asset_registry)
-	production_asset_integration.bind_world(world_state)
-	# Do not inject primitive rescue geometry when the production art pipeline is active.
-	# The Android build contains the real medieval asset packs and they are bound to WorldState.
+	# External binary packs are optional. The authored procedural visual world is
+	# the guaranteed Android render path and does not depend on missing GLB/GLTF files.
+	visual_world = ReleaseVisualWorld.new()
+	visual_world.name = "VisualWorld"
+	add_child(visual_world)
+	visual_world.build(self)
 	combat_system = ReleaseCombatSystem.new()
 	combat_system.name = "CombatSystem"
 	add_child(combat_system)
@@ -289,6 +286,13 @@ func _boot_gameplay() -> void:
 	if is_instance_valid(boot):
 		await get_tree().create_timer(1.5).timeout
 		boot.queue_free()
+
+func _build_visual_world() -> void:
+	# Dedicated visual vertical slice: castle, village, river, ships, mountains,
+	# forest, siege camp and two opposing armies.
+	# Gameplay systems remain authoritative and are not replaced by this layer.
+	if is_instance_valid(visual_world):
+		return
 
 func _build_visual_content_upgrade() -> void:
 	var upgrade = ContentUpgrade.new()
