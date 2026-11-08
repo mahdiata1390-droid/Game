@@ -142,12 +142,6 @@ func _boot_gameplay() -> void:
 	_build_world_life_mobile()
 	_build_ten_complete()
 	_build_final_completion()
-	# External binary packs are optional. The authored procedural visual world is
-	# the guaranteed Android render path and does not depend on missing GLB/GLTF files.
-	visual_world = ReleaseVisualWorld.new()
-	visual_world.name = "VisualWorld"
-	add_child(visual_world)
-	visual_world.build(self)
 	combat_system = ReleaseCombatSystem.new()
 	combat_system.name = "CombatSystem"
 	add_child(combat_system)
@@ -293,6 +287,10 @@ func _build_visual_world() -> void:
 	# Gameplay systems remain authoritative and are not replaced by this layer.
 	if is_instance_valid(visual_world):
 		return
+	visual_world = ReleaseVisualWorld.new()
+	visual_world.name = "VisualWorld"
+	add_child(visual_world)
+	visual_world.build(self)
 
 func _build_visual_content_upgrade() -> void:
 	var upgrade = ContentUpgrade.new()
