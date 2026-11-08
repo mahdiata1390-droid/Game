@@ -52,10 +52,9 @@ func _mat(color: Color, roughness := 0.82, metallic := false) -> StandardMateria
 
 func _texture_mat(path: String, tint: Color) -> StandardMaterial3D:
     var m := _mat(tint)
-    var tex = load(path)
-    if tex is Texture2D:
-        m.albedo_texture = tex
-        m.uv1_scale = Vector3(2.2, 2.2, 2.2)
+    # SVG source files are optional design references only; Android uses
+    # native StandardMaterial colors here so headless/mobile rendering never
+    # depends on an external SVG loader.
     return m
 
 func _box(parent: Node3D, size: Vector3, pos: Vector3, mat, rot := Vector3.ZERO) -> MeshInstance3D:
