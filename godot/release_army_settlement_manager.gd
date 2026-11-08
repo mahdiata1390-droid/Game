@@ -78,7 +78,7 @@ func _update() -> void:
 	if sid >= 0 and sid < world.settlements.size():
 		sname = String(world.settlements[sid].get("name",""))
 	var objective := String(campaign.get_progress().get("next_objective","")) if campaign != null else ""
-	info.text = "Objective: %s\n\nArmy: %s\nTroops: %d\nMorale: %d\nRegion: %s\nFormation: %s\nOrder: %s\n\nOwned settlement: %s" % [
+	info.text = "Objective: %s\n\nArmy: %s\nTroops: %d\nMorale: %d\nRegion: %s\nFormation: %s\nOrder: %s\n\nOwned settlement: %s\nCampaign: %s" % [
 		String(a.get("name","")), int(a.get("soldiers",0)), int(a.get("morale",0)),
 		String(world.regions[int(a.get("region",0))].get("name","")), String(a.get("formation","line")),
 		String(a.get("order","hold")), sname, objective]
