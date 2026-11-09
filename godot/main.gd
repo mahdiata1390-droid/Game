@@ -115,6 +115,19 @@ func _boot_gameplay() -> void:
 	world_state.name = "WorldState"
 	add_child(world_state)
 	world_state.initialize_continent()
+	# Load the actual production GLB/GLTF packs downloaded by CI and bind them
+	# to the authoritative campaign settlements/armies. The authored visual
+	# world remains visible only as a fallback if the production pack fails.
+	asset_registry = preload("res://release_asset_registry.gd").new()
+	asset_registry.name = "ProductionAssetRegistry"
+	add_child(asset_registry)
+	asset_registry.scan()
+	production_asset_integration = preload("res://release_production_asset_integration.gd").new()
+	production_asset_integration.name = "ProductionAssetIntegration"
+	add_child(production_asset_integration)
+	production_asset_integration.setup(asset_registry)
+	production_asset_integration.bind_world(world_state)
+	_set_boot_status("Loading production 3D art…")
 	_set_boot_status("Spawning troops and gameplay UI…")
 	_build_warband()
 	_build_ui()
