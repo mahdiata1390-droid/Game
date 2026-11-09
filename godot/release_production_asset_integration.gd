@@ -40,7 +40,16 @@ func _populate() -> void:
     _apply_live_actor_visuals()
     var status := get_status()
     print("PRODUCTION_ART_READY spawned=%d environment=%d nature=%d characters=%d buildings=%d" % [int(status.get("spawned", 0)), int(status.get("environment", 0)), int(status.get("nature", 0)), int(status.get("characters", 0)), int(status.get("buildings_extra", 0))])
-    if int(status.get("spawned", 0)) < 10:
+    var spawned_count := int(status.get("spawned", 0))
+    if spawned_count >= 10:
+        var fallback = get_node_or_null("../VisualWorld")
+        if fallback != null:
+            fallback.visible = false
+        var rescue = get_node_or_null("../AuthoredWorldVisual")
+        if rescue != null:
+            rescue.visible = false
+        print("PRODUCTION_ART_ACTIVE spawned=%d" % spawned_count)
+    else:
         push_error("PRODUCTION_ART_FAILED: too few runtime-loaded production assets")
 
 func _clear_previous() -> void:
