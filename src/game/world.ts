@@ -7,6 +7,9 @@ import { World, type Entity } from "../engine/ecs";
 import { ATLAS_TILE as TILE } from "../engine/textures";
 import type { Input } from "../engine/input";
 import type { Camera, Instance, Light } from "../engine/renderer";
+import { buildSettlement as buildSettlementGeometry } from "./architecture";
+import { emitFigure } from "./figures";
+import { CHAMPIONS, houseOf, unitTitle, WEAPON_PROFILE } from "./houses";
 
 export type Transform = {
   x: number; y: number; z: number;
@@ -18,6 +21,8 @@ export type Appearance = {
   r: number; g: number; b: number;
   tile: number;
   repeat: number;
+  /** optional independent vertical tiling for long surfaces */
+  repeatY?: number;
   emissive: number;
   flash: number;
 };
@@ -27,12 +32,16 @@ export type Body = { hx: number; hz: number; solid: boolean };
 export type Character = {
   name: string;
   faction: "player" | "ally" | "enemy";
+  /** owning house id; absent in scenes saved before houses existed */
+  house?: string;
   hp: number;
   maxHp: number;
   speed: number;
   damage: number;
   cooldown: number;
   respawn: number;
+  /** townsfolk: they wander, they never fight */
+  civilian?: boolean;
 };
 
 export type Unit = {
@@ -43,15 +52,6 @@ export type Unit = {
 };
 
 export type Meta = { name: string; group: string };
-
-const FACTION_COLORS: Record<string, [number, number, number]> = {
-  "Free Company": [0.42, 0.45, 0.5],
-  north_kingdom: [0.24, 0.38, 0.66],
-  river_kingdom: [0.74, 0.55, 0.2],
-  eastern_tribes: [0.72, 0.24, 0.16],
-  southern_sultanate: [0.82, 0.62, 0.14],
-  western_clans: [0.42, 0.3, 0.58],
-};
 
 type SettlementDef = {
   name: string;
@@ -101,6 +101,8 @@ export class MedievalWorld {
   log = "Click or press Space to strike.";
   private spawnCooldown = 0;
   private random = rng(20261125);
+  /** previous positions, so figures know whether they are walking */
+  private lastPositions = new Map<Entity, { x: number; z: number }>();
 
   constructor(build = true) {
     if (build) this.build();
@@ -126,7 +128,7 @@ export class MedievalWorld {
     sx: number, sy: number, sz: number,
     color: [number, number, number],
     options: {
-      tile?: number; repeat?: number; emissive?: number;
+      tile?: number; repeat?: number; repeatY?: number; emissive?: number;
       yaw?: number; pitch?: number; body?: Body; meta?: boolean;
     } = {},
   ): Entity {
@@ -136,6 +138,7 @@ export class MedievalWorld {
         r: color[0], g: color[1], b: color[2],
         tile: options.tile ?? -1,
         repeat: options.repeat ?? 1,
+        repeatY: options.repeatY ?? options.repeat ?? 1,
         emissive: options.emissive ?? 0,
         flash: 0,
       },
@@ -144,22 +147,40 @@ export class MedievalWorld {
     });
   }
 
-  addCharacter(name: string, faction: Character["faction"], x: number, z: number, hp: number): Entity {
-    const color: [number, number, number] = faction === "enemy"
-      ? [0.62, 0.24, 0.2]
-      : faction === "ally" ? [0.36, 0.5, 0.62] : [0.55, 0.62, 0.72];
+  addCharacter(
+    name: string,
+    faction: Character["faction"],
+    x: number,
+    z: number,
+    hp: number,
+    houseId = "free_company",
+    civilian = false,
+  ): Entity {
+    const house = houseOf(houseId);
+    const profile = WEAPON_PROFILE[house.weapon];
+    const base = faction === "player" ? 18 : faction === "enemy" ? 8 : 9;
+    const walk = faction === "player" ? 5.6 : faction === "ally" ? 3.4 : 2.8;
     const id = this.world.create({
       Transform: { x, y: 0, z, yaw: 0, pitch: 0, sx: 1, sy: 1, sz: 1 },
-      Appearance: { r: color[0], g: color[1], b: color[2], tile: -1, repeat: 1, emissive: 0, flash: 0 },
+      Appearance: {
+        r: house.banner[0], g: house.banner[1], b: house.banner[2],
+        tile: -1, repeat: 1, emissive: 0, flash: 0,
+      },
       Character: {
-        name, faction, hp, maxHp: hp,
-        speed: faction === "player" ? 5.6 : faction === "ally" ? 3.4 : 2.8,
-        damage: faction === "player" ? 18 : 9,
+        name, faction, house: house.id, hp, maxHp: hp,
+        speed: civilian ? 1.6 : walk * profile.speed,
+        damage: civilian ? 0 : Math.round(base * profile.damage),
         cooldown: 0, respawn: 0,
+        ...(civilian ? { civilian: true } : {}),
       },
       Unit: { homeX: x, homeZ: z, wanderT: this.random() * 3, target: 0 },
       Body: { hx: 0.35, hz: 0.35, solid: false },
-      Meta: { name, group: faction === "player" ? "Player" : faction === "ally" ? "Warband" : "Enemies" },
+      Meta: {
+        name,
+        group: civilian
+          ? "Populace"
+          : faction === "player" ? "Player" : faction === "ally" ? "Warband" : "Enemies",
+      },
       ...(faction === "player" ? { Player: {} } : {}),
     });
     return id;
@@ -168,13 +189,13 @@ export class MedievalWorld {
   private build(): void {
     // Ground and roads
     this.add("Ground", "Terrain", 0, -1.1, 0, 260, 2, 260, [1, 1, 1], {
-      tile: TILE.GRASS, repeat: 44, meta: false,
+      tile: TILE.GRASS, repeat: 104, meta: false,
     });
     this.add("Kingsroad", "Terrain", 0, -0.02, -40, 150, 0.06, 7, [1, 1, 1], {
-      tile: TILE.DIRT, repeat: 18, meta: false,
+      tile: TILE.DIRT, repeat: 75, repeatY: 3.5, meta: false,
     });
     this.add("South Road", "Terrain", 0, -0.02, 30, 9, 0.06, 92, [1, 1, 1], {
-      tile: TILE.DIRT, repeat: 16, meta: false,
+      tile: TILE.DIRT, repeat: 4.5, repeatY: 46, meta: false,
     });
 
     for (const s of SETTLEMENTS) this.buildSettlement(s);
@@ -187,22 +208,22 @@ export class MedievalWorld {
     for (let i = 0; i < 6; i++) {
       const angle = (i / 6) * Math.PI * 2;
       this.addCharacter(
-        `Warband ${i + 1}`, "ally",
+        `Warband ${unitTitle("ally", i)}`, "ally",
         SPAWN.x + Math.cos(angle) * 3.4, SPAWN.z + Math.sin(angle) * 3.4, 60,
       );
     }
 
-    // Three hostile patrols
-    const patrols: Array<[number, number, string]> = [
-      [-8, -20, "Steppe Riders"],
-      [30, 10, "Redstone Guard"],
-      [-40, 24, "Clan Raiders"],
+    // Three hostile patrols, each from a different power.
+    const patrols: Array<[number, number, string, string]> = [
+      [-8, -20, "Steppe Riders", "eastern_tribes"],
+      [30, 10, "Redstone Guard", "eastern_tribes"],
+      [-40, 24, "Clan Raiders", "western_clans"],
     ];
-    for (const [px, pz, squad] of patrols) {
+    for (const [px, pz, squad, houseId] of patrols) {
       for (let i = 0; i < 3; i++) {
         const id = this.addCharacter(
-          `${squad} ${i + 1}`, "enemy",
-          px + (this.random() - 0.5) * 4, pz + (this.random() - 0.5) * 4, 45,
+          `${squad} ${unitTitle("enemy", i)}`, "enemy",
+          px + (this.random() - 0.5) * 4, pz + (this.random() - 0.5) * 4, 45, houseId,
         );
         this.world.require<Unit>(id, "Unit").homeX = px;
         this.world.require<Unit>(id, "Unit").homeZ = pz;
@@ -213,148 +234,172 @@ export class MedievalWorld {
   }
 
   private buildSettlement(s: SettlementDef): void {
-    const color = FACTION_COLORS[s.owner] ?? [0.5, 0.5, 0.5];
-    const [r, g, b] = color;
-    const group = `Settlement · ${s.name}`;
+    const house = houseOf(s.owner);
 
-    const keepHeight = s.kind === "castle" ? 9 : s.kind === "city" ? 7 : 4.5;
-    const keepWidth = s.kind === "castle" ? 12 : 9;
-
-    // Keep: stone body plus a clay roof
-    this.world.create({
-      Transform: { x: s.x, y: 0.5, z: s.z, yaw: 0, pitch: 0, sx: keepWidth, sy: keepHeight, sz: keepWidth * 0.8 },
-      Appearance: { r: 1.2, g: 1.2, b: 1.16, tile: TILE.STONE, repeat: keepWidth / 4, emissive: 0, flash: 0 },
-      Body: { hx: keepWidth / 2, hz: keepWidth * 0.4, solid: true },
-      Meta: { name: `${s.name} Keep`, group },
-    });
-    this.world.create({
-      Transform: { x: s.x, y: keepHeight + 1.6, z: s.z, yaw: 0.4, pitch: 0, sx: keepWidth * 1.06, sy: 3.2, sz: keepWidth * 0.9 },
-      Appearance: { r: 0.9, g: 0.55, b: 0.42, tile: TILE.ROOF, repeat: keepWidth / 2.4, emissive: 0, flash: 0 },
-      Meta: { name: `${s.name} Roof`, group },
-    });
-
-    // Corner towers
-    for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-      const tx = s.x + dx * (keepWidth / 2 + 1.5);
-      const tz = s.z + dz * (keepWidth * 0.4 + 1.5);
-      this.world.create({
-        Transform: { x: tx, y: 1, z: tz, yaw: 0, pitch: 0, sx: 3.4, sy: 10, sz: 3.4 },
-        Appearance: { r: 1.1, g: 1.1, b: 1.08, tile: TILE.STONE, repeat: 1.2, emissive: 0, flash: 0 },
-        Body: { hx: 1.7, hz: 1.7, solid: true },
-        Meta: { name: `${s.name} Tower`, group },
-      });
-      this.world.create({
-        Transform: { x: tx, y: 6.6, z: tz, yaw: 0.78, pitch: 0, sx: 4.2, sy: 2.2, sz: 4.2 },
-        Appearance: { r: 0.85, g: 0.5, b: 0.38, tile: TILE.ROOF, repeat: 2, emissive: 0, flash: 0 },
-        Meta: { name: `${s.name} Tower Roof`, group },
-      });
-    }
-
-    // Houses
-    const houses = s.kind === "village" ? 3 : s.kind === "city" ? 6 : 4;
-    for (let i = 0; i < houses; i++) {
-      const a = (i / houses) * Math.PI * 2 + 0.6;
-      const dist = keepWidth * 0.9 + 5;
-      const hx = s.x + Math.cos(a) * dist;
-      const hz = s.z + Math.sin(a) * dist * 0.9;
-      const w = 5 + this.random() * 2;
-      this.world.create({
-        Transform: { x: hx, y: 0.5, z: hz, yaw: -a, pitch: 0, sx: w, sy: 3.6, sz: w * 0.78 },
-        Appearance: { r: 1, g: 1, b: 1, tile: this.random() > 0.45 ? TILE.PLASTER : TILE.WOOD, repeat: 1.4, emissive: 0, flash: 0 },
-        Body: { hx: w / 2, hz: w * 0.39, solid: true },
-        Meta: { name: `${s.name} House ${i + 1}`, group },
-      });
-      this.world.create({
-        Transform: { x: hx, y: 3.4, z: hz, yaw: -a, pitch: 0, sx: w * 1.14, sy: 1.9, sz: w * 0.92 },
-        Appearance: { r: 0.95, g: 0.52, b: 0.4, tile: TILE.ROOF, repeat: 1.4, emissive: 0, flash: 0 },
-        Meta: { name: `${s.name} Roof ${i + 1}`, group },
-      });
-    }
-
-    // Faction banner
-    this.world.create({
-      Transform: { x: s.x + 2.6, y: 5, z: s.z + keepWidth * 0.5, yaw: 0, pitch: 0, sx: 0.18, sy: 10, sz: 0.18 },
-      Appearance: { r: 0.22, g: 0.18, b: 0.14, tile: TILE.WOOD, repeat: 1, emissive: 0, flash: 0 },
-      Meta: { name: `${s.name} Banner Pole`, group },
-    });
-    this.world.create({
-      Transform: { x: s.x + 3.1, y: 7.6, z: s.z + keepWidth * 0.5, yaw: 0, pitch: 0, sx: 0.08, sy: 3.2, sz: 1.9 },
-      Appearance: { r: r * 1.5, g: g * 1.5, b: b * 1.5, tile: TILE.CLOTH, repeat: 1, emissive: 0.06, flash: 0 },
-      Meta: { name: `${s.name} Banner`, group },
-    });
-
-    // Windows as warm emissive details
-    const windows = s.kind === "village" ? 4 : 8;
-    for (let i = 0; i < windows; i++) {
-      const a = (i / windows) * Math.PI * 2;
-      this.world.create({
-        Transform: {
-          x: s.x + Math.cos(a) * (keepWidth / 2 + 0.06),
-          y: 2.4 + (i % 2) * 1.8,
-          z: s.z + Math.sin(a) * (keepWidth * 0.4 + 0.06),
-          yaw: -a, pitch: 0, sx: 0.9, sy: 1.1, sz: 0.1,
+    buildSettlementGeometry(
+      {
+        block: (request) => {
+          this.add(
+            request.name, request.group,
+            request.x, request.y, request.z,
+            request.sx, request.sy, request.sz,
+            request.color,
+            {
+              tile: request.tile,
+              repeat: request.repeat,
+              repeatY: request.repeatY,
+              emissive: request.emissive,
+              yaw: request.yaw,
+              pitch: request.pitch,
+              body: request.solid
+                ? { hx: Math.max(0.5, request.sx / 2), hz: Math.max(0.5, request.sz / 2), solid: true }
+                : undefined,
+            },
+          );
         },
-        Appearance: { r: 1, g: 0.82, b: 0.45, tile: TILE.CLOTH, repeat: 1, emissive: 0.85, flash: 0 },
-        Meta: { name: `${s.name} Window`, group },
-      });
+        random: () => this.random(),
+      },
+      s,
+      house,
+    );
+
+    // Garrison: soldiers of the owning house carrying its signature weapon.
+    const guards = s.kind === "castle" ? 5 : s.kind === "city" ? 4 : s.kind === "town" ? 2 : 1;
+    for (let i = 0; i < guards; i++) {
+      const a = (i / guards) * Math.PI * 2 + 0.35;
+      const radius = s.kind === "castle" ? 11.5 : s.kind === "city" ? 10.5 : 6.5;
+      this.addCharacter(
+        `${s.name} ${unitTitle("ally", i)}`, "ally",
+        s.x + Math.sin(a) * radius, s.z + Math.cos(a) * radius,
+        s.kind === "castle" ? 85 : 65, s.owner,
+      );
     }
 
-    // Settlers (visual population, non-combat)
-    const settlers = Math.min(4, Math.max(1, Math.round(s.population / 400)));
-    for (let i = 0; i < settlers; i++) {
-      this.add(
-        `${s.name} Settler ${i + 1}`, group,
-        s.x + (this.random() - 0.5) * keepWidth * 1.6,
-        0.7,
-        s.z + (this.random() - 0.5) * keepWidth,
-        0.55, 1.4, 0.55,
-        [0.62, 0.56, 0.46],
-        { tile: TILE.CLOTH, repeat: 1 },
+    // Every castle and city is held by a named commander.
+    if (s.kind === "castle" || s.kind === "city") {
+      const champion = `${CHAMPIONS[s.owner] ?? "Warden"} of ${s.name}`;
+      this.addCharacter(champion, "ally", s.x + 2.2, s.z + 2.6, 150, s.owner);
+    }
+
+    // Civilians: the reason a town looks inhabited rather than garrisoned.
+    const residents = Math.min(6, Math.max(2, Math.round(s.population / 260)));
+    for (let i = 0; i < residents; i++) {
+      const a = this.random() * Math.PI * 2;
+      const radius = s.kind === "village" ? 3.4 : 5.6;
+      this.addCharacter(
+        `${s.name} Resident ${i + 1}`, "ally",
+        s.x + Math.sin(a) * radius, s.z + Math.cos(a) * radius,
+        40, s.owner, true,
       );
     }
   }
 
   private buildForest(): void {
     const group = "Wilds";
-    for (let i = 0; i < 260; i++) {
+    for (let i = 0; i < 240; i++) {
       const x = (this.random() - 0.5) * 230;
       const z = (this.random() - 0.5) * 230;
-      if (Math.hypot(x - SPAWN.x, z - SPAWN.z) < 14) continue;
-      if (SETTLEMENTS.some((s) => Math.hypot(x - s.x, z - s.z) < 16)) continue;
-      const h = 3 + this.random() * 3;
-      this.add("Pine", group, x, h / 2 + 1.4, z, 0.7, h, 0.7, [0.9, 0.85, 0.8], {
-        tile: TILE.WOOD, repeat: 1, meta: false,
-      }, );
-      this.add("Pine Canopy", group, x, h + 2.6, z, 4.2 + this.random() * 2, 4.6, 4.2, [0.62, 0.86, 0.6], {
-        tile: TILE.GRASS, repeat: 2, yaw: this.random() * Math.PI, meta: false,
+      if (Math.hypot(x - SPAWN.x, z - SPAWN.z) < 15) continue;
+      if (SETTLEMENTS.some((s) => Math.hypot(x - s.x, z - s.z) < 18)) continue;
+      const h = 3 + this.random() * 3.4;
+      const yaw = this.random() * Math.PI;
+      const spread = 3.4 + this.random() * 1.7;
+      this.add("Pine Trunk", group, x, h * 0.5 + 0.6, z, 0.55, h, 0.55, [0.66, 0.54, 0.4], {
+        tile: TILE.OAK, repeat: 1, yaw, meta: false,
+      });
+      // three stacked tiers give a fir silhouette instead of a flat slab
+      const tiers = [
+        { y: h + 1.1, s: spread, th: 2.5, c: [0.46, 0.64, 0.44] as [number, number, number] },
+        { y: h + 2.4, s: spread * 0.78, th: 2.1, c: [0.55, 0.76, 0.5] as [number, number, number] },
+        { y: h + 3.6, s: spread * 0.54, th: 1.8, c: [0.66, 0.88, 0.6] as [number, number, number] },
+      ];
+      tiers.forEach((tier, tierIndex) => {
+        this.add(`Pine Canopy ${tierIndex + 1}`, group, x, tier.y, z, tier.s, tier.th, tier.s, tier.c, {
+          tile: TILE.GRASS, repeat: 3, yaw, meta: false,
+        });
       });
     }
   }
 
   private buildRocks(): void {
-    for (let i = 0; i < 45; i++) {
+    for (let i = 0; i < 50; i++) {
       const x = (this.random() - 0.5) * 210;
       const z = (this.random() - 0.5) * 210;
       const s = 1 + this.random() * 2.4;
-      this.add("Boulder", "Wilds", x, s * 0.4, z, s, s * 0.8, s * 1.1, [0.72, 0.74, 0.76], {
-        tile: TILE.STONE, repeat: 1, yaw: this.random() * Math.PI, meta: false,
+      const yaw = this.random() * Math.PI;
+      this.add("Boulder", "Wilds", x, s * 0.4, z, s, s * 0.82, s * 1.1, [0.88, 0.9, 0.94], {
+        tile: TILE.RUBBLE, repeat: 1, yaw, meta: false,
       });
+      this.add("Boulder Cap", "Wilds", x + 0.2, s * 0.78, z - 0.18, s * 0.62, s * 0.42, s * 0.7,
+        [0.98, 1.0, 1.02], { tile: TILE.RUBBLE, repeat: 1, yaw: yaw + 0.7, pitch: 0.2, meta: false });
     }
   }
 
   private buildCamp(): void {
+    const house = houseOf("free_company");
     const cx = SPAWN.x + 5;
     const cz = SPAWN.z - 4;
-    this.add("Campfire", "Camp", cx, 0.6, cz, 1.6, 0.7, 1.6, [0.4, 0.4, 0.4], {
-      tile: TILE.STONE, repeat: 1, body: { hx: 0.8, hz: 0.8, solid: false },
+
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2;
+      this.add("Campfire Stones", "Camp", cx + Math.sin(a) * 0.9, 0.16, cz + Math.cos(a) * 0.9,
+        0.46, 0.36, 0.46, [0.88, 0.9, 0.94], { tile: TILE.RUBBLE, yaw: a });
+    }
+    this.add("Campfire Logs", "Camp", cx, 0.32, cz, 1.5, 0.28, 1.5, [0.5, 0.34, 0.2], {
+      tile: TILE.OAK, yaw: 0.6, pitch: 0.12,
     });
     this.world.create({
-      Transform: { x: cx, y: 1.35, z: cz, yaw: 0, pitch: 0, sx: 0.6, sy: 1.1, sz: 0.6 },
-      Appearance: { r: 1, g: 0.62, b: 0.22, tile: -1, repeat: 1, emissive: 0.95, flash: 1 },
+      Transform: { x: cx, y: 0.82, z: cz, yaw: 0, pitch: 0, sx: 0.72, sy: 0.9, sz: 0.72 },
+      Appearance: { r: 1, g: 0.6, b: 0.2, tile: -1, repeat: 1, emissive: 0.95, flash: 1 },
       Meta: { name: "Campfire Flame", group: "Camp" },
     });
-    this.add("Tent", "Camp", cx + 3.4, 1.2, cz - 1.2, 3.4, 2.4, 3, [0.72, 0.66, 0.52], {
-      tile: TILE.CLOTH, repeat: 1.5, pitch: 0.18, body: { hx: 1.7, hz: 1.5, solid: true },
+    this.add("Campfire Embers", "Camp", cx, 0.26, cz, 1.5, 0.09, 1.5, [0.95, 0.34, 0.12], {
+      emissive: 0.5,
+    });
+
+    const tent = (
+      name: string, tx: number, tz: number, yaw: number,
+      w: number, h: number, d: number,
+    ) => {
+      for (const side of [-1, 1]) {
+        this.add(name, "Camp", tx, h * 0.5, tz + side * d * 0.26, w, h, d * 0.62,
+          [0.92, 0.88, 0.78], {
+            tile: TILE.CLOTH, repeat: 3, yaw, pitch: side * 0.52,
+            body: side === -1 ? { hx: w / 2, hz: d / 2, solid: true } : undefined,
+          });
+      }
+      for (const side of [-1, 1]) {
+        this.add(`${name} Seam`, "Camp", tx, h * 0.55, tz + side * d * 0.52, w * 0.98, h * 0.7, 0.1,
+          house.banner, { tile: house.heraldry, yaw, emissive: 0.04 });
+      }
+      this.add(`${name} Ridge`, "Camp", tx, h * 0.98, tz, 0.12, 0.12, d, [0.34, 0.24, 0.16], {
+        tile: TILE.OAK, yaw,
+      });
+      this.add(`${name} Pennant`, "Camp",
+        tx + Math.cos(yaw) * w * 0.5, h * 1.15, tz - Math.sin(yaw) * w * 0.5,
+        0.05, 0.8, 0.9, house.banner, { tile: house.heraldry, emissive: 0.05, yaw });
+    };
+
+    tent("Pavilion", cx + 4.4, cz - 3.0, 0.3, 4.0, 2.8, 3.6);
+    tent("Tent", cx - 4.0, cz - 2.2, -0.5, 2.8, 2.1, 2.8);
+    tent("Tent", cx - 1.2, cz + 4.8, 0.9, 2.6, 1.9, 2.4);
+
+    this.add("Warband Standard", "Camp", cx + 1.6, 3.6, cz - 5.6, 0.14, 7.2, 0.14,
+      [0.3, 0.22, 0.15], { tile: TILE.OAK });
+    this.add("Warband Banner", "Camp", cx + 1.72, 5.0, cz - 4.7, 0.06, 2.4, 2.2,
+      house.banner, { tile: house.heraldry, emissive: 0.06 });
+
+    this.add("Supply Cart Bed", "Camp", cx + 7.6, 0.95, cz + 2.4, 3.0, 0.24, 1.7,
+      [0.46, 0.33, 0.21], { tile: TILE.WOOD, yaw: -0.4 });
+    for (const dz of [-0.85, 0.85]) {
+      this.add("Cart Wheel", "Camp", cx + 7.6, 0.6, cz + 2.4 + dz, 0.9, 0.9, 0.16,
+        [0.32, 0.24, 0.16], { tile: TILE.OAK, yaw: -0.4 });
+    }
+    this.add("Cart Crate", "Camp", cx + 7.4, 1.32, cz + 2.5, 0.8, 0.8, 0.8, [0.52, 0.38, 0.24], {
+      tile: TILE.WOOD,
+    });
+    this.add("Spare Spears", "Camp", cx + 6.2, 1.1, cz - 1.4, 0.8, 2.2, 0.8, [0.6, 0.45, 0.3], {
+      tile: TILE.OAK, pitch: 0.22,
     });
   }
 
@@ -473,7 +518,7 @@ export class MedievalWorld {
       const c = this.world.get<Character>(id, "Character");
       const t = this.world.get<Transform>(id, "Transform");
       const unit = this.world.get<Unit>(id, "Unit");
-      if (!c || !t || !unit || c.hp <= 0) continue;
+      if (!c || !t || !unit || c.hp <= 0 || c.civilian) continue;
       c.cooldown = Math.max(0, c.cooldown - dt);
 
       const nearby = this.findFoe(id, c, t);
@@ -530,7 +575,7 @@ export class MedievalWorld {
     for (const other of this.world.query("Character", "Transform")) {
       if (other === id) continue;
       const oc = this.world.require<Character>(other, "Character");
-      if (oc.hp <= 0) continue;
+      if (oc.hp <= 0 || oc.civilian) continue;
       const hostile =
         (c.faction === "enemy" && oc.faction !== "enemy") ||
         (c.faction === "ally" && oc.faction === "enemy");
@@ -597,8 +642,10 @@ export class MedievalWorld {
     let enemies = 0;
     for (const id of this.world.query("Character")) {
       const c = this.world.get<Character>(id, "Character");
-      if (!c || c.hp <= 0) continue;
-      if (c.faction === "ally") allies++;
+      if (!c || c.hp <= 0 || c.civilian) continue;
+      // The HUD counts the player's own war band, not every garrison in the basin.
+      const ownCompany = c.house === undefined || c.house === "free_company";
+      if (c.faction === "ally" && ownCompany) allies++;
       if (c.faction === "enemy") enemies++;
     }
     this.aliveAllies = allies;
@@ -623,47 +670,26 @@ export class MedievalWorld {
       const c = this.world.get<Character>(id, "Character");
 
       if (c) {
-        // Characters: torso plus a head, and a dashed health bar above.
         if (c.hp <= 0) continue;
-        const torso = Math.min(1, Math.max(0, c.hp / c.maxHp));
-        out.push({
-          x: t.x, y: 0.9, z: t.z, yaw: t.yaw,
-          sx: 0.62, sy: 1.3, sz: 0.5,
-          color: [a.r, a.g, a.b],
-          tile: -1,
-          emissive: a.flash > 0.6 ? 0.45 : a.flash,
+        // Walking is inferred from frame-to-frame movement so the legs swing
+        // only when the unit is actually going somewhere.
+        const previous = this.lastPositions.get(id);
+        const moved = previous ? Math.hypot(t.x - previous.x, t.z - previous.z) : 0;
+        this.lastPositions.set(id, { x: t.x, z: t.z });
+        const window = c.faction === "player" ? 0.42 : 1.15;
+        emitFigure(out, {
+          id,
+          x: t.x, z: t.z, yaw: t.yaw,
+          house: houseOf(c.house ?? "free_company"),
+          faction: c.faction,
+          hp: c.hp, maxHp: c.maxHp,
+          swing: c.cooldown > 0.01 ? 1 - Math.min(1, c.cooldown / window) : 0,
+          moving: moved > 0.012,
+          time,
           selected: id === selected,
+          flash: a.flash,
+          civilian: c.civilian === true,
         });
-        out.push({
-          x: t.x, y: 1.78, z: t.z, yaw: t.yaw,
-          sx: 0.42, sy: 0.42, sz: 0.42,
-          color: [0.85, 0.72, 0.58],
-          tile: -1,
-          selected: id === selected,
-        });
-        // Shoulder mark shows faction at a distance.
-        out.push({
-          x: t.x, y: 1.42, z: t.z, yaw: t.yaw,
-          sx: 0.7, sy: 0.18, sz: 0.56,
-          color: c.faction === "enemy" ? [0.72, 0.16, 0.12] : c.faction === "ally" ? [0.32, 0.55, 0.78] : [0.9, 0.78, 0.32],
-          tile: -1,
-          emissive: 0.12,
-        });
-        if (torso < 1) {
-          out.push({
-            x: t.x, y: 2.12, z: t.z, yaw: 0,
-            sx: 0.9, sy: 0.1, sz: 0.06,
-            color: [0.18, 0.16, 0.14],
-            tile: -1,
-          });
-          out.push({
-            x: t.x - 0.45 + 0.45 * torso, y: 2.12, z: t.z, yaw: 0,
-            sx: 0.9 * torso, sy: 0.1, sz: 0.08,
-            color: [0.65, 0.2, 0.16],
-            tile: -1,
-            emissive: 0.2,
-          });
-        }
         continue;
       }
 
@@ -674,10 +700,38 @@ export class MedievalWorld {
         color: [a.r, a.g, a.b],
         tile: a.tile,
         repeat: a.repeat,
+        repeatY: a.repeatY,
         emissive: Math.min(1, a.emissive + a.flash * 0.8),
         selected: id === selected,
       });
     }
+  }
+
+  /**
+   * Shorten the third-person boom when it would pass through a solid body, so
+   * the camera never ends up inside a wall. Marches out from the target and
+   * tests the body footprints above the ground.
+   */
+  cameraDistance(target: Vec3, yaw: number, pitch: number, distance: number): number {
+    const steps = 8;
+    const bodies = this.world.query("Body", "Transform");
+    for (let i = 1; i <= steps; i++) {
+      const d = (distance * i) / steps;
+      const x = target.x + Math.sin(yaw) * Math.cos(pitch) * d;
+      const z = target.z + Math.cos(yaw) * Math.cos(pitch) * d;
+      const y = target.y + 1.5 + Math.sin(pitch) * d;
+      for (const id of bodies) {
+        const body = this.world.get<Body>(id, "Body");
+        if (!body || !body.solid) continue;
+        const bt = this.world.get<Transform>(id, "Transform");
+        if (!bt) continue;
+        if (y > bt.y + bt.sy * 0.5 + 0.3) continue;
+        if (Math.abs(x - bt.x) < body.hx + 0.35 && Math.abs(z - bt.z) < body.hz + 0.35) {
+          return Math.max(1.6, (distance * (i - 1)) / steps);
+        }
+      }
+    }
+    return distance;
   }
 
   light(): Light {
@@ -712,7 +766,11 @@ export class CameraRig {
   distance = 9;
   firstPerson = false;
 
-  update(input: Input, target: Vec3): Camera {
+  update(
+    input: Input,
+    target: Vec3,
+    clampDistance?: (distance: number) => number,
+  ): Camera {
     this.yaw -= input.lookX * 0.0042;
     this.pitch = clamp(this.pitch + input.lookY * 0.0032, -0.35, 1.15);
     if (input.wheel) {
@@ -723,12 +781,15 @@ export class CameraRig {
       this.distance = this.firstPerson ? 0.1 : 9;
     }
 
+    const reach = clampDistance && !this.firstPerson
+      ? clampDistance(this.distance)
+      : this.distance;
     const eye: Vec3 = this.firstPerson
       ? { x: target.x, y: target.y + 2.05, z: target.z }
       : {
-          x: target.x + Math.sin(this.yaw) * Math.cos(this.pitch) * this.distance,
-          y: target.y + 1.5 + Math.sin(this.pitch) * this.distance,
-          z: target.z + Math.cos(this.yaw) * Math.cos(this.pitch) * this.distance,
+          x: target.x + Math.sin(this.yaw) * Math.cos(this.pitch) * reach,
+          y: target.y + 1.5 + Math.sin(this.pitch) * reach,
+          z: target.z + Math.cos(this.yaw) * Math.cos(this.pitch) * reach,
         };
     const look: Vec3 = this.firstPerson
       ? {

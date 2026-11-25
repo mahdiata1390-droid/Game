@@ -24,10 +24,13 @@ Controls: `WASD` move · drag look · wheel zoom · `Space` or click attack · `
 | Math | `src/engine/math.ts` | vec3 helpers, column-major mat4, perspective, lookAt, TRS compose |
 | ECS | `src/engine/ecs.ts` | entities, typed component stores, queries, stats |
 | Renderer | `src/engine/renderer.ts` | WebGL2 instanced forward pass, atlas sampling, sun + hemisphere ambient, fog, selection highlight, one draw call |
-| Textures | `src/engine/textures.ts` | deterministic 512×512 procedural atlas (grass, stone, wood, clay, dirt, plaster, iron, water, cloth) |
+| Textures | `src/engine/textures.ts` | deterministic 1024×1024 procedural atlas: 35 painted tiles (five masonries, four roofs, five metals, armour, cloth, water, eight heraldry devices) with guard bands so mipmaps cannot bleed between tiles |
 | Input | `src/engine/input.ts` | keyboard, mouse, wheel, drag-look, mobile virtual stick |
 | Scene | `src/engine/scene.ts` | JSON save/load of every component, versioned format |
-| World | `src/game/world.ts` | 12 settlements, 6 factions, forests, warbands, combat, day/night, collision |
+| World | `src/game/world.ts` | 12 settlements, 6 factions, forests, warbands, combat, day/night, collision, body-aware camera |
+| Houses | `src/game/houses.ts` | the five powers plus the free company: stone, roof, metal, heraldry, armour, weapon and combat profile |
+| Architecture | `src/game/architecture.ts` | castles, gatehouses, curtain walls, drum towers, keeps, townhouses, cottages, markets, wells, braziers |
+| Figures | `src/game/figures.ts` | twenty-instance character rigs: armour, helmets, shields, cloaks, six weapons, walk and swing animation |
 | Editor | `src/editor/main.ts` | play/pause, hierarchy, inspector, save/load, perf counters, asset pack panel |
 | Packs | `tools/fetch-packs.mjs` | list/verify/download CC0 asset packs, size-capped, hash-recorded |
 
@@ -40,7 +43,7 @@ resize → camera from input → fixed-cap simulation step → build instance li
 
 The renderer keeps every box, tree, tower and soldier in a single instanced draw. Each instance stores a model matrix (16 floats), albedo + atlas tile (4), and UV repeat/emissive/selection (4): 96 bytes. 1,000 objects cost ~94 KiB of instance data and **one** draw call.
 
-Measured production build: **39.3 kB JavaScript (14.3 kB gzipped)** plus 7.6 kB CSS — no engine runtime download, no WebAssembly, no asset request on boot.
+Measured production build: **85.7 kB JavaScript (29.4 kB gzipped)** plus 7.6 kB CSS — no engine runtime download, no WebAssembly, no asset request on boot. The art system (five powers, castles, character rigs, 35-tile atlas) is part of that, at ~6,500 instances in one draw call.
 
 ### Scene format
 

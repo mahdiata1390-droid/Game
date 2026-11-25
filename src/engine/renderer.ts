@@ -3,10 +3,14 @@
 // UV tiling, emissive amount and a selection flag.
 
 import { compose, lookAt, multiply, mat4, perspective, type Vec3 } from "./math";
+import { ATLAS_CELL, ATLAS_PAD_PX, ATLAS_TILES_PER_ROW } from "./textures";
 
 const INSTANCE_FLOATS = 24;
 const INSTANCE_BYTES = INSTANCE_FLOATS * 4;
-const ATLAS_TILES = 4;
+const ATLAS_TILES = ATLAS_TILES_PER_ROW;
+/** guard band, expressed in cell-local UV units */
+const ATLAS_PAD_UV = (ATLAS_PAD_PX / ATLAS_CELL).toFixed(6);
+const ATLAS_INSET_UV = (1 - (ATLAS_PAD_PX * 2) / ATLAS_CELL).toFixed(6);
 
 const VERT = `#version 300 es
 layout(location=0) in vec3 aPos;
@@ -68,7 +72,9 @@ void main() {
   vec3 albedo = vColor;
   if (vTile >= 0.0) {
     vec2 cell = vec2(mod(vTile, ${ATLAS_TILES}.0), floor(vTile / ${ATLAS_TILES}.0));
-    vec2 uv = (cell + fract(vUV * vRepeat)) / ${ATLAS_TILES}.0;
+    // Sample inside the cell's guard band so mip filtering never crosses tiles.
+    vec2 local = ${ATLAS_PAD_UV} + fract(vUV * vRepeat) * ${ATLAS_INSET_UV};
+    vec2 uv = (cell + local) / ${ATLAS_TILES}.0;
     albedo *= texture(uAtlas, uv).rgb;
   }
   float ndl = max(dot(n, uLightDir), 0.0);
@@ -107,6 +113,8 @@ export type Instance = {
   color: [number, number, number];
   tile?: number;
   repeat?: number;
+  /** vertical tiling, for long thin surfaces such as roads and curtain walls */
+  repeatY?: number;
   emissive?: number;
   selected?: boolean;
 };
@@ -286,7 +294,7 @@ export class Renderer {
     this.data[base + 19] = i.tile ?? 0;
     const repeat = i.repeat ?? 1;
     this.data[base + 20] = repeat;
-    this.data[base + 21] = repeat;
+    this.data[base + 21] = i.repeatY ?? repeat;
     this.data[base + 22] = i.emissive ?? 0;
     this.data[base + 23] = i.selected ? 1 : 0;
     this.count++;

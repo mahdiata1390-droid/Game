@@ -14,6 +14,12 @@ npm run build   # typecheck + dist/
 
 Read [docs/ENGINE.md](docs/ENGINE.md) for the architecture, the size budget, and an honest comparison against Godot (including what Forge does *not* do yet). Asset packs are opt-in: `npm run packs:list`.
 
+### Art system
+
+[**docs/DESIGN.md**](docs/DESIGN.md) is the art and design bible: five powers and a free company, each with its own masonry, roof, coat of arms, armour, helmet, shield and signature weapon; five distinct castle silhouettes with gatehouses and portcullises; twenty-instance character rigs; and thirty-five materials painted into a single 1024² atlas at boot. It includes the concept plates and in-engine captures.
+
+Everything is authored in code and drawn in **one instanced draw call** — around 6,500 instances, 0.59 MiB of instance data, no binary art committed.
+
 ## Current prototype foundation
 
 The repository contains a Unity 2022.3 project marker and a greybox Prototype scene. At scene start, runtime setup creates a ground plane, placeholder player and enemy, third-person follow camera, touch drag-look area, virtual movement joystick, attack button, and player health HUD.

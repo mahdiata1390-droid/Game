@@ -66,6 +66,12 @@ function start(): void {
   refreshWorldUI();
   boot.classList.add("hidden");
   setStatus("World ready — press Play to take command.");
+  // Development-only handle so the world can be staged and inspected from the
+  // console. Production builds strip it.
+  const dev = (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV === true;
+  if (dev) {
+    (window as unknown as { forge?: unknown }).forge = { game, rig, renderer };
+  }
   requestAnimationFrame(frame);
 }
 
@@ -358,7 +364,8 @@ function frame(now: number): void {
     ? { x: playerTransform.x, y: playerTransform.y, z: playerTransform.z }
     : { x: 0, y: 0, z: 0 };
 
-  const camera = rig.update(input, target);
+  const camera = rig.update(input, target, (distance) =>
+    game.cameraDistance(target, rig.yaw, rig.pitch, distance));
   game.update(dt, input, rig.facing, playing);
 
   instances.length = 0;
