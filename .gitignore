@@ -23,3 +23,10 @@
 # OS
 .DS_Store
 Thumbs.db
+node_modules
+dist
+packs/*
+!packs/registry.json
+packs/INSTALLED.json
+dev-server.log
+dev-server.pid

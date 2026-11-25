@@ -1,6 +1,18 @@
 # Game
 
-Offline-first medieval fantasy sandbox for Android, planned in Unity.
+Offline-first medieval fantasy sandbox for Android.
+
+## Forge Engine (own engine, new)
+
+The active path is now **Forge Engine**, our own WebGL2 + TypeScript engine and editor, running the medieval world without Unity or Godot. It boots with zero binary assets, draws the whole scene in one instanced draw call, and includes a scene format, hierarchy/inspector editor, and an asset-pack registry with sizes and licences.
+
+```bash
+npm install
+npm run dev     # editor + playable world at http://localhost:3000
+npm run build   # typecheck + dist/
+```
+
+Read [docs/ENGINE.md](docs/ENGINE.md) for the architecture, the size budget, and an honest comparison against Godot (including what Forge does *not* do yet). Asset packs are opt-in: `npm run packs:list`.
 
 ## Current prototype foundation
 

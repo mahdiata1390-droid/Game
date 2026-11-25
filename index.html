@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Forge Engine — Medieval Sandbox</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23d8b25a'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-weight='700' text-anchor='middle' fill='%231a1408'%3EF%3C/text%3E%3C/svg%3E" />
+    <meta name="description" content="Forge Engine: an own-built WebGL2 game engine and editor for an offline-first medieval sandbox." />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">F</span>
+          <span class="brand-text">Forge<em>Engine</em></span>
+          <span class="brand-version">v0.1</span>
+        </div>
+        <div class="toolbar">
+          <button id="btn-play" class="btn primary" type="button">▶ Play</button>
+          <button id="btn-stop" class="btn" type="button">■ Stop</button>
+          <span class="divider"></span>
+          <button id="btn-save" class="btn" type="button">Save scene</button>
+          <button id="btn-load" class="btn" type="button">Load scene</button>
+          <button id="btn-reset" class="btn" type="button">New world</button>
+        </div>
+        <div class="stats" id="stats">--</div>
+      </header>
+
+      <aside class="panel panel-left">
+        <div class="panel-head">
+          <h2>World</h2>
+          <span class="pill" id="mode-pill">Edit</span>
+        </div>
+        <div class="search">
+          <input id="hierarchy-search" type="search" placeholder="Filter entities…" autocomplete="off" />
+        </div>
+        <ul id="hierarchy" class="hierarchy"></ul>
+        <div class="panel-foot" id="entity-count">0 entities</div>
+      </aside>
+
+      <main class="viewport">
+        <canvas id="scene"></canvas>
+        <div id="hud" class="hud">
+          <div class="hud-row">
+            <span class="hud-label">Household</span>
+            <span id="hud-health">100 / 100</span>
+          </div>
+          <div class="bar"><span id="hud-healthbar" style="width:100%"></span></div>
+          <div class="hud-grid">
+            <div><span class="hud-label">Day</span><strong id="hud-day">1</strong></div>
+            <div><span class="hud-label">Gold</span><strong id="hud-gold">250</strong></div>
+            <div><span class="hud-label">Warband</span><strong id="hud-warband">6</strong></div>
+            <div><span class="hud-label">Foes</span><strong id="hud-foes">9</strong></div>
+          </div>
+          <div id="hud-log" class="hud-log">Click or press Space to strike.</div>
+        </div>
+        <div id="boot" class="boot">Building the world…</div>
+        <div class="controls-hint">
+          <span><kbd>WASD</kbd> move</span>
+          <span><kbd>Drag</kbd> look</span>
+          <span><kbd>Wheel</kbd> zoom</span>
+          <span><kbd>Space</kbd> attack</span>
+          <span><kbd>F</kbd> first person</span>
+        </div>
+      </main>
+
+      <aside class="panel panel-right">
+        <div class="panel-head"><h2>Inspector</h2></div>
+        <div id="inspector" class="inspector">
+          <p class="muted">Select an entity in the World list.</p>
+        </div>
+        <div class="panel-head"><h2>Asset packs</h2></div>
+        <div id="packs" class="packs"><p class="muted">Loading registry…</p></div>
+        <div class="panel-foot" id="pack-total"></div>
+      </aside>
+
+      <footer class="statusbar">
+        <span id="status">Ready</span>
+        <span class="spacer"></span>
+        <span id="perf">0 fps</span>
+      </footer>
+    </div>
+    <script type="module" src="/src/editor/main.ts"></script>
+  </body>
+</html>

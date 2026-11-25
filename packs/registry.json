@@ -1,0 +1,96 @@
+{
+  "note": "Asset pack registry for the medieval sandbox. Sizes are approximate download sizes. Nothing here is committed to git: packs/ is ignored apart from this registry, so the repository stays small.",
+  "updated": "2026-11-25",
+  "budget": {
+    "repositoryTargetMB": 15,
+    "androidApkTargetMB": 90,
+    "textureRamTargetMB": 64,
+    "notes": "The engine boots with zero binary assets (procedural atlas). Packs are opt-in and loaded per scene."
+  },
+  "packs": [
+    {
+      "id": "polyhaven-sky-1k",
+      "name": "Poly Haven — Sky HDRI (1k)",
+      "category": "Environment",
+      "license": "CC0 1.0",
+      "approxSizeMB": 1.1,
+      "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/kloppenheim_06_puresky_1k.hdr",
+      "homepage": "https://polyhaven.com/a/kloppenheim_06_puresky",
+      "contents": "one 1k .hdr sky",
+      "why": "Skybox and image-based ambient light for the day/night cycle",
+      "maxMB": 40
+    },
+    {
+      "id": "kenney-castle-kit",
+      "name": "Kenney — Castle Kit",
+      "category": "3D models",
+      "license": "CC0 1.0",
+      "approxSizeMB": 4.5,
+      "url": null,
+      "homepage": "https://kenney.nl/assets/castle-kit",
+      "contents": "~120 GLB/OBJ castle parts",
+      "why": "Upgrades the box keeps and towers to authored walls, gates and battlements",
+      "maxMB": 200
+    },
+    {
+      "id": "kenney-nature-kit",
+      "name": "Kenney — Nature Kit",
+      "category": "3D models",
+      "license": "CC0 1.0",
+      "approxSizeMB": 8.2,
+      "url": null,
+      "homepage": "https://kenney.nl/assets/nature-kit",
+      "contents": "trees, rocks, cliffs, grass",
+      "why": "Replaces the procedural pine and boulder boxes",
+      "maxMB": 250
+    },
+    {
+      "id": "kenney-medieval-rts",
+      "name": "Kenney — Medieval RTS",
+      "category": "2D sprites",
+      "license": "CC0 1.0",
+      "approxSizeMB": 1.2,
+      "url": null,
+      "homepage": "https://kenney.nl/assets/medieval-rts",
+      "contents": "units, buildings, UI sprites",
+      "why": "World-map markers, banners and the strategy map layer",
+      "maxMB": 100
+    },
+    {
+      "id": "kenney-ui-pack",
+      "name": "Kenney — UI Pack",
+      "category": "UI",
+      "license": "CC0 1.0",
+      "approxSizeMB": 1.6,
+      "url": null,
+      "homepage": "https://kenney.nl/assets/ui-pack",
+      "contents": "panels, buttons, icons",
+      "why": "Touch-first HUD and menus for the Android build",
+      "maxMB": 100
+    },
+    {
+      "id": "kenney-rpg-audio",
+      "name": "Kenney — RPG Audio",
+      "category": "Audio",
+      "license": "CC0 1.0",
+      "approxSizeMB": 9.4,
+      "url": null,
+      "homepage": "https://kenney.nl/assets/rpg-audio",
+      "contents": "~50 OGG SFX",
+      "why": "Sword, hit, gather and UI sounds",
+      "maxMB": 250
+    },
+    {
+      "id": "quaternius-fantasy",
+      "name": "Quaternius — Ultimate Fantasy Pack",
+      "category": "3D models",
+      "license": "CC0 1.0",
+      "approxSizeMB": 12.5,
+      "url": null,
+      "homepage": "https://quaternius.com/packs/ultimatefantasy.html",
+      "contents": "characters, creatures, props",
+      "why": "Animated knights, villagers and fantasy creatures",
+      "maxMB": 300
+    }
+  ]
+}
