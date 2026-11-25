@@ -109,7 +109,7 @@ func set_career(mode:String) -> Dictionary:
 func advance_campaign_day() -> void:
 	var before:=world.day
 	world.advance_day()
-	var elapsed:=max(0,world.day-before)
+	var elapsed: Variant = max(0,world.day-before)
 	if world.player_mode in ["king","tribal_leader"]:
 		state["days_as_ruler"]=int(state["days_as_ruler"])+elapsed
 	_update_family_status()

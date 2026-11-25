@@ -360,7 +360,7 @@ func _system_20_siege_attrition() -> void:
 
 func _system_21_siege_progress() -> void:
 	for sid in world.sieges.keys():
-		var key = String(sid)
+		var key = str(sid)
 		siege_progress[key] = int(siege_progress.get(key,0)) + 4
 		var siege = world.sieges[sid] as Dictionary
 		siege["progress"] = clamp(int(siege_progress[key]),0,100)

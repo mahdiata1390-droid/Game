@@ -28,8 +28,12 @@ func _process(delta:float)->void:
 	tick+=delta
 	var troops:Array=game.get("troops") if game.get("troops")!=null else []
 	for entry in troops:
-		var node=entry.get("node") as Node3D
-		if not is_instance_valid(node):
+		# Check validity before casting: casting a freed instance raises an error.
+		var node_value: Variant = entry.get("node")
+		if not is_instance_valid(node_value):
+			continue
+		var node := node_value as Node3D
+		if node == null:
 			continue
 		var id=node.get_instance_id()
 		if not states.has(id):
@@ -80,8 +84,11 @@ func _nearest_enemy(from:Node3D,team:String)->Node3D:
 	for entry in troops:
 		if String(entry.get("team",""))==team:
 			continue
-		var n=entry.get("node") as Node3D
-		if not is_instance_valid(n):
+		var node_value: Variant = entry.get("node")
+		if not is_instance_valid(node_value):
+			continue
+		var n := node_value as Node3D
+		if n == null:
 			continue
 		var d=from.global_position.distance_to(n.global_position)
 		if d<best_distance:

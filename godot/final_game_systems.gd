@@ -428,11 +428,11 @@ func get_political_influence() -> int:
 func change_law_with_influence(name: String, value: int) -> Dictionary:
     if not laws.has(name):
         return {"ok":false,"reason":"invalid_law"}
-    var target := clamp(value, 0, 30)
+    var target: Variant = clamp(value, 0, 30)
     var current := int(laws[name])
     if target == current:
         return {"ok":false,"reason":"no_change"}
-    var cost := max(1, abs(target-current) * 2)
+    var cost: Variant = max(1, abs(target-current) * 2)
     if political_influence < cost:
         return {"ok":false,"reason":"not_enough_influence","cost":cost}
     political_influence -= cost

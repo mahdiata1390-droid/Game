@@ -88,7 +88,7 @@ func _process(delta: float) -> void:
     _watch_battle()
 
 func _update_atmosphere() -> void:
-    var daylight := clamp(sin((time_of_day-6.0)/12.0*PI),0.08,1.0)
+    var daylight: Variant = clamp(sin((time_of_day-6.0)/12.0*PI),0.08,1.0)
     if sun != null:
         sun.light_energy = 0.35 + daylight * 0.95
         sun.rotation_degrees.x = -25.0 - daylight * 42.0

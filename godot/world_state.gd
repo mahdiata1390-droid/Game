@@ -103,24 +103,28 @@ func _get_faction(id:String)->Dictionary:
 func recruit_from_settlement(settlement_id:int,troop_type:String,count:int)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size(): return {"ok":false,"reason":"invalid_settlement"}
 	if count<=0: return {"ok":false,"reason":"invalid_count"}
-	var settlement:Dictionary=settlements[settlement_id]; var available:=max(0,int(settlement["population"])/12-int(settlement["garrison"])); var recruit_count:=min(count,available)
+	var settlement:Dictionary=settlements[settlement_id]; var available: int = maxi(0,int(settlement["population"])/20-int(settlement["garrison"])/4); var recruit_count: int = mini(count,available)
 	if recruit_count<=0: return {"ok":false,"reason":"no_recruits"}
 	var costs={"levy":5,"spearman":9,"archer":11,"horseman":18}
 	if not costs.has(troop_type): return {"ok":false,"reason":"invalid_troop_type"}
 	var total_cost: int = recruit_count * int(costs[troop_type])
 	if gold<total_cost: return {"ok":false,"reason":"not_enough_gold"}
-	gold-=total_cost; settlement["garrison"]=int(settlement["garrison"])+recruit_count
+	gold-=total_cost
+	# Paid recruits join the player's Free Company band, not the settlement
+	# owner's army. Otherwise the player can never command troops or siege.
+	if String(settlement["owner"])==player_faction:
+		settlement["garrison"]=int(settlement["garrison"])+recruit_count
 	for army in armies:
-		if int(army["region"])==int(settlement["region"]) and String(army["owner"])==String(settlement["owner"]):
+		if int(army["region"])==int(settlement["region"]) and String(army["owner"])==player_faction:
 			army["soldiers"]=int(army["soldiers"])+recruit_count
 			army["troops"][troop_type]=int(army["troops"].get(troop_type,0))+recruit_count
 			return {"ok":true,"count":recruit_count,"cost":total_cost,"army":String(army["name"])}
-	var owner:=String(settlement["owner"]); _add_army("%s Muster"%settlement["name"],owner,int(settlement["region"]),recruit_count); var new_army:Dictionary=armies.back(); new_army["troops"]={"levy":0,"spearman":0,"archer":0,"horseman":0}; new_army["troops"][troop_type]=recruit_count
+	_add_army("Free Company Band",player_faction,int(settlement["region"]),recruit_count); var new_army:Dictionary=armies.back(); new_army["troops"]={"levy":0,"spearman":0,"archer":0,"horseman":0}; new_army["troops"][troop_type]=recruit_count
 	return {"ok":true,"count":recruit_count,"cost":total_cost,"army":String(new_army["name"])}
 
 func travel_to_settlement(settlement_id:int)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size(): return {"ok":false,"days":0,"reason":"invalid_settlement"}
-	var settlement:Dictionary=settlements[settlement_id]; var target_region:int=int(settlement["region"]); var distance_regions:=abs(target_region-player_region_id); var travel_days:=max(1,int(ceil(float(distance_regions)/2.0))); player_region_id=target_region
+	var settlement:Dictionary=settlements[settlement_id]; var target_region:int=int(settlement["region"]); var distance_regions: Variant = abs(target_region-player_region_id); var travel_days: Variant = max(1,int(ceil(float(distance_regions)/2.0))); player_region_id=target_region
 	for i in range(travel_days): advance_day()
 	return {"ok":true,"days":travel_days,"settlement":String(settlement["name"])}
 
@@ -142,7 +146,7 @@ func advance_day()->void:
 		settlement["prosperity"]=clamp(int(settlement["prosperity"])+randi_range(-1,2),0,100)
 		var owner:=String(settlement["owner"])
 		var faction:=_get_faction(owner)
-		var tax_income:=max(1,int(settlement["population"]*float(settlement.get("tax_rate",0.10))/100))
+		var tax_income: Variant = max(1,int(settlement["population"]*float(settlement.get("tax_rate",0.10))/100))
 		if not faction.is_empty(): faction["treasury"]=int(faction.get("treasury",0))+tax_income
 		_simulate_settlement_production(settlement)
 	for army in armies:
@@ -162,7 +166,7 @@ func _simulate_settlement_production(settlement:Dictionary)->void:
 	var resource:=String(regions[int(settlement["region"])]["resource"])
 	var buildings:Dictionary=settlement["buildings"]
 	var stock:Dictionary=settlement["stockpile"]
-	var output:=max(1,int(settlement["prosperity"])/25)
+	var output: Variant = max(1,int(settlement["prosperity"])/25)
 	if resource=="grain": stock["food"]=int(stock.get("food",0))+output+int(buildings.get("farm",1))
 	elif resource=="wood": stock["wood"]=int(stock.get("wood",0))+output+int(buildings.get("workshop",1))
 	elif resource=="iron": stock["iron"]=int(stock.get("iron",0))+output+int(buildings.get("workshop",1))
@@ -188,12 +192,12 @@ func _simulate_faction_ai()->void:
 		var id:=String(faction["id"])
 		if id=="Free Company": continue
 		var treasury:=int(faction.get("treasury",0))
-		var owned:=faction.get("territory",[])
+		var owned: Variant = faction.get("territory",[])
 		if treasury>150 and not owned.is_empty():
 			var region_id:=int(owned[randi_range(0,owned.size()-1)])
 			for settlement in settlements:
 				if int(settlement["region"])==region_id and String(settlement["owner"])==id and int(settlement["population"])>int(settlement["garrison"])*10:
-					var recruit:=min(12,int(settlement["population"])/30)
+					var recruit: Variant = min(12,int(settlement["population"])/30)
 					faction["treasury"]=treasury-recruit*5
 					for army in armies:
 						if String(army["owner"])==id and int(army["region"])==region_id:
@@ -210,10 +214,33 @@ func _simulate_faction_ai()->void:
 
 func _simulate_caravans()->void:
 	for i in range(caravans.size()-1,-1,-1):
+		if i>=caravans.size(): continue
 		caravans[i]["days_left"]=int(caravans[i].get("days_left",1))-1
 		if int(caravans[i]["days_left"])<=0:
 			resolve_caravan(caravans[i])
 			caravans.remove_at(i)
+	if caravans.size()<6 and day%2==0:
+		_spawn_faction_caravan()
+
+func _spawn_faction_caravan()->void:
+	# Faction trade keeps moving without the player: pick a peace-time route
+	# between two neighbouring settlements and send a caravan along it.
+	var routes:Array[Vector2i]=[]
+	for i in range(settlements.size()):
+		var origin_region:=int(settlements[i]["region"])
+		for j in range(i+1,settlements.size()):
+			var destination_region:=int(settlements[j]["region"])
+			if destination_region==origin_region: continue
+			if not get_region_neighbors(origin_region).has(destination_region): continue
+			if _are_at_war(String(settlements[i]["owner"]),String(settlements[j]["owner"])): continue
+			routes.append(Vector2i(i,j))
+	if routes.is_empty(): return
+	var route:Vector2i=routes[randi_range(0,routes.size()-1)]
+	var result:=create_trade_caravan(route.x,route.y)
+	if not result.get("ok",false): return
+	var caravan:Dictionary=result["caravan"]
+	caravan["owner"]=String(settlements[route.x]["owner"])
+	caravans.append(caravan)
 
 func get_region_neighbors(region_id:int)->Array[int]:
 	var result:Array[int]=[]; if region_id<0 or region_id>=regions.size(): return result
@@ -245,10 +272,17 @@ func create_trade_caravan(origin_id:int,destination_id:int)->Dictionary:
 	return {"ok":true,"caravan":caravan}
 
 func resolve_caravan(caravan:Dictionary)->Dictionary:
-	var profit:=max(0,int(caravan.get("profit",0)))
-	gold+=profit
-	world_events.append("Trade caravan arrived with %d gold profit."%profit)
-	return {"ok":true,"profit":profit}
+	var profit: int = maxi(0,int(caravan.get("profit",0)))
+	var owner:=String(caravan.get("owner",player_faction))
+	if owner==player_faction:
+		gold+=profit
+		world_events.append("Trade caravan arrived with %d gold profit."%profit)
+	else:
+		# Faction caravans profit their own faction, not the player.
+		var faction:=_get_faction(owner)
+		if not faction.is_empty(): faction["treasury"]=int(faction.get("treasury",0))+profit
+		world_events.append("%s caravan arrived safely."%get_faction_name(owner))
+	return {"ok":true,"profit":profit,"owner":owner}
 
 func get_market_prices(settlement_id:int)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size(): return {}
@@ -339,8 +373,8 @@ func resolve_ai_battle(settlement_id:int,attacker:Dictionary,defender:Dictionary
 	if attacker_id>=0 and attacker_id<armies.size():
 		attack_score*=_army_tactical_bonus(armies[attacker_id])
 	var won:=attack_score>=defend_score
-	var attacker_losses:=clamp(int(defender.get("soldiers",1)*(0.20 if won else 0.48)),1,int(attacker.get("soldiers",1)))
-	var defender_losses:=clamp(int(attacker.get("soldiers",1)*(0.52 if won else 0.20)),1,int(defender.get("soldiers",1)))
+	var attacker_losses: Variant = clamp(int(defender.get("soldiers",1)*(0.20 if won else 0.48)),1,int(attacker.get("soldiers",1)))
+	var defender_losses: Variant = clamp(int(attacker.get("soldiers",1)*(0.52 if won else 0.20)),1,int(defender.get("soldiers",1)))
 	var army_id:=int(attacker.get("army_id",-1))
 	if army_id>=0 and army_id<armies.size():
 		_apply_army_losses(army_id,attacker_losses)
@@ -382,11 +416,11 @@ func get_player_battle_force()->Dictionary:
 	return {"owner":player_faction,"soldiers":soldiers,"morale":78,"troops":troops,"formation":formation,"order":order}
 
 func resolve_auto_battle(settlement_id:int,attacker:Dictionary,defender:Dictionary)->Dictionary:
-	var attack_count:=max(1,int(attacker.get("soldiers",1))); var defend_count:=max(1,int(defender.get("soldiers",1))); var attack_morale:=float(attacker.get("morale",70)); var defend_morale:=float(defender.get("morale",65))
-	var attack_score:=float(attack_count)*(0.72+_battle_quality(attacker.get("troops",{})))*(0.75+attack_morale/200.0)*(1.0+get_player_combat_bonus())
+	var attack_count: Variant = max(1,int(attacker.get("soldiers",1))); var defend_count: Variant = max(1,int(defender.get("soldiers",1))); var attack_morale: Variant = float(attacker.get("morale",70)); var defend_morale: Variant = float(defender.get("morale",65))
+	var attack_score: Variant = float(attack_count)*(0.72+_battle_quality(attacker.get("troops",{})))*(0.75+attack_morale/200.0)*(1.0+get_player_combat_bonus())
 	if player_army_tactical_bonus() > 0.0: attack_score*=(1.0+player_army_tactical_bonus())
-	var defend_score:=float(defend_count)*(0.72+_battle_quality(defender.get("troops",{})))*(0.75+defend_morale/200.0)
-	var attacker_won:=attack_score>=defend_score; var ratio:=clamp(max(attack_score,defend_score)/max(1.0,min(attack_score,defend_score)),1.0,3.0); var attacker_losses:int; var defender_losses:int; var rounds:Array[String]=[]
+	var defend_score: Variant = float(defend_count)*(0.72+_battle_quality(defender.get("troops",{})))*(0.75+defend_morale/200.0)
+	var attacker_won: Variant = attack_score>=defend_score; var ratio: Variant = clamp(max(attack_score,defend_score)/max(1.0,min(attack_score,defend_score)),1.0,3.0); var attacker_losses:int; var defender_losses:int; var rounds:Array[String]=[]
 	if attacker_won:
 		attacker_losses=clamp(int(defend_count*(0.18+0.10/ratio)),1,attack_count); defender_losses=clamp(int(attack_count*(0.55+0.12*ratio)),1,defend_count); rounds=["Attackers gained the first advantage.","Defensive lines began to collapse.","The garrison withdrew after sustained pressure."]
 	else:
@@ -481,9 +515,9 @@ func apply_manual_battle_result(settlement_id:int,attacker_losses:int,defender_l
 	var garrison_troops:Dictionary = settlement.get("garrison_troops", {})
 	var applied_defender := 0
 	for kind in defender_types.keys():
-		var loss := max(0, int(defender_types[kind]))
+		var loss: Variant = max(0, int(defender_types[kind]))
 		var available := int(garrison_troops.get(kind, 0))
-		var actual := min(loss, available)
+		var actual: Variant = min(loss, available)
 		garrison_troops[kind] = available-actual
 		applied_defender += actual
 	if applied_defender < defender_losses:
@@ -491,7 +525,7 @@ func apply_manual_battle_result(settlement_id:int,attacker_losses:int,defender_l
 		for kind in garrison_troops.keys():
 			if fallback<=0: break
 			var available := int(garrison_troops[kind])
-			var actual := min(available,fallback)
+			var actual: Variant = min(available,fallback)
 			garrison_troops[kind]=available-actual
 			fallback-=actual
 			applied_defender += actual
@@ -508,9 +542,9 @@ func _apply_army_troop_losses(army_id:int,losses:Dictionary)->int:
 	var army:Dictionary=armies[army_id]
 	var applied := 0
 	for kind in losses.keys():
-		var requested := max(0,int(losses[kind]))
+		var requested: Variant = max(0,int(losses[kind]))
 		var available := int(army["troops"].get(kind,0))
-		var actual := min(requested,available)
+		var actual: Variant = min(requested,available)
 		army["troops"][kind]=available-actual
 		applied += actual
 	# Apply the accumulated losses exactly once; applying inside the loop
@@ -527,7 +561,7 @@ func apply_manual_victory(settlement_id:int,attacker_losses:int,defender_losses:
 func _apply_army_losses(army_id:int,losses:int)->void:
 	if army_id<0 or army_id>=armies.size(): return
 	var army:Dictionary=armies[army_id]
-	var old:=max(1,int(army["soldiers"])); var remaining:=max(0,old-losses); var ratio:=float(remaining)/float(old)
+	var old: Variant = max(1,int(army["soldiers"])); var remaining: Variant = max(0,old-losses); var ratio: Variant = float(remaining)/float(old)
 	army["soldiers"]=remaining
 	for kind in army["troops"].keys(): army["troops"][kind]=int(round(int(army["troops"][kind])*ratio))
 	army["morale"]=max(0,int(army["morale"])-min(30,losses/3))
@@ -557,10 +591,16 @@ func naval_battle(ship_a_id:int,ship_b_id:int)->Dictionary:
 	var ascore:=int(a["crew"])+int(a["cargo"].get("iron",0))*2; var bscore:=int(b["crew"])+int(b["cargo"].get("iron",0))*2
 	var winner:=ship_a_id if ascore>=bscore else ship_b_id
 	var loser:=ship_b_id if winner==ship_a_id else ship_a_id
-	ships[winner]["crew"]=max(1,int(ships[winner]["crew"])-randi_range(3,10))
+	ships[winner]["crew"]=maxi(1,int(ships[winner]["crew"])-randi_range(3,10))
 	world_events.append("%s defeated %s at sea."%[ships[winner]["name"],ships[loser]["name"]])
-	ships.remove_at(loser)
-	return {"ok":true,"winner":winner,"loser":loser}
+	# A defeated ship is crippled, not deleted: removing it would invalidate
+	# every stored ship index (orders, encounters, save files).
+	ships[loser]["crew"]=0
+	ships[loser]["hull"]=0
+	ships[loser]["disabled"]=true
+	ships[loser]["moving"]=false
+	ships[loser]["target_region"]=int(ships[loser]["region"])
+	return {"ok":true,"winner":winner,"loser":loser,"disabled":true}
 
 func get_diplomacy(a:String,b:String)->String:
 	return String(diplomacy.get("%s|%s" % [a,b], "neutral"))
@@ -575,13 +615,15 @@ func raid_settlement(settlement_id:int)->Dictionary:
 	if settlement_id<0 or settlement_id>=settlements.size(): return {"ok":false,"reason":"invalid_settlement"}
 	var s:=settlements[settlement_id]; var owner:=String(s["owner"])
 	if not _are_at_war(player_faction,owner): return {"ok":false,"reason":"not_at_war"}
-	var loot:=max(10,int(s["prosperity"])*2); gold+=loot; s["prosperity"]=max(0,int(s["prosperity"])-12); s["garrison"]=max(0,int(s["garrison"])-10)
+	var loot: Variant = max(10,int(s["prosperity"])*2); gold+=loot; s["prosperity"]=max(0,int(s["prosperity"])-12); s["garrison"]=max(0,int(s["garrison"])-10)
 	world_events.append("Free Company raided %s for %d gold."%[s["name"],loot])
 	return {"ok":true,"loot":loot}
 
 func create_caravan(origin_id:int,destination_id:int)->Dictionary:
 	var result:=create_trade_caravan(origin_id,destination_id)
-	if result.get("ok",false): caravans.append(result["caravan"])
+	if result.get("ok",false):
+		result["caravan"]["owner"]=player_faction
+		caravans.append(result["caravan"])
 	return result
 
 func _get_depth_state() -> Dictionary:
@@ -644,6 +686,12 @@ func load_game()->bool:
 	if int(parsed.get("save_version",1)) > 7: return false
 	for key in ["day","gold","player_faction","player_start","player_region_id","player_mode","player_level","player_xp","player_inventory","family","weather","time_of_day","yearly_tax","player_income","battle_events","world_events","battle_cooldowns","regions","factions","settlements","armies","diplomacy","caravans","ships","sieges","player_equipment","family_members","player_buildings","production_stock","faction_ai_state","simulation_paused"]:
 		if parsed.has(key): set(key,parsed[key])
+	# JSON object keys are always strings, so dictionaries keyed by settlement id
+	# came back as {"9": ...} and every lookup by int then missed. Restore the
+	# integer keys the simulation indexes with.
+	battle_cooldowns = _int_keyed(parsed.get("battle_cooldowns", {}))
+	sieges = _int_keyed(parsed.get("sieges", {}))
+	player_buildings = _int_keyed(parsed.get("player_buildings", {}))
 	var campaign_node := get_node_or_null("/root/CampaignSystems")
 	if campaign_node and campaign_node.has_method("load_save_state") and parsed.has("campaign_state"):
 		campaign_node.load_save_state(parsed["campaign_state"])
@@ -692,7 +740,7 @@ func garrison_army_in_settlement(army_id:int,settlement_id:int)->Dictionary:
 	if army_id<0 or army_id>=armies.size() or settlement_id<0 or settlement_id>=settlements.size(): return {"ok":false,"reason":"invalid"}
 	var army:=armies[army_id]; var s:=settlements[settlement_id]
 	if String(army["owner"])!=player_faction or int(army["region"])!=int(s["region"]): return {"ok":false,"reason":"not_available"}
-	var moved:=min(50,int(army["soldiers"])); s["garrison"]=int(s["garrison"])+moved; army["soldiers"]=int(army["soldiers"])-moved
+	var moved: Variant = min(50,int(army["soldiers"])); s["garrison"]=int(s["garrison"])+moved; army["soldiers"]=int(army["soldiers"])-moved
 	return {"ok":true,"garrison":s["garrison"],"army":army["soldiers"]}
 
 func set_army_formation(army_id:int,formation:String)->Dictionary:
@@ -722,21 +770,21 @@ func assault_siege(settlement_id:int)->Dictionary:
 	if army_id<0 or army_id>=armies.size(): return {"ok":false,"reason":"army_missing"}
 	var a:Dictionary=armies[army_id]
 	var wall:=int(s.get("wall_level",1))
-	var attack_power:=max(1,int(a["soldiers"])+int(a["troops"].get("horseman",0))*2)
-	var defense_power:=max(1,int(s["garrison"])+wall*25)
+	var attack_power: Variant = max(1,int(a["soldiers"])+int(a["troops"].get("horseman",0))*2)
+	var defense_power: Variant = max(1,int(s["garrison"])+wall*25)
 	var ratio:=float(attack_power)/float(defense_power)
-	var attacker_loss:=clamp(int(defense_power*(0.08 if ratio>=1.0 else 0.16)),1,max(1,int(a["soldiers"])))
-	var defender_loss:=clamp(int(attack_power*(0.22 if ratio>=1.0 else 0.10)),1,max(1,int(s["garrison"])))
+	var attacker_loss: Variant = clamp(int(defense_power*(0.08 if ratio>=1.0 else 0.16)),1,max(1,int(a["soldiers"])))
+	var defender_loss: Variant = clamp(int(attack_power*(0.22 if ratio>=1.0 else 0.10)),1,max(1,int(s["garrison"])))
 	_apply_army_losses(army_id,attacker_loss)
 	if army_id>=armies.size():
 		settlement_siege_end(settlement_id)
 		return {"ok":true,"won":false,"attacker_losses":attacker_loss,"defender_losses":defender_loss,"captured":false,"progress":int(siege["progress"]),"phase":"repulsed"}
 	var current_garrison:=int(s["garrison"])
 	s["garrison"]=max(0,current_garrison-defender_loss)
-	var gate_damage:=max(8,int(attack_power/12))
-	var wall_damage:=max(5,int(attack_power/18))
-	var gate_hp:=max(0,int(siege.get("gate_hp",120))-gate_damage)
-	var wall_hp:=max(0,int(siege.get("wall_hp",wall*100))-wall_damage)
+	var gate_damage: Variant = max(8,int(attack_power/12))
+	var wall_damage: Variant = max(5,int(attack_power/18))
+	var gate_hp: Variant = max(0,int(siege.get("gate_hp",120))-gate_damage)
+	var wall_hp: Variant = max(0,int(siege.get("wall_hp",wall*100))-wall_damage)
 	siege["gate_hp"]=gate_hp
 	siege["wall_hp"]=wall_hp
 	var progress_gain:=15 if ratio>=1.0 else 8
@@ -781,6 +829,15 @@ func _simulate_sieges()->void:
 		if int(siege["progress"])>=100: settlements[sid]["garrison"]=max(0,int(settlements[sid]["garrison"])-20); siege["progress"]=80
 		sieges[sid]=siege
 	for sid in finished: sieges.erase(sid)
+
+func _int_keyed(source:Variant)->Dictionary:
+	var result:Dictionary = {}
+	if typeof(source) != TYPE_DICTIONARY:
+		return result
+	for key in source.keys():
+		var numeric := int(str(key))
+		result[numeric] = source[key]
+	return result
 
 func upgrade_player_equipment(slot:String,item:String,cost:int)->Dictionary:
 	if not ["weapon","armor","horse","shield"].has(slot) or cost<0: return {"ok":false,"reason":"invalid_equipment"}

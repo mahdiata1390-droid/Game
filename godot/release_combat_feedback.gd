@@ -27,7 +27,10 @@ func _refresh_bars() -> void:
         if not (troop_value is Dictionary):
             continue
         var node_value: Variant = troop_value.get("node")
-        if not (node_value is Node3D) or not is_instance_valid(node_value):
+        # Validity first: a freed instance raises an error when tested with 'is'.
+        if not is_instance_valid(node_value):
+            continue
+        if not (node_value is Node3D):
             continue
         var hp = int(troop_value.get("hp", troop_value.get("health", 100)))
         var label = node_value.get_node_or_null("CombatHP") as Label3D

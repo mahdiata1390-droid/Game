@@ -31,7 +31,7 @@ func _update_trade_network() -> void:
 			var b: Dictionary = world.settlements[j]
 			var b_owner: String = String(b.get("owner", ""))
 			var distance: int = abs(int(a.get("region", 0)) - int(b.get("region", 0)))
-			var relation: String = String(world.get_diplomacy_state(a_owner, b_owner))
+			var relation: String = String(world.get_diplomacy(a_owner, b_owner))
 			if distance <= 3 and (a_owner == b_owner or relation in ["peace", "trade", "alliance"]):
 				routes.append({"from": i, "to": j, "distance": distance, "volume": 10 + int(a.get("prosperity", 50) / 10)})
 				if routes.size() >= 12:

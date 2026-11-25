@@ -23,3 +23,6 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Local Godot engine binaries, export templates and Android SDK used for verification
+/tools/

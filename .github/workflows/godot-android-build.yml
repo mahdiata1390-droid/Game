@@ -1,4 +1,3 @@
-# CI diagnostic: isolated script validation enabled
 name: Godot Android Final Candidate
 
 on:
@@ -23,172 +22,93 @@ jobs:
 
       - name: Prepare Android SDK
         run: |
+          set -euo pipefail
           export ANDROID_SDK_ROOT="/usr/local/lib/android/sdk"
           export ANDROID_HOME="/usr/local/lib/android/sdk"
-          export PATH="/usr/local/lib/android/sdk/cmdline-tools/latest/bin:/usr/local/lib/android/sdk/platform-tools:$PATH"
           echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
           echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
           echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
           echo "/usr/local/lib/android/sdk/platform-tools" >> "$GITHUB_PATH"
-          command -v sdkmanager
-          sdkmanager --version
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Download Godot
         run: |
+          set -euo pipefail
           wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
           unzip -q Godot_v4.7.2-stable_linux.x86_64.zip -d godot-bin
           chmod +x godot-bin/Godot_v4.7.2-stable_linux.x86_64
 
       - name: Download Android export templates
         run: |
-          mkdir -p "$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          set -euo pipefail
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          mkdir -p "$TEMPLATE_DIR"
           wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
           unzip -q Godot_v4.7.2-stable_export_templates.tpz -d godot-templates
-          cp godot-templates/templates/android_debug.apk "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
-          cp godot-templates/templates/android_release.apk "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
+          cp godot-templates/templates/android_debug.apk "$TEMPLATE_DIR/"
+          cp godot-templates/templates/android_release.apk "$TEMPLATE_DIR/"
+          cp godot-templates/templates/version.txt "$TEMPLATE_DIR/" || true
 
-      - name: Configure Android paths
-        run: |
-          mkdir -p godot/build
-
-      - name: Create export preset
-        run: |
-          cat > godot/export_presets.cfg <<'EOF'
-          [preset.0]
-          name="Android"
-          platform="Android"
-          runnable=true
-          export_filter="all_resources"
-          include_filter="assets/production/**"
-          exclude_filter=""
-          export_path="build/MedievalSandbox.apk"
-          [preset.0.options]
-          package/unique_name="com.mahdiata1390.medievalsandbox"
-          package/name="Medieval Sandbox"
-          package/version_code=2
-          package/version_name="1.0.0-rc"
-          package/launcher_icons/main_192x192=""
-          package/launcher_icons/adaptive_foreground_432x432=""
-          package/launcher_icons/adaptive_background_432x432=""
-          package/launcher/strip_large_resources=true
-          graphics/opengl/force_angle=false
-          architecture/arm64-v8a=true
-          architecture/armeabi-v7a=false
-          EOF
-
-      - name: Fetch production art packs
+      - name: Import project
         run: |
           set -euo pipefail
-          mkdir -p godot/assets/production/medieval_village godot/assets/production/nature godot/assets/production/characters godot/assets/production/characters_extra godot/assets/production/buildings_extra godot/assets/production/animals godot/assets/production/crops godot/assets/production/creatures
-          curl -L --fail --retry 3 -o /tmp/medieval_village.zip https://opengameart.org/sites/default/files/medieval_village_megakitstandard.zip
-          curl -L --fail --retry 3 -o /tmp/stylized_nature.zip https://opengameart.org/sites/default/files/stylized_nature_megakitstandard.zip
-          curl -L --fail --retry 3 -o /tmp/medieval_buildings.zip 'https://opengameart.org/sites/default/files/Modular%20Medieval%20Pack%20by%20%40Quaternius_0.zip'
-          curl -L --fail --retry 3 -o /tmp/prototype_kit.zip https://opengameart.org/sites/default/files/kenney_prototype-kit.zip
-          curl -L --fail --retry 3 -o /tmp/animated_characters.zip https://opengameart.org/sites/default/files/ultimate_animated_character_pack_by_quaternius.zip
-          curl -L --fail --retry 3 -o /tmp/farm_animals.zip 'https://opengameart.org/sites/default/files/Farm%20Animals%20by%20%40Quaternius.zip'
-          curl -L --fail --retry 3 -o /tmp/crops.zip https://opengameart.org/sites/default/files/nature_crops_pack_by_quaternius.zip
-          curl -L --fail --retry 3 -o /tmp/monsters.zip https://opengameart.org/sites/default/files/Animated%20Monster%20Pack%20by%20%40Quaternius.zip
-          curl -L --fail --retry 3 -o godot/assets/production/characters/character.glb https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/character.glb
-          unzip -q /tmp/medieval_village.zip -d /tmp/medieval_village
-          unzip -q /tmp/stylized_nature.zip -d /tmp/stylized_nature
-          unzip -q /tmp/medieval_buildings.zip -d /tmp/medieval_buildings
-          unzip -q /tmp/prototype_kit.zip -d /tmp/prototype_kit
-          unzip -q /tmp/animated_characters.zip -d /tmp/animated_characters
-          unzip -q /tmp/farm_animals.zip -d /tmp/farm_animals
-          unzip -q /tmp/crops.zip -d /tmp/crops
-          unzip -q /tmp/monsters.zip -d /tmp/monsters
-          cp -a /tmp/medieval_village/. godot/assets/production/medieval_village/
-          cp -a /tmp/stylized_nature/. godot/assets/production/nature/
-          cp -a /tmp/medieval_buildings/. godot/assets/production/buildings_extra/
-          cp -a /tmp/prototype_kit/. godot/assets/production/animals/
-          cp -a /tmp/animated_characters/. godot/assets/production/characters_extra/
-          cp -a /tmp/farm_animals/. godot/assets/production/animals/
-          cp -a /tmp/crops/. godot/assets/production/crops/
-          cp -a /tmp/monsters/. godot/assets/production/creatures/
-          find godot/assets/production -type f | sort > /tmp/production_asset_list.txt
-          sed -n '1,160p' /tmp/production_asset_list.txt
+          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --import
 
-      - name: Validate project and scripts
+      # Godot's editor reports parse errors but still exits 0. A plain
+      # "--editor --quit" therefore passes on a completely broken project, which
+      # is how this repository previously shipped non-compiling scripts. These
+      # gates exit non-zero for real failures.
+      - name: Validate every script compiles
         run: |
-          set -o pipefail
-          set +e
-          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --editor --quit --check-only 2>&1 | tee godot-check.log
-          status=${PIPESTATUS[0]}
-          set -e
-          echo "=== GODOT VALIDATION LOG (ERRORS) ==="
-          grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Final QA failed" godot-check.log || true
-          echo "=== GODOT VALIDATION EXIT STATUS: $status ==="
-          if [ "$status" -ne 0 ]; then
-            exit "$status"
-          fi
-          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Final QA failed" godot-check.log; then
-            exit 1
-          fi
+          set -euo pipefail
+          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --script res://qa/validate_scripts.gd
 
-      - name: Runtime smoke test
+      - name: Headless gameplay QA
         run: |
-          set -o pipefail
-          set +e
-          timeout 15s ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --quit-after 8 2>&1 | tee godot-runtime.log
-          status=${PIPESTATUS[0]}
-          set -e
-          echo "=== GODOT RUNTIME LOG ==="
-          cat godot-runtime.log
-          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
-            echo "Godot runtime exited with status $status"
-            exit "$status"
-          fi
-          if grep -E "SCRIPT ERROR|Parse Error|Final QA failed" godot-runtime.log; then
-            echo "Runtime QA reported an error."
-            exit 1
-          fi
+          set -euo pipefail
+          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --script res://qa/headless_qa.gd
 
-      - name: Upload Godot QA logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Godot-QA-Logs
-          path: |
-            godot-check.log
-            godot-runtime.log
-          if-no-files-found: ignore
-
-
-      - name: Verify production art runtime load
+      - name: Runtime boot smoke test
         run: |
-          if ! grep -q "PRODUCTION_ART_ACTIVE" godot-runtime.log; then
-            echo "Production 3D art did not load at runtime."
+          set -euo pipefail
+          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --fixed-fps 60 --quit-after 3600 2>&1 | tee boot.log
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load" boot.log; then
+            echo "Runtime produced script errors"
             exit 1
           fi
 
       - name: Export APK
         run: |
+          set -euo pipefail
+          mkdir -p godot/build
           ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --export-debug "Android" build/MedievalSandbox.apk
-
-      - name: Final candidate QA report
-        run: |
-          echo "=== MEDIEVAL SANDBOX FINAL CANDIDATE ==="
-          echo "Godot: 4.7.2"
-          echo "Android: arm64-v8a"
-          echo "Branch: release-candidate"
-          echo "Runtime smoke test: passed if previous step exited 0"
-          echo "APK:"
-          ls -lh godot/build/MedievalSandbox.apk
 
       - name: Verify APK
         run: |
-          test -s godot/build/MedievalSandbox.apk
-          ls -lh godot/build/MedievalSandbox.apk
+          set -euo pipefail
+          APK="godot/build/MedievalSandbox.apk"
+          test -s "$APK"
+          ls -lh "$APK"
+          unzip -tq "$APK"
+          python3 - <<'PY'
+          import zipfile, sys
+          apk = "godot/build/MedievalSandbox.apk"
+          with zipfile.ZipFile(apk) as z:
+              names = z.namelist()
+          required = ["AndroidManifest.xml", "classes.dex", "resources.arsc"]
+          missing = [n for n in required if n not in names]
+          if missing:
+              sys.exit("APK missing: %s" % missing)
+          if not any(n.startswith("assets/") for n in names):
+              sys.exit("APK does not package the Godot game data")
+          if not any(n.startswith("lib/") for n in names):
+              sys.exit("APK does not package a native library")
+          print("APK verified with %d entries" % len(names))
+          PY
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MedievalSandbox-Android
           path: godot/build/MedievalSandbox.apk
-
-# Build verification trigger: final gameplay integration.
-# Final QA build trigger: Android release-candidate smoke test.
-
-# Build 313 diagnostic refresh: run against current release-candidate fixes.

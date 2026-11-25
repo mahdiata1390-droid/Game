@@ -1064,10 +1064,12 @@ func _troop_combat_stats(troop_type: String) -> Dictionary:
 func _update_troops(delta: float) -> void:
 	for i in range(troops.size() - 1, -1, -1):
 		var data = troops[i]
-		var node: CharacterBody3D = data.node
-		if not is_instance_valid(node):
+		# Assigning a freed instance to a typed variable raises, so validate first.
+		var node_value: Variant = data.node
+		if not is_instance_valid(node_value):
 			troops.remove_at(i)
 			continue
+		var node: CharacterBody3D = node_value
 		data.cooldown = max(0.0, float(data.cooldown) - delta)
 		var target = _nearest_enemy(node, String(data.team))
 		if target:
@@ -1100,7 +1102,9 @@ func _update_troops(delta: float) -> void:
 			if node.global_position.distance_to(look_target) > 0.05:
 				node.look_at(look_target, Vector3.UP)
 			_animate_troop_visual(node, moving, attacking, battle_time + float(i))
-		troops[i] = data
+		# Another troop can die (and be removed) during this pass.
+		if i < troops.size():
+			troops[i] = data
 
 func _nearest_enemy(from: Node3D, team: String) -> Node3D:
 	var best: Node3D

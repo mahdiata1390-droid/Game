@@ -1,22 +1,41 @@
 # Game
 
-Offline-first medieval fantasy sandbox for Android, planned in Unity.
+Offline-first open-world medieval sandbox targeting Android. The active engine path is **Godot 4.7.2** in [`godot/`](godot/); the Unity files under `Assets/` and `ProjectSettings/` are historical and are not the game.
 
-## Current prototype foundation
+## What exists
 
-The repository contains a Unity 2022.3 project marker and a greybox Prototype scene. At scene start, runtime setup creates a ground plane, placeholder player and enemy, third-person follow camera, touch drag-look area, virtual movement joystick, attack button, and player health HUD.
+77 GDScript files implement one simulated continent:
 
-Gameplay source includes camera-relative movement, basic melee combat, a simple enemy behavior, local checkpoint persistence, automatic respawn, and a starter resource loop. The greybox now spawns finite wood, stone, and herb nodes; gathered counts appear in the HUD and persist locally. One herb restores up to 25 health. Three wood plus two stone craft one persistent campfire placed in front of the player; resting within three metres restores up to 50 health. Actions show brief on-screen feedback for gathering, healing, missing resources, and campfire restrictions; the campfire flame and light have a subtle flicker. Actions now show short on-screen feedback for missing resources, out-of-range resting, and successful gathering/healing; the campfire flame and light have a subtle flicker. The prototype player is configured to return to the saved spawn position with full health two seconds after defeat. Checkpoint loading rejects obviously invalid coordinates and restores full health if a saved checkpoint contains zero health.
+- **World simulation** — 12 regions, 48 settlements across four types, 6 factions, 12 armies, ships, caravans, weather and day/night. `advance_day()` runs settlement production, faction taxes and treasuries, faction AI recruitment and army movement, sieges, ship movement, faction caravans and world events without needing the player.
+- **Player freedom** — no campaign and no forced missions. The player can trade, recruit a company, raid, besiege, take settlements, rise to lord or king, or ignore politics.
+- **Economy** — regional resources, stockpiles, supply/demand prices, markets, contracts, caravans, taxes and prosperity.
+- **Combat** — third-person melee, an optional first-person mode, manual and automatic resolution, both applied to the same world state.
+- **Sieges** — walls, gates, breach phases, supplies, morale and capture that transfers real settlement ownership.
+- **Naval** — ships with crews, cargo, routes and battles that change world state.
+- **Diplomacy, family, succession, technology, rebellions, creatures** — persistent state owned by `world_state.gd`, `campaign_systems.gd` and `final_game_systems.gd`.
+- **UI** — HUD, world map, army, settlement, diplomacy, economy, equipment, family, siege, naval and save/load panels bound to live data.
+- **Save/load** — one JSON save covering world time, weather, factions, settlements, armies, sieges, ships, caravans, economy, family and progression.
 
-All visuals remain temporary primitive placeholders. Resource nodes are colored primitives and disappear visually when depleted. This is a small systems prototype foundation, not the planned full open-world sandbox.
+## Verification
 
-## Design and planning
-- [Game Design Document](docs/GDD.md)
-- [Development Roadmap](docs/ROADMAP.md)
-- [Prototype scripts guide](Assets/Scripts/README.md)
+```bash
+godot --headless --path godot --import
+godot --headless --path godot --script res://qa/validate_scripts.gd   # every script must compile
+godot --headless --path godot --script res://qa/headless_qa.gd       # boots the game and drives the simulation
+```
 
-## Honest build status
+CI runs both gates, a runtime boot smoke test, then exports and inspects the Android APK. All warnings are enabled; nothing is suppressed to make the build pass.
 
-The Unity project files and scripts have been committed, but Unity Editor compilation, Play Mode testing, Android packaging, and real-device testing have **not** been performed. There is no verified APK yet.
+## Honest limitations
 
-An Android build requires Unity 2022.3 with Android Build Support (SDK/NDK + OpenJDK). Unity Editor does not run natively on iPhone; a compatible computer or configured cloud build runner is required. A cloud build also needs valid Unity licensing/CI credentials.
+- **No production art is committed.** `godot/assets/production/` contains mount points and a README for the CC0 Quaternius packs, but no models or textures. The world is built from authored procedural meshes (castles, houses, roofs, walls, banners, forests, soldiers) and falls back gracefully when packs are absent. This is the largest gap to a finished game.
+- Settlements are represented on the shared continent rather than as fully modelled walkable interiors.
+- Animation, audio assets and navigation meshes are not present.
+- Android is exported and the APK is structurally verified in CI, but it has not been installed on a physical device or emulator from this repository's automation.
+
+## Docs
+
+- [Game design](docs/GDD.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Technical audit](docs/TECHNICAL_AUDIT.md)
+- [Godot project notes](godot/README.md)

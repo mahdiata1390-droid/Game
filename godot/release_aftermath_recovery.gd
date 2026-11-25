@@ -27,13 +27,13 @@ func _recover() -> void:
 			continue
 		var wounded := int(army.get("wounded",0))
 		if wounded > 0:
-			var healed := min(5, wounded)
+			var healed: Variant = min(5, wounded)
 			army["wounded"] = wounded - healed
 			army["soldiers"] = int(army.get("soldiers",0)) + healed
 			recovered_wounded += healed
 		var prisoners := int(army.get("prisoners",0))
 		if prisoners > 0 and int(army.get("morale",75)) >= 70:
-			var released := min(2, prisoners)
+			var released: Variant = min(2, prisoners)
 			army["prisoners"] = prisoners - released
 			released_prisoners += released
 		if int(army.get("morale",75)) < 70 and int(army.get("soldiers",0)) > 0:

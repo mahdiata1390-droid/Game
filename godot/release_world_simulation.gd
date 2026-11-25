@@ -51,7 +51,15 @@ func _simulate_factions() -> void:
                     actions += 1
 
 func _simulate_armies() -> void:
-    for i in range(world.armies.size()):
+    # Iterate by army id, not by index: assault_siege() can destroy an army and
+    # reindex the array mid-loop, which made later indices point past the end.
+    var army_ids: Array[int] = []
+    for candidate in world.armies:
+        army_ids.append(int(candidate.get("id", -1)))
+    for army_id in army_ids:
+        var i := _army_index(army_id)
+        if i < 0:
+            continue
         var army: Dictionary = world.armies[i]
         var owner = String(army.get("owner",""))
         if owner == "" or owner == String(world.get("player_faction")):
@@ -79,6 +87,14 @@ func _simulate_armies() -> void:
                 state["settlements_captured"] = int(state["settlements_captured"]) + 1
                 actions += 1
                 last_event = "%s captured %s" % [owner,String(result.get("settlement","Settlement"))]
+
+func _army_index(army_id: int) -> int:
+    if army_id < 0:
+        return -1
+    for idx in range(world.armies.size()):
+        if int(world.armies[idx].get("id", -1)) == army_id:
+            return idx
+    return -1
 
 func _simulate_recovery() -> void:
     for i in range(world.armies.size()):

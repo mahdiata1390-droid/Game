@@ -136,7 +136,7 @@ func _nearest_hostile_settlement() -> int:
             continue
         if world.get_diplomacy(player,owner) != "war":
             continue
-        var distance := abs(int(s.get("region",0)) - player_region)
+        var distance: Variant = abs(int(s.get("region",0)) - player_region)
         if distance < best_distance:
             best_distance = distance
             best = i
@@ -153,7 +153,7 @@ func _nearest_player_army_to_settlement(settlement_id: int) -> int:
         var army: Dictionary = world.armies[i]
         if String(army.get("owner","")) != player or int(army.get("soldiers",0)) <= 0:
             continue
-        var distance := abs(int(army.get("region",0)) - target_region)
+        var distance: Variant = abs(int(army.get("region",0)) - target_region)
         if distance < best_distance:
             best_distance = distance
             best = i

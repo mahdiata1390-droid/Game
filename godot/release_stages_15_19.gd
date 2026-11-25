@@ -42,10 +42,10 @@ func is_region_discovered(region_id:String)->bool:
     return bool(discovered.get(region_id,false))
 
 func get_map_state()->Dictionary:
-    return {"discovered":discovered.duplicate(true),"player_region":String(world.get("player_region_id"))}
+    return {"discovered":discovered.duplicate(true),"player_region":str(world.get("player_region_id"))}
 
 func _map_tick()->void:
-    var current=String(world.get("player_region_id"))
+    var current=str(world.get("player_region_id"))
     if current!="":
         discovered[current]=true
     var route=world.get_meta("player_travel_route",[])

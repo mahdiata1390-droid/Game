@@ -1,46 +1,41 @@
-# Medieval Sandbox — Release Candidate
+# Medieval Sandbox — Release Candidate (Godot 4.7.2)
 
-Offline-first open-world medieval sandbox for Android, built with Godot 4.7.2.
+## Layout
 
-## Release target
+| File | Role |
+| --- | --- |
+| `main.gd` / `main.tscn` | Boots world, player, camera, UI, input and the play loop |
+| `world_state.gd` | Continent, factions, settlements, armies, ships, economy, diplomacy, battles, sieges, save/load |
+| `campaign_systems.gd` | Autoload: naval campaign, trade contracts, family aging, succession |
+| `final_game_systems.gd` | Autoload: politics, technology, NPCs, trade routes, wildlife, creatures, events |
+| `final_systems_ui.gd` | Autoload: sandbox panels bound to live world state |
+| `completion_systems.gd` | Autoload: late-game objectives from live state |
+| `battle_controller.gd` | Autoload: battle/siege prompts, manual and automatic modes |
+| `release_*.gd` (60+ files) | Release layers: content, visuals, combat, economy, logistics, weather, UI, mobile polish |
+| `release_asset_registry.gd` | Detects `assets/production/` packs and falls back to authored geometry |
+| `qa/validate_scripts.gd` | Compile gate; exits non-zero if any script fails |
+| `qa/headless_qa.gd` | Headless gameplay QA driving the real simulation |
 
-This branch is the active release-candidate branch. The word **complete** is reserved for the final release build only: all designed gameplay systems, final visual/audio content, mobile controls, save/load, performance checks, Android export, installation and runtime validation must pass before release is announced.
+## Run and verify
 
-## Current development
+```bash
+godot --headless --path godot --import
+godot --headless --path godot --script res://qa/validate_scripts.gd
+godot --headless --path godot --script res://qa/headless_qa.gd
+godot --path godot     # play
+```
 
-The project now contains a dedicated release-content layer for authored-feeling castles, towns, farms, forests, materials, banners, torches, environmental particles, character detail and generated audio. Existing campaign, battle, economy and sandbox systems remain separate from this visual layer.
+Headless QA boots `main.tscn` as the current scene, then checks continent generation, diplomacy, markets, recruitment, 45 simulated days, battles, sieges, naval combat, family data, autoloads, a save/load round trip and 120 further simulated days.
 
-## Build and validation
+GDScript warnings are **enabled** in `project.godot`. Do not disable them to make a build pass; fix the code.
 
-- Engine: Godot 4.7.2
-- Target: Android
-- Renderer: Compatibility/OpenGL for broad mobile support
-- CI workflow: .github/workflows/godot-android-build.yml
-- Branch for release work: release-candidate
+## Android
 
-A CI build artifact is not considered a release until the APK has been checked for build success, installed successfully, launched, and exercised through the core gameplay loop.
+`export_presets.cfg` is committed (arm64-v8a, GL Compatibility). CI exports `build/MedievalSandbox.apk` and verifies the archive contents. `qa/` is excluded from the shipped package.
 
-## Planned release content
+## Known gaps
 
-- Detailed castle/city/village variants
-- Character, armor, weapon and mount visual variation
-- Combat VFX and battlefield atmosphere
-- Dedicated SFX and music set
-- Siege visuals and equipment
-- Naval gameplay and sea travel
-- Expanded AI armies and formations
-- Economy, trade, diplomacy, war and succession integration
-- Family/generation gameplay
-- World events, weather and day/night presentation
-- Save/load reliability
-- Mobile UI, touch controls and performance optimization
-
-## Size estimate
-
-Final APK size is intentionally not fixed yet. The final size will depend mainly on the number of imported 3D models, textures, animations, music and sound effects. The project will be optimized so visual quality does not translate directly into unnecessary file size.
-
-Current target for the finished Android release is approximately **300–600 MB installed**, with the final downloadable APK/AAB size reported from the actual release build rather than guessed.
-
-
-## Final candidate QA
-The release-candidate branch is validated by the Android CI workflow before an APK is considered releasable.
+- `assets/production/` is an empty mount point; no binary art is committed. Delete nothing there, but expect fallback geometry until the CC0 packs are imported.
+- `release_visual_world.gd` is not attached to the continent (it would place a second world at the same coordinates).
+- Interiors, animation, audio and navigation meshes are not implemented.
+- Android has not been verified on physical hardware.

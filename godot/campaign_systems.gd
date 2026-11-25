@@ -105,7 +105,7 @@ func create_trade_contract(resource: String, amount: int, destination_region: in
     if destination_region < 0 or destination_region >= world.regions.size():
         return {"ok":false,"reason":"invalid_region"}
     var stock := int(world.production_stock.get(resource,0))
-    var moved := min(amount, stock)
+    var moved: Variant = min(amount, stock)
     if moved <= 0:
         return {"ok":false,"reason":"no_stock"}
     world.production_stock[resource] = stock - moved
@@ -168,7 +168,7 @@ func create_naval_mission(resource: String, amount: int, destination_region: int
     if int(ship.get("region",0)) == destination_region:
         return {"ok":false,"reason":"already_at_destination"}
     var stock := int(world.production_stock.get(resource,0))
-    var moved := min(amount, stock)
+    var moved: Variant = min(amount, stock)
     if moved <= 0: return {"ok":false,"reason":"no_stock"}
     world.production_stock[resource] = stock - moved
     var reward: int = moved * (4 if resource == "food" else (7 if resource == "wood" else 11))
@@ -195,7 +195,7 @@ func _at_war(a: String, b: String) -> bool:
 
 func _ship_power(ship: Dictionary) -> float:
     var crew := int(ship.get("crew", 0))
-    var cargo := ship.get("cargo", {})
+    var cargo: Variant = ship.get("cargo", {})
     var cargo_value := 0
     if cargo is Dictionary:
         for value in cargo.values():
@@ -220,15 +220,15 @@ func naval_battle(attacker_id: int, defender_id: int, player_engaged: bool = fal
     var loser := defender_id if winner == attacker_id else attacker_id
     var winning: Dictionary = world.ships[winner]
     var losing: Dictionary = world.ships[loser]
-    var loss_ratio := clamp(0.20 + abs(a_roll-d_roll) / max(1.0, max(a_roll,d_roll)) * 0.35, 0.20, 0.65)
-    var crew_loss := max(1, int(round(float(losing.get("crew",1)) * loss_ratio)))
-    var hull_damage := max(5, int(round(12.0 + loss_ratio * 35.0)))
+    var loss_ratio: Variant = clamp(0.20 + abs(a_roll-d_roll) / max(1.0, max(a_roll,d_roll)) * 0.35, 0.20, 0.65)
+    var crew_loss: Variant = max(1, int(round(float(losing.get("crew",1)) * loss_ratio)))
+    var hull_damage: Variant = max(5, int(round(12.0 + loss_ratio * 35.0)))
     losing["crew"] = max(0, int(losing.get("crew",0)) - crew_loss)
     losing["hull"] = max(0, int(losing.get("hull",50)) - hull_damage)
     var loot := 0
     var cargo: Dictionary = losing.get("cargo", {})
     for key in cargo.keys():
-        var amount := max(0, int(cargo[key]))
+        var amount: Variant = max(0, int(cargo[key]))
         var taken := int(round(float(amount) * 0.35))
         loot += taken
         cargo[key] = amount - taken
@@ -378,10 +378,10 @@ func recruit_ship_crew(ship_id: int, amount: int) -> Dictionary:
     if String(ship.get("owner","")) != "Free Company":
         return {"ok":false,"reason":"not_player_ship"}
     var current_crew := int(ship.get("crew",0))
-    var max_crew := max(20, int(ship.get("max_crew",60)))
+    var max_crew: Variant = max(20, int(ship.get("max_crew",60)))
     if current_crew >= max_crew:
         return {"ok":false,"reason":"crew_full","max_crew":max_crew}
-    var moved := min(amount, max_crew - current_crew)
+    var moved: Variant = min(amount, max_crew - current_crew)
     var cost: int = moved * 4
     if int(world.gold) < cost:
         return {"ok":false,"reason":"not_enough_gold","cost":cost}
@@ -540,8 +540,8 @@ func transfer_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
     for key in cargo.keys():
         current += int(cargo[key])
     var capacity := int(ship.get("cargo_capacity",100))
-    var available := max(0, capacity - current)
-    var moved := min(amount, available)
+    var available: Variant = max(0, capacity - current)
+    var moved: Variant = min(amount, available)
     if moved <= 0:
         return {"ok":false,"reason":"cargo_full"}
     var stock := int(world.production_stock.get(resource,0))
@@ -563,7 +563,7 @@ func unload_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
         return {"ok":false,"reason":"invalid_resource"}
     var ship: Dictionary = world.ships[ship_id]
     var cargo: Dictionary = ship.get("cargo", {})
-    var moved := min(amount, int(cargo.get(resource,0)))
+    var moved: Variant = min(amount, int(cargo.get(resource,0)))
     if moved <= 0:
         return {"ok":false,"reason":"no_cargo"}
     cargo[resource] = int(cargo.get(resource,0)) - moved
@@ -588,7 +588,7 @@ func sell_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
     if settlement.is_empty():
         return {"ok":false,"reason":"no_settlement_here"}
     var cargo: Dictionary = ship.get("cargo", {})
-    var moved := min(amount, int(cargo.get(resource,0)))
+    var moved: Variant = min(amount, int(cargo.get(resource,0)))
     if moved <= 0:
         return {"ok":false,"reason":"no_cargo"}
     var stockpile: Dictionary = settlement.get("stockpile",{})
@@ -599,11 +599,11 @@ func sell_cargo(ship_id: int, resource: String, amount: int) -> Dictionary:
             base_price = 5
         "iron":
             base_price = 8
-    var scarcity_bonus := clamp(40 - stock, -10, 30)
-    var unit_price := max(1, int(round(float(base_price) * (1.0 + float(scarcity_bonus) / 100.0) * (1.0 + float(world.production_stock.get(resource,0)) / 200.0))))
-    var duty := clamp(int(float(unit_price * moved) * 0.05), 0, unit_price * moved)
+    var scarcity_bonus: Variant = clamp(40 - stock, -10, 30)
+    var unit_price: Variant = max(1, int(round(float(base_price) * (1.0 + float(scarcity_bonus) / 100.0) * (1.0 + float(world.production_stock.get(resource,0)) / 200.0))))
+    var duty: Variant = clamp(int(float(unit_price * moved) * 0.05), 0, unit_price * moved)
     var gross: int = unit_price * moved
-    var payout := max(1, gross - duty)
+    var payout: Variant = max(1, gross - duty)
     cargo[resource] = int(cargo.get(resource,0)) - moved
     ship["cargo"] = cargo
     stockpile[resource] = stock + moved

@@ -199,7 +199,7 @@ func _update_hud()->void:
     var player=game.get("player")
     var pos: Vector3 = player.global_position if is_instance_valid(player) else Vector3.ZERO
     info.text="DAY %d • GOLD %d • REGION %s\nPosition %.0f, %.0f • Mounted %s • Factions autonomous" % [
-        int(world.day),int(world.gold),String(world.player_region_id),pos.x,pos.z,str(mounted)]
+        int(world.day),int(world.gold),str(world.player_region_id),pos.x,pos.z,str(mounted)]
 
 func get_state()->Dictionary:
     return {"mounted":mounted,"map_open":map_open,"selected_settlement":selected_settlement.duplicate(true)}

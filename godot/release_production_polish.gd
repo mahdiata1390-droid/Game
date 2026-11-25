@@ -27,14 +27,23 @@ var base_visibility := {}
 var _built := false
 
 func _ready() -> void:
+	# Wait for the playable scene instead of rescheduling a deferred call every
+	# frame forever: with no current scene that loop never ends and the engine
+	# aborts on the runaway deferred queue.
+	get_tree().node_added.connect(_on_tree_node_added)
 	call_deferred("_attach_to_game")
+
+func _on_tree_node_added(_node: Node) -> void:
+	if not _built:
+		_attach_to_game()
 
 func _attach_to_game() -> void:
 	if _built:
 		return
+	if not is_inside_tree():
+		return
 	var scene := get_tree().current_scene
 	if scene == null:
-		call_deferred("_attach_to_game")
 		return
 	var root := scene as Node3D
 	if root == null:

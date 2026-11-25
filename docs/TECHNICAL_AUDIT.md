@@ -1,43 +1,82 @@
-# Prototype Technical Audit
+# Technical Audit — release-candidate
 
-This is a source review only. Unity Editor compilation, Play Mode, Android packaging, and device testing have not been performed.
+Engine: Godot 4.7.2. Branch: `release-candidate`. The Unity prototype described in older commits was never compiled or packaged and is historical.
 
-## Completed in this pass
-- Enemy CharacterController movement now applies gravity even when the player is outside detection range.
-- Valid damage broadcasts an OnDamaged message.
-- The prototype enemy briefly flashes its material when hit.
-- Player and enemy CharacterController spawn heights were corrected to sit on the flat ground plane; legacy saved heights are recovered to the corrected spawn height.
-- Checkpoints now persist player facing direction as well as position and health, and save immediately after automatic respawn.
+## 1. Validation was disabled rather than satisfied
 
-## Outstanding verification
-- ProjectSettings/ProjectSettings.asset is absent; confirm Unity project import and input handling in Unity 2022.3.
-- Verify touch-look and attack-button raycast ordering in Play Mode.
-- Test movement, combat, enemy grounding, death, respawn, and save/load across an app restart.
-- Camera mode switching is not integrated; only third-person is active.
-- No animation, sound, navigation mesh, or final environment assets exist yet.
-- A Unity Android CI workflow needs a licensed Unity runner and Android Build Support. No credentials are available in this repository, so no misleading placeholder workflow was added.
+`godot/project.godot` contained:
 
-## Required next checks
-1. Open in Unity 2022.3 and fix import/compiler errors.
-2. Run the complete prototype in Play Mode.
-3. Configure licensed CI, build a development APK, install it on Android, and profile performance.
+```ini
+[debug/gdscript]
+warnings/enable=false
+warnings/treat_warnings_as_errors=false
+warnings/inference_on_variant=0
+```
 
-Checked roadmap items indicate authored source only, not verified runtime behavior.
+This made the project appear to import cleanly. GDScript's Variant-inference check is an error by default, and several real type errors in the codebase were only invisible because warnings were switched off.
 
-## Resource gathering pass
-- Added finite wood, stone, and herb nodes with depletion behavior.
-- Added player inventory counters and a compact HUD.
-- Added a collect action that selects the nearest resource node in front of the player within interaction range.
-- Added herb consumption: one herb restores up to 25 health, capped at maximum health.
-- Inventory counts now persist locally between sessions.
-- Harvested node depletion persists locally between sessions.
-- Added one-time campfire crafting for 3 wood + 2 stone; the built campfire and its location persist locally.
-- Added a rest action that restores up to 50 health only when the player is within 3 metres of the campfire.
-- These changes are source-authored only; they have not been compiled or exercised in Unity. Verify touch-button hit testing, interaction range/aiming, depleted-node behavior, and healing in Play Mode.
-\n\n## Interaction feedback polish\n- Added a transient on-screen status message for successful collection, missing resources, herb use, campfire construction, and rest restrictions.\n- Added a subtle campfire flame pulse and light flicker.\n- Source-only changes; Unity compilation and Play Mode verification remain outstanding.\n
+Those settings were removed. With validation restored, **62 parse errors** appeared across 9 files, mostly `var x := <untyped expression>` declarations in `world_state.gd`, `campaign_systems.gd`, `final_game_systems.gd` and several `release_*` systems. They were fixed by giving each declaration its real type (`maxi`/`mini`/`clampi` for integer math, explicit `Dictionary`/`int`/`String`/`Variant` types where a call genuinely returns Variant). All 77 scripts now compile with warnings enabled and no suppression.
 
-## Follow-up source correction
-- Rewrote the player interaction and campfire scripts with normal line breaks after a source-formatting issue was found during review.
-- Completed status feedback for herb use, full health, missing herbs, campfire construction requirements, and resting range.
-- Adjusted the campfire flame pulse so its height remains visible while animating.
-- Still requires Unity import/compile and Play Mode testing; no runtime result is claimed.
+## 2. Engine abort from a runaway deferred call
+
+`release_production_polish.gd` scheduled itself again every frame while waiting for a current scene:
+
+```gdscript
+if scene == null:
+    call_deferred("_attach_to_game")
+```
+
+With no current scene the deferred queue grows without bound and the engine aborts (`Exit code 134`, C++ backtrace inside `_attach_to_game`). It now connects to `SceneTree.node_added` and attaches once a scene exists, with no self-rescheduling.
+
+## 3. Save/load crashed with an invalid constructor
+
+`release_playable_world.gd:201` called `String(world.player_region_id)`. `String` has no integer constructor in GDScript, so every `load_game()` raised `Invalid call. Nonexistent 'String' constructor.` while rebuilding the HUD. The same mistake existed in `release_stages_15_19.gd` and `release_thirty_systems.gd`; all were replaced with `str(...)`.
+
+## 3b. Freed instances were cast and tested before validity checks
+
+`release_combat_system.gd` (`_process`, `_nearest_enemy`), `release_combat_feedback.gd` and `main.gd::_update_troops` read a troop node, cast it (`as Node3D`, or into a typed variable) and only then called `is_instance_valid()`. Casting or assigning a freed instance raises a script error, which repeated thousands of times during a longer boot (2501 errors in a 15-second run). Validity is now checked on the raw `Variant` before any cast or typed assignment. `main.gd::_update_troops` also guards `troops[i] = data` because another troop can be removed during the same pass.
+
+## 3c. Army simulation iterated a mutable array
+
+`release_world_simulation.gd::_simulate_armies` looped `for i in range(world.armies.size())` while calling `assault_siege()`, which can destroy an army and reindex the array. A later index then pointed past the end (`Invalid access of index '11'`). The loop now iterates army **ids** and re-resolves the index each iteration, matching what `world_state._simulate_world_events` already did.
+
+## 4. Gameplay defects found by running the simulation
+
+A headless QA harness (`godot/qa/headless_qa.gd`) boots the real main scene, sets it as the current scene so autoloads attach exactly as in a real launch, and drives the real simulation. It found four behavioural defects that compile checks cannot see:
+
+1. **The player could never own an army.** `recruit_from_settlement()` added paid recruits to the *settlement owner's* army and garrison. The player starts with no army, so army orders and sieges were unreachable. Recruits now join the player's Free Company band (created in that region when needed); the garrison only grows for settlements the player owns.
+2. **Recruitment was impossible in defended settlements.** Capacity was `population/12 - garrison`, negative for most castles and cities. It is now `population/20 - garrison/4`.
+3. **No autonomous caravan traffic.** Nothing created caravans without the player, so faction trade was static. Faction caravans now spawn on peace-time routes between neighbouring settlements, and profit is credited to the caravan's owner instead of always to the player.
+4. **Save/load corrupted integer-keyed dictionaries.** JSON object keys are always strings, so after `load_game()` `sieges` came back as `{"9": {...}}`; `_simulate_sieges` then did `sieges[9]` and failed on every simulated day (120 errors in one QA pass). `battle_cooldowns` and `player_buildings` had the same latent defect. Loading now rebuilds those dictionaries with integer keys, and QA asserts the key type and a preserved cooldown value across the round trip.
+5. **A naval defeat corrupted ship indices.** `WorldState.naval_battle()` deleted the losing ship without reindexing, invalidating every stored ship index (campaign orders, pending encounters, saves). Defeated ships are now crippled and disabled, matching `CampaignSystems.naval_battle`.
+
+## 5. CI could not fail
+
+The workflow used `--editor --quit` as its "Validate project" step. Godot prints parse errors but exits 0 there, so a non-compiling project produced a green build. The export preset was also generated by a heredoc at build time.
+
+The workflow now runs:
+
+- `qa/validate_scripts.gd` — loads all 77 scripts, exits non-zero on any compile failure.
+- `qa/headless_qa.gd` — 56 gameplay assertions against the live world.
+- a boot smoke test that fails if runtime output contains script errors.
+- an APK export using the committed `godot/export_presets.cfg`, followed by archive integrity inspection (`unzip -t`, `AndroidManifest.xml`, `classes.dex`, `resources.arsc`, packaged `assets/`, native `lib/`).
+
+## 6. Verification performed locally
+
+| Check | Result |
+| --- | --- |
+| Editor import with warnings enabled | clean, 0 errors |
+| `qa/validate_scripts.gd` | 77/77 scripts compile, exit 0 |
+| `qa/headless_qa.gd` | 56 checks, 0 failures, exit 0 |
+| Headless boot soak (60 s simulated, 3600 frames) | no script errors |
+| Android debug APK export | succeeded, signed and aligned |
+| APK contents | manifest, `classes.dex`, `resources.arsc`, `assets/*.gdc` + main scene, `lib/arm64-v8a` |
+| APK signature | verified with `apksigner` |
+| APK install/launch on hardware | **not performed** — no device or emulator available |
+
+## 7. Remaining real problems
+
+- **Production art is not in the repository.** `godot/assets/production/{medieval_village,nature,characters}` contain only `.gitkeep` and a README naming the CC0 Quaternius packs. `ReleaseAssetRegistry` detects the absence and the game uses authored procedural geometry. The target look cannot be reached until those packages are actually imported.
+- `release_visual_world.gd` builds a complete standalone scene at fixed coordinates; it is not attached to the continent to avoid stacking a second world on the first. Settlement visuals come from `main.gd`, `release_content.gd` and `content_upgrade.gd`.
+- Settlement interiors, animation, audio and navigation meshes are absent.
+- Mobile touch UI exists but has not been exercised on a phone; frame rate on low-end hardware is unmeasured.

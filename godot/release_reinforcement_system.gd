@@ -32,8 +32,8 @@ func _run_reinforcement_pass() -> void:
 		var settlement := _nearest_owned_settlement(int(army.get("region",0)))
 		if settlement.is_empty():
 			continue
-		var available := max(0, int(settlement.get("garrison",0)) - 25)
-		var amount := min(10, available)
+		var available: Variant = max(0, int(settlement.get("garrison",0)) - 25)
+		var amount: Variant = min(10, available)
 		if amount <= 0:
 			continue
 		settlement["garrison"] = int(settlement.get("garrison",0)) - amount
@@ -50,7 +50,7 @@ func _nearest_owned_settlement(region_id: int) -> Dictionary:
 	for s in world.settlements:
 		if String(s.get("owner","")) != String(world.player_faction):
 			continue
-		var d := abs(int(s.get("region",0)) - region_id)
+		var d: Variant = abs(int(s.get("region",0)) - region_id)
 		if d < best_distance:
 			best_distance = d
 			best = s

@@ -296,7 +296,7 @@ func _pcm_tone(freq: float, seconds: float, volume: float, rate := 22050) -> Pac
         var t:=float(i)/rate
         var env: float = min(1.0,t*35.0)*min(1.0,(seconds-t)*12.0)
         var sample: float = sin(TAU*freq*t)*volume*env
-        var v:=clamp(int(sample*32767.0),-32768,32767)
+        var v: Variant = clamp(int(sample*32767.0),-32768,32767)
         data[i*2]=v&255
         data[i*2+1]=(v>>8)&255
     return data
