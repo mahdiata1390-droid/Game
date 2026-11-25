@@ -33,6 +33,10 @@ GDScript warnings are **enabled** in `project.godot`. Do not disable them to mak
 
 `export_presets.cfg` is committed (arm64-v8a, GL Compatibility). CI exports `build/MedievalSandbox.apk` and verifies the archive contents. `qa/` is excluded from the shipped package.
 
+## Production art
+
+Packs go in `assets/production/<pack>/`; `scripts/install_production_packs.sh` installs them and regenerates `assets/production/manifest.json`. CI regenerates the manifest before export because an APK packages imported scenes, not raw `.glb` files.
+
 ## Known gaps
 
 - `assets/production/` is an empty mount point; no binary art is committed. Delete nothing there, but expect fallback geometry until the CC0 packs are imported.

@@ -59,6 +59,11 @@ jobs:
       # "--editor --quit" therefore passes on a completely broken project, which
       # is how this repository previously shipped non-compiling scripts. These
       # gates exit non-zero for real failures.
+      - name: Generate production asset manifest
+        run: |
+          set -euo pipefail
+          ./godot-bin/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot --script res://qa/generate_asset_manifest.gd
+
       - name: Validate every script compiles
         run: |
           set -euo pipefail

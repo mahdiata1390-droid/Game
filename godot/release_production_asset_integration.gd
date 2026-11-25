@@ -64,6 +64,17 @@ func _load_scene(path: String) -> Node:
     var lower := path.to_lower()
     if not (lower.ends_with(".glb") or lower.ends_with(".gltf")):
         return null
+    # Exported builds package the imported .scn, not the raw .glb, so the raw
+    # GLTFDocument path works in the editor and fails inside an APK. Prefer the
+    # resource loader (it resolves the import remap) and parse raw only as a fallback.
+    if ResourceLoader.exists(path):
+        var imported: Variant = ResourceLoader.load(path)
+        if imported is PackedScene:
+            var instance: Variant = (imported as PackedScene).instantiate()
+            if instance is Node3D:
+                return instance
+            if instance != null:
+                (instance as Node).queue_free()
     var document := GLTFDocument.new()
     var state := GLTFState.new()
     state.base_path = path.get_base_dir()

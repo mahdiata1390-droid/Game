@@ -28,7 +28,8 @@ CI runs both gates, a runtime boot smoke test, then exports and inspects the And
 
 ## Honest limitations
 
-- **No production art is committed.** `godot/assets/production/` contains mount points and a README for the CC0 Quaternius packs, but no models or textures. The world is built from authored procedural meshes (castles, houses, roofs, walls, banners, forests, soldiers) and falls back gracefully when packs are absent. This is the largest gap to a finished game.
+- **No production art is committed yet.** `godot/assets/production/` holds the folder structure and installer for the CC0 Quaternius packs, but no models. The import path is implemented and verified (a test GLB loaded and spawned inside a packaged build); the world uses authored procedural meshes until the packs are installed. **This is why the APK is 29 MB rather than hundreds of MB: size is art, and the art is not in the repository.**
+- **Reaching 500 MB is an asset decision, not a code one.** The three core packs alone (village 153 MB, nature 99 MB, characters 122 MB) push the APK past 400 MB, and all eight listed packs exceed 500 MB. They cannot be fetched automatically here because quaternius.itch.io requires an interactive download; run `scripts/install_production_packs.sh <pack> <zip>` after downloading them.
 - Settlements are represented on the shared continent rather than as fully modelled walkable interiors.
 - Animation, audio assets and navigation meshes are not present.
 - Android is exported and the APK is structurally verified in CI, but it has not been installed on a physical device or emulator from this repository's automation.

@@ -14,6 +14,7 @@ class_name ReleaseAssetRegistry
 # When a pack is present, this registry exposes it to the world builder.
 
 const ROOT := "res://assets/production"
+const MANIFEST := ROOT + "/manifest.json"
 
 const PACKS := {
 	"medieval_village": {
@@ -73,11 +74,35 @@ func _ready() -> void:
 
 func scan() -> void:
 	available.clear()
+	# An exported build contains imported scenes, so the raw .glb paths this
+	# directory scan finds in the editor do not exist inside an APK. Prefer the
+	# build-time manifest and fall back to scanning for editor and local runs.
+	var manifest := _read_manifest()
 	for pack_id in PACKS:
 		var pack: Dictionary = PACKS[pack_id]
 		var files: Array[String] = []
-		_collect_models(String(pack["path"]), files)
+		if manifest.has(pack_id):
+			for path in manifest[pack_id]:
+				files.append(String(path))
+		else:
+			_collect_models(String(pack["path"]), files)
 		available[pack_id] = files
+
+func _read_manifest() -> Dictionary:
+	if not FileAccess.file_exists(MANIFEST):
+		return {}
+	var file := FileAccess.open(MANIFEST, FileAccess.READ)
+	if file == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {}
+	var result: Dictionary = {}
+	for key in parsed.keys():
+		if parsed[key] is Array:
+			result[String(key)] = parsed[key]
+	return result
 
 func _collect_models(path: String, out: Array[String]) -> void:
 	var dir := DirAccess.open(path)
