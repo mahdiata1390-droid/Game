@@ -14,6 +14,7 @@ import {
   type Meta,
   type Transform,
 } from "../game/world";
+import { Council } from "./council";
 
 const SCENE_KEY = "forge.scene.v1";
 
@@ -46,6 +47,7 @@ const touchKnobEl = $("touch-knob");
 let game: MedievalWorld;
 let renderer: Renderer;
 let input: Input;
+let council: Council | null = null;
 const rig = new CameraRig();
 let playing = false;
 let selected: Entity | null = null;
@@ -68,6 +70,7 @@ function start(): void {
   refreshWorldUI();
   boot.classList.add("hidden");
   initTouchControls();
+  initCouncil();
   setStatus("World ready — press Play to take command.");
   // Development-only handle so the world can be staged and inspected from the
   // console. Production builds strip it.
@@ -254,6 +257,7 @@ function loadSavedScene(): void {
     playing = false;
     syncPlayButtons();
     refreshWorldUI();
+    initCouncil();
     setStatus(`Loaded ${scene.entities.length} entities.`);
   } catch (error) {
     setStatus(`Load failed: ${(error as Error).message}`);
@@ -265,8 +269,51 @@ function newWorld(): void {
   playing = false;
   syncPlayButtons();
   refreshWorldUI();
+  initCouncil();
   setStatus("New world generated.");
 }
+
+// ------------------------------------------------------------------- council
+
+// The council is rebuilt whenever the world is, so its holdings always point at
+// the settlements actually standing in the sandbox.
+function initCouncil(): void {
+  council?.destroy();
+  council = new Council({
+    kingdom: game.kingdom,
+    onChange: (message, ok) => {
+      if (message) setStatus(ok ? message : `The council refuses: ${message}`);
+    },
+    onEndDay: () => {
+      game.advanceDay();
+      setStatus(`Day ${game.day}: the council has ruled.`);
+    },
+  });
+}
+
+function openCouncil(): void {
+  if (!council) return;
+  setPlaying(false);
+  council.show();
+  setStatus("The council is seated.");
+}
+
+function toggleCouncil(): void {
+  if (!council) return;
+  if (council.open) {
+    council.close();
+    setStatus("The council rises.");
+  } else {
+    openCouncil();
+  }
+}
+
+window.addEventListener("keydown", (event) => {
+  if (event.code === "KeyM" && !(event.target instanceof HTMLInputElement)) {
+    event.preventDefault();
+    toggleCouncil();
+  }
+});
 
 function setPlaying(next: boolean): void {
   playing = next;
@@ -308,6 +355,7 @@ function updateTouchVisual(): void {
   touchKnobEl.style.transform = `translate(${visual.x * 30}px, ${visual.y * 30}px)`;
 }
 
+$("btn-council").addEventListener("click", openCouncil);
 $("btn-play").addEventListener("click", () => setPlaying(true));
 $("btn-stop").addEventListener("click", () => setPlaying(false));
 $("btn-save").addEventListener("click", saveScene);
@@ -398,7 +446,7 @@ function frame(now: number): void {
   game.update(dt, input, rig.facing, playing);
 
   instances.length = 0;
-  game.buildInstances(instances, selected, now / 1000);
+  game.buildInstances(instances, selected, now / 1000, camera.eye);
   renderer.begin(camera, game.light());
   for (const instance of instances) renderer.push(instance);
   renderer.flush();

@@ -297,3 +297,347 @@ body.touch .hud-grid strong { font-size: 13px; }
   .toolbar { gap: 4px; }
   .btn { padding: 5px 8px; }
 }
+
+/* ==========================================================================
+   The council — the campaign war room laid over the sandbox
+   ========================================================================== */
+
+.council-btn { border-color: #6b5525; color: #f0dfae; }
+.council-btn kbd { margin-left: 4px; }
+
+.council {
+  position: fixed; inset: 0; z-index: 40;
+  display: none;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(94, 74, 28, 0.28), transparent 55%),
+    radial-gradient(circle at 85% 100%, rgba(30, 58, 74, 0.32), transparent 50%),
+    rgba(7, 9, 12, 0.9);
+  backdrop-filter: blur(6px);
+  overflow: auto;
+}
+.council.open { display: block; }
+
+.council-frame {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 36px);
+  border: 1px solid #3d3421;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, #191713 0%, #12100d 40%, #0f0e0c 100%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(216, 178, 90, 0.12);
+  overflow: hidden;
+}
+
+.council-head {
+  display: flex; align-items: center; gap: 18px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #332c1d;
+  background:
+    linear-gradient(90deg, rgba(10, 9, 7, 0.95) 0%, rgba(10, 9, 7, 0.7) 58%, rgba(10, 9, 7, 0.92) 100%),
+    url("/art/kingdom.jpg") center 34% / cover no-repeat,
+    #15130f;
+  min-height: 96px;
+}
+.council-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.council-crown {
+  display: grid; place-items: center;
+  width: 42px; height: 42px; border-radius: 8px;
+  background: linear-gradient(160deg, #3a2f16, #191206);
+  border: 1px solid #6b5525;
+  color: var(--gold); font-size: 22px;
+  box-shadow: inset 0 0 12px rgba(216, 178, 90, 0.22);
+}
+.council-words h1 {
+  margin: 0; font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px; font-weight: 600; letter-spacing: 0.04em;
+  color: #f2e6c6;
+}
+.council-words p { margin: 2px 0 0; font-size: 11px; color: var(--muted); letter-spacing: 0.05em; }
+
+.council-stats { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+.cstat {
+  display: flex; flex-direction: column; gap: 1px;
+  min-width: 84px; padding: 6px 10px;
+  border: 1px solid #322b1c; border-radius: 6px;
+  background: linear-gradient(180deg, #1c1913, #13110d);
+}
+.cstat-label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: #8d8266; }
+.cstat-value { font-size: 16px; color: #f3e9cf; font-variant-numeric: tabular-nums; }
+.cstat-note { font-size: 9.5px; color: #7d7c74; }
+
+.council-close {
+  width: 36px; height: 36px; border-radius: 6px;
+  background: #1a1712; color: #cbbf9f;
+  border: 1px solid #3d3421; font-size: 15px; cursor: pointer;
+}
+.council-close:hover { background: #2a2318; color: #f2e6c6; }
+
+.council-tabs {
+  display: flex; gap: 2px; padding: 0 12px;
+  background: #100e0b; border-bottom: 1px solid #332c1d;
+  overflow-x: auto; scrollbar-width: none;
+}
+.council-tabs::-webkit-scrollbar { display: none; }
+.council-tab {
+  display: flex; align-items: center; gap: 7px;
+  padding: 11px 14px 10px;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: #93886f; font: inherit; font-size: 11.5px; letter-spacing: 0.05em;
+  text-transform: uppercase; cursor: pointer; white-space: nowrap;
+}
+.council-tab:hover { color: #d9cba6; }
+.council-tab.active { color: var(--gold); border-bottom-color: var(--gold); background: linear-gradient(180deg, rgba(216, 178, 90, 0.1), transparent); }
+.tab-glyph { font-size: 13px; }
+
+.council-body { padding: 18px; flex: 1; }
+.council-notice {
+  padding: 9px 18px; border-top: 1px solid #332c1d;
+  font-size: 11.5px; color: #b3a983; background: #100e0b;
+  min-height: 18px;
+}
+.council-blurb { max-width: 78ch; color: #a89e86; font-size: 12px; line-height: 1.6; margin: 0 0 16px; }
+
+/* ---------- realm map ---------- */
+.realm-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr); gap: 16px; }
+.realm-map {
+  border: 1px solid #332c1d; border-radius: 8px;
+  background:
+    linear-gradient(rgba(10, 15, 12, 0.82), rgba(8, 12, 10, 0.92)),
+    url("/art/world-map.jpg") center / cover no-repeat,
+    #101411;
+  padding: 8px 8px 6px;
+  display: flex; flex-direction: column;
+}
+.chronicle-banner {
+  display: block; width: 100%; max-height: 210px; object-fit: cover;
+  border-radius: 8px; border: 1px solid #332c1d; margin-bottom: 12px;
+}
+.realm-svg { width: 100%; height: auto; display: block; border-radius: 5px; }
+.realm-svg .realm-site { cursor: pointer; }
+.realm-svg .realm-site:hover circle { filter: brightness(1.25); }
+.realm-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 4px 2px; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; color: #a49a82; }
+.legend-swatch { width: 9px; height: 9px; border-radius: 2px; display: inline-block; border: 1px solid rgba(255, 255, 255, 0.16); }
+
+.realm-detail, .cpanel {
+  border: 1px solid #332c1d; border-radius: 8px;
+  background: linear-gradient(180deg, #191611, #121009);
+  padding: 14px;
+}
+.realm-detail { align-self: start; }
+.detail-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.detail-head h2 { margin: 0; font-family: Georgia, serif; font-size: 18px; color: #f2e6c6; font-weight: 600; }
+.detail-names p { margin: 2px 0 0; font-size: 11px; }
+.detail-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-bottom: 12px; }
+.fact { display: flex; flex-direction: column; }
+.fact-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #857a5f; }
+.fact strong { font-size: 12.5px; color: #e4d9bd; font-weight: 500; text-transform: capitalize; }
+
+.meter-label { display: flex; justify-content: space-between; font-size: 10px; color: #948a72; margin: 8px 0 3px; text-transform: uppercase; letter-spacing: 0.08em; }
+.cbar { height: 6px; border-radius: 3px; background: #241f16; overflow: hidden; }
+.cbar span { display: block; height: 100%; border-radius: 3px; transition: width 0.2s ease; }
+.cbar-fill { background: linear-gradient(90deg, #8a6c2a, #d8b25a); }
+.cbar-fill.good { background: linear-gradient(90deg, #3f6b46, #7fc08a); }
+.cbar-fill.danger { background: linear-gradient(90deg, #7a3325, #d2684a); }
+
+.siege { margin-top: 10px; font-size: 11px; color: #e0997f; }
+.siege strong { display: block; margin-bottom: 4px; font-weight: 500; }
+.detail-sub { margin: 14px 0 6px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #857a5f; }
+
+.action-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.cbtn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  background: linear-gradient(180deg, #232019, #171410);
+  border: 1px solid #3d3421; color: #e0d5b8; font: inherit; text-align: left;
+}
+.cbtn:hover { border-color: #6b5525; background: linear-gradient(180deg, #2c271c, #1b1712); }
+.cbtn strong { font-size: 11.5px; font-weight: 600; }
+.cbtn span { font-size: 9.5px; color: #8e8266; }
+.cbtn.small { padding: 5px 10px; align-items: center; }
+.cbtn.wide { width: 100%; align-items: center; margin-top: 6px; }
+.cbtn.gold { border-color: #7a6128; color: #f4e2ab; background: linear-gradient(180deg, #3a2f16, #201a0c); }
+.cbtn.danger { border-color: #5e3128; color: #eab3a1; }
+.cbtn.danger:hover { background: #2a1712; }
+
+/* ---------- ledger ---------- */
+.ledger-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.res-card {
+  padding: 12px; border-radius: 8px; border: 1px solid #332c1d;
+  background: linear-gradient(180deg, #1b1812, #12100c);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.res-label { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #8d8266; }
+.res-value { font-size: 22px; color: #f4e9cd; font-variant-numeric: tabular-nums; font-weight: 500; }
+.res-flow { font-size: 10.5px; }
+.res-flow.up { color: #86b98b; }
+.res-flow.down { color: #cf7f66; }
+
+.cpanel { margin-bottom: 14px; }
+.cpanel h2 { margin: 0 0 10px; font-family: Georgia, serif; font-size: 15px; font-weight: 600; color: #eddfbc; }
+.tax-row { display: flex; align-items: center; gap: 14px; }
+.tax-range { flex: 1; accent-color: #d8b25a; }
+.tax-readout { font-size: 18px; color: var(--gold); font-variant-numeric: tabular-nums; min-width: 52px; }
+
+.holding-list { display: flex; flex-direction: column; }
+.holding-row {
+  display: grid; grid-template-columns: 20px minmax(120px, 250px) minmax(0, 1fr) 80px 80px;
+  align-items: center; gap: 8px;
+  padding: 7px 6px; border-radius: 5px;
+  background: none; border: none; border-bottom: 1px solid #221d14;
+  color: #ddd2b6; font: inherit; font-size: 11.5px; text-align: left; cursor: pointer;
+}
+.holding-row:hover { background: #1a1712; }
+.holding-icon { color: var(--house, #d8b25a); font-size: 13px; }
+.holding-owner { color: #978c72; font-size: 10.5px; }
+.holding-pop { color: #b6ab8e; font-variant-numeric: tabular-nums; text-align: right; }
+.holding-siege { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.07em; color: #d2684a; text-align: right; }
+.holding-siege.calm { color: #5f6d5c; }
+
+table.standings { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+table.standings th {
+  text-align: left; font-weight: 500; font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: #857a5f; padding: 4px 6px; border-bottom: 1px solid #2a2418;
+}
+table.standings td { padding: 6px 6px; color: #cfc4a8; border-bottom: 1px solid #1d1912; text-transform: capitalize; }
+table.standings tr.you td { color: #f0dfae; }
+table.standings td:first-child { display: flex; align-items: center; gap: 7px; text-transform: none; }
+table.standings td:not(:first-child) { font-variant-numeric: tabular-nums; }
+
+/* ---------- army ---------- */
+.army-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.troop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.troop-card {
+  display: grid; grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 12px; align-items: center;
+  padding: 12px; border-radius: 8px; border: 1px solid #332c1d;
+  background: linear-gradient(180deg, #1b1812, #12100c);
+}
+.troop-side { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.troop-glyph {
+  display: grid; place-items: center;
+  width: 52px; height: 52px; border-radius: 50%;
+  font-size: 22px; color: var(--gold);
+  background: radial-gradient(circle at 40% 30%, #3a2f16, #171207);
+  border: 1px solid #5c4a20;
+}
+.troop-count { display: flex; flex-direction: column; align-items: center; }
+.troop-count strong { font-size: 14px; color: #f0e4c6; }
+.troop-text h3 { margin: 0 0 3px; font-family: Georgia, serif; font-size: 13.5px; font-weight: 600; color: #eddfbc; }
+.troop-text p { margin: 0 0 4px; line-height: 1.45; }
+.troop-cost { color: #b9a778; font-size: 10px; }
+.troop-actions { display: flex; flex-direction: column; gap: 4px; }
+
+/* ---------- diplomacy ---------- */
+.diplo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.diplo-card {
+  padding: 14px; border-radius: 8px; border: 1px solid #332c1d;
+  background: linear-gradient(180deg, #1b1812, #12100c);
+}
+.diplo-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+.diplo-head h3 { margin: 0 0 2px; font-family: Georgia, serif; font-size: 14px; font-weight: 600; color: #eddfbc; }
+.diplo-head p { margin: 0; }
+.diplo-state { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #8fa27f; margin-top: 3px !important; }
+.diplo-state.war { color: #d2684a; }
+.diplo-facts { display: flex; gap: 12px; flex-wrap: wrap; font-size: 10.5px; color: #9a8f74; margin: 10px 0 8px; }
+
+/* ---------- champions & heraldry ---------- */
+.champion-grid, .heraldry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.champion-card, .heraldry-card {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px; border-radius: 8px;
+  border: 1px solid #332c1d;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--house) 16%, transparent), transparent 60%),
+    linear-gradient(180deg, #1b1812, #12100c);
+}
+.champion-portrait { flex: 0 0 auto; }
+.champion-info { min-width: 0; }
+.champion-info h3, .heraldry-words h3 { margin: 0; font-family: Georgia, serif; font-size: 15px; font-weight: 600; color: #f2e6c6; }
+.champion-house { margin: 2px 0 6px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #a2946f; }
+.champion-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.champion-stats .cstat { min-width: 0; padding: 5px 7px; }
+.champion-stats .cstat-value { font-size: 12px; text-transform: capitalize; }
+.crest { display: block; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45)); }
+
+.heraldry-card { align-items: center; }
+.heraldry-words { min-width: 0; }
+.heraldry-motto { margin: 4px 0 8px; font-family: Georgia, serif; font-style: italic; font-size: 12px; color: var(--trim, #d8b25a); }
+.heraldry-words p { margin: 0 0 3px; }
+
+.swatch-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch-chip {
+  padding: 6px 12px; border-radius: 4px; font-size: 10.5px;
+  border: 1px solid #3d3421; color: #c9bd9d;
+  background: repeating-linear-gradient(45deg, #1d1913, #1d1913 6px, #221d15 6px, #221d15 12px);
+}
+
+/* ---------- chronicle ---------- */
+.chronicle { display: flex; flex-direction: column; gap: 2px; }
+.chronicle-row {
+  display: grid; grid-template-columns: 78px minmax(0, 1fr);
+  gap: 10px; padding: 7px 8px; border-radius: 5px;
+  border-left: 2px solid #332c1d; background: #14120e;
+  font-size: 11.5px; color: #c7bca0;
+}
+.chronicle-row.war { border-left-color: #a8442f; }
+.chronicle-row.diplomacy { border-left-color: #4b7185; }
+.chronicle-row.recruit { border-left-color: #6f7a45; }
+.chronicle-row.build { border-left-color: #8a6c2a; }
+.chronicle-day { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #857a5f; padding-top: 2px; }
+
+/* ---------- codex ---------- */
+.codex-list { display: flex; flex-direction: column; }
+.codex-row {
+  display: grid; grid-template-columns: 24px 150px minmax(0, 1fr) auto;
+  gap: 10px; align-items: baseline;
+  padding: 7px 4px; border-bottom: 1px solid #1f1a12; font-size: 11.5px; color: #d3c8ac;
+}
+.codex-glyph { color: var(--gold); }
+.codex-figure { font-size: 10px; color: #8f8368; white-space: nowrap; }
+.small { font-size: 10.5px; }
+
+/* ---------- council on phones ---------- */
+body.touch .touch-council { right: 84px; }
+@media (max-width: 900px) {
+  .council { padding: 0; }
+  .council-frame { border-radius: 0; min-height: 100vh; border: none; }
+  .council-head { flex-wrap: wrap; gap: 10px; padding: 10px 12px; }
+  .council-title { flex: 1 1 100%; }
+  .council-stats {
+    order: 3; width: 100%;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px; margin-left: 0;
+  }
+  .cstat { min-width: 0; }
+  .council { overflow-x: hidden; }
+  .council-close { position: absolute; right: 10px; top: 10px; }
+  .council-head { position: relative; }
+  .council-body { padding: 12px; }
+  .realm-layout { grid-template-columns: minmax(0, 1fr); }
+  .realm-svg text { font-size: 2.6px; }
+  .council-tab { padding: 10px 11px; font-size: 10.5px; }
+  .champion-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .troop-card { grid-template-columns: 56px minmax(0, 1fr); }
+  .troop-actions { flex-direction: row; grid-column: 1 / -1; }
+  .troop-actions .cbtn { flex: 1; }
+  .holding-row { grid-template-columns: 18px 1.4fr 60px 58px; }
+  .holding-owner { display: none; }
+  .codex-row { grid-template-columns: 20px 110px minmax(0, 1fr); }
+  .codex-figure { grid-column: 2 / -1; }
+}
+
+.council-day {
+  padding: 9px 14px; border-radius: 6px; cursor: pointer;
+  background: linear-gradient(180deg, #3a2f16, #201a0c);
+  border: 1px solid #7a6128; color: #f4e2ab;
+  font: inherit; font-size: 11.5px; letter-spacing: 0.04em; white-space: nowrap;
+}
+.council-day:hover { background: linear-gradient(180deg, #4a3b1b, #2a2210); }
+@media (max-width: 900px) {
+  .council-day { margin-left: auto; font-size: 11px; padding: 7px 10px; }
+}

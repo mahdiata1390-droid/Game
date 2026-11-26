@@ -10,6 +10,8 @@ import type { Camera, Instance, Light } from "../engine/renderer";
 import { buildSettlement as buildSettlementGeometry } from "./architecture";
 import { emitFigure } from "./figures";
 import { CHAMPIONS, houseOf, unitTitle, WEAPON_PROFILE } from "./houses";
+import { COAST_X, MAP_HALF, SITES, type Site } from "./geography";
+import { Kingdom } from "./kingdom";
 
 export type Transform = {
   x: number; y: number; z: number;
@@ -53,31 +55,13 @@ export type Unit = {
 
 export type Meta = { name: string; group: string };
 
-type SettlementDef = {
-  name: string;
-  kind: "village" | "town" | "castle" | "city";
-  x: number;
-  z: number;
-  owner: string;
-  population: number;
-};
+const SETTLEMENTS = SITES;
 
-const SETTLEMENTS: SettlementDef[] = [
-  { name: "Northwatch", kind: "castle", x: -58, z: -42, owner: "north_kingdom", population: 720 },
-  { name: "Pinehaven", kind: "village", x: -20, z: -48, owner: "north_kingdom", population: 260 },
-  { name: "Valoria", kind: "city", x: 22, z: -45, owner: "river_kingdom", population: 1450 },
-  { name: "Steppe Camp", kind: "village", x: 61, z: -29, owner: "eastern_tribes", population: 310 },
-  { name: "Frostport", kind: "town", x: -64, z: 0, owner: "north_kingdom", population: 610 },
-  { name: "Kingsbridge", kind: "city", x: -16, z: -3, owner: "river_kingdom", population: 1300 },
-  { name: "Goldford", kind: "town", x: 26, z: -3, owner: "river_kingdom", population: 820 },
-  { name: "Redstone", kind: "castle", x: 61, z: 6, owner: "eastern_tribes", population: 540 },
-  { name: "Clanhold", kind: "castle", x: -54, z: 38, owner: "western_clans", population: 490 },
-  { name: "Basinfield", kind: "village", x: -10, z: 35, owner: "river_kingdom", population: 280 },
-  { name: "Sahr", kind: "city", x: 32, z: 38, owner: "southern_sultanate", population: 1600 },
-  { name: "Pearl Bay", kind: "town", x: 64, z: 48, owner: "southern_sultanate", population: 730 },
-];
+type SettlementDef = Site;
 
-const SPAWN: Vec3 = { x: 0, y: 0, z: 14 };
+// The company camps on the Kingsroad, in the open fields south of Kingsbridge
+// where the city walls cannot crowd the camera at spawn.
+const SPAWN: Vec3 = { x: 2, y: 0, z: 58 };
 
 function rng(seed: number): () => number {
   let a = seed >>> 0;
@@ -99,8 +83,16 @@ export class MedievalWorld {
   aliveAllies = 0;
   aliveEnemies = 0;
   log = "Click or press Space to strike.";
+  /** the campaign that runs on top of the sandbox, one tick per in-game day */
+  readonly kingdom = new Kingdom();
   private spawnCooldown = 0;
   private random = rng(20261125);
+  /**
+   * Solid bodies never move, so collisions are answered from a coarse grid
+   * instead of testing every wall in the basin for every walking figure.
+   */
+  private bodyGrid = new Map<string, Entity[]>();
+  private bodyGridAge = 0;
   /** previous positions, so figures know whether they are walking */
   private lastPositions = new Map<Entity, { x: number; z: number }>();
 
@@ -111,6 +103,16 @@ export class MedievalWorld {
   /** Recompute faction counts after loading a scene from disk. */
   refresh(): void {
     this.countLiving();
+  }
+
+  /**
+   * Advance the clock by a whole day from outside the frame loop — the council
+   * uses this so a campaign can be played without walking the valley.
+   */
+  advanceDay(): void {
+    this.day += 1;
+    this.hour = 8;
+    this.kingdom.advanceDay();
   }
 
   /** The player entity, or 0 when a loaded scene does not contain one. */
@@ -187,9 +189,15 @@ export class MedievalWorld {
   }
 
   private build(): void {
-    // Ground and roads
-    this.add("Ground", "Terrain", 0, -1.1, 0, 260, 2, 260, [1, 1, 1], {
-      tile: TILE.GRASS, repeat: 104, meta: false,
+    // Ground, coast and roads
+    this.add("Ground", "Terrain", 0, -1.1, 0, 380, 2, 380, [1, 1, 1], {
+      tile: TILE.GRASS, repeat: 152, meta: false,
+    });
+    this.add("Shoreline", "Terrain", COAST_X - 3, -0.12, 0, 8, 0.2, 380, [1, 1, 1], {
+      tile: TILE.SAND, repeat: 3, repeatY: 120, meta: false,
+    });
+    this.add("The Silver Sea", "Terrain", COAST_X + 22, 0.04, 0, 44, 0.1, 380, [1, 1, 1], {
+      tile: TILE.WATER, repeat: 12, repeatY: 100, emissive: 0.08, meta: false,
     });
     this.add("Kingsroad", "Terrain", 0, -0.02, -40, 150, 0.06, 7, [1, 1, 1], {
       tile: TILE.DIRT, repeat: 75, repeatY: 3.5, meta: false,
@@ -197,11 +205,18 @@ export class MedievalWorld {
     this.add("South Road", "Terrain", 0, -0.02, 30, 9, 0.06, 92, [1, 1, 1], {
       tile: TILE.DIRT, repeat: 4.5, repeatY: 46, meta: false,
     });
+    this.add("West Road", "Terrain", -84, -0.02, 66, 96, 0.06, 6, [1, 1, 1], {
+      tile: TILE.DIRT, repeat: 48, repeatY: 3, yaw: 0.22, meta: false,
+    });
+    this.add("Coast Road", "Terrain", 96, -0.02, 84, 6, 0.06, 150, [1, 1, 1], {
+      tile: TILE.DIRT, repeat: 3, repeatY: 75, meta: false,
+    });
 
     for (const s of SETTLEMENTS) this.buildSettlement(s);
     this.buildForest();
     this.buildRocks();
     this.buildCamp();
+    this.rebuildBodyGrid();
 
     // Player and warband
     this.player = this.addCharacter("You", "player", SPAWN.x, SPAWN.z, 100);
@@ -213,14 +228,19 @@ export class MedievalWorld {
       );
     }
 
-    // Three hostile patrols, each from a different power.
+    // Hostile patrols, one or two from every rival power.
     const patrols: Array<[number, number, string, string]> = [
       [-8, -20, "Steppe Riders", "eastern_tribes"],
       [30, 10, "Redstone Guard", "eastern_tribes"],
       [-40, 24, "Clan Raiders", "western_clans"],
+      [-96, 46, "Glen Prowlers", "western_clans"],
+      [70, 40, "Sahr Lancers", "southern_sultanate"],
+      [96, 118, "Sunmarch Riders", "southern_sultanate"],
+      [-84, -34, "Frost Wolf Pack", "north_kingdom"],
+      [18, -66, "Ford Halberdiers", "river_kingdom"],
     ];
     for (const [px, pz, squad, houseId] of patrols) {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         const id = this.addCharacter(
           `${squad} ${unitTitle("enemy", i)}`, "enemy",
           px + (this.random() - 0.5) * 4, pz + (this.random() - 0.5) * 4, 45, houseId,
@@ -296,11 +316,12 @@ export class MedievalWorld {
 
   private buildForest(): void {
     const group = "Wilds";
-    for (let i = 0; i < 240; i++) {
-      const x = (this.random() - 0.5) * 230;
-      const z = (this.random() - 0.5) * 230;
+    for (let i = 0; i < 560; i++) {
+      const x = (this.random() - 0.5) * 336;
+      const z = (this.random() - 0.5) * 336;
+      if (x > COAST_X - 14) continue;
       if (Math.hypot(x - SPAWN.x, z - SPAWN.z) < 15) continue;
-      if (SETTLEMENTS.some((s) => Math.hypot(x - s.x, z - s.z) < 18)) continue;
+      if (SETTLEMENTS.some((s) => Math.hypot(x - s.x, z - s.z) < 17)) continue;
       const h = 3 + this.random() * 3.4;
       const yaw = this.random() * Math.PI;
       const spread = 3.4 + this.random() * 1.7;
@@ -322,9 +343,10 @@ export class MedievalWorld {
   }
 
   private buildRocks(): void {
-    for (let i = 0; i < 50; i++) {
-      const x = (this.random() - 0.5) * 210;
-      const z = (this.random() - 0.5) * 210;
+    for (let i = 0; i < 150; i++) {
+      const x = (this.random() - 0.5) * 330;
+      const z = (this.random() - 0.5) * 330;
+      if (x > COAST_X - 4) continue;
       const s = 1 + this.random() * 2.4;
       const yaw = this.random() * Math.PI;
       this.add("Boulder", "Wilds", x, s * 0.4, z, s, s * 0.82, s * 1.1, [0.88, 0.9, 0.94], {
@@ -425,6 +447,8 @@ export class MedievalWorld {
     if (this.hour >= 24) {
       this.hour -= 24;
       this.day += 1;
+      // The campaign advances with the calendar you can watch in the sky.
+      this.kingdom.advanceDay();
     }
   }
 
@@ -462,8 +486,8 @@ export class MedievalWorld {
       t.z += dz * step;
       t.yaw = Math.atan2(dx, dz);
       this.resolveCollisions(t, 0.55);
-      t.x = clamp(t.x, -118, 118);
-      t.z = clamp(t.z, -118, 118);
+      t.x = clamp(t.x, -MAP_HALF, COAST_X - 2);
+      t.z = clamp(t.z, -MAP_HALF, MAP_HALF);
     }
 
     c.cooldown = Math.max(0, c.cooldown - dt);
@@ -594,10 +618,37 @@ export class MedievalWorld {
     return current + angleDelta(current, target) * clamp(t, 0, 1);
   }
 
-  private resolveCollisions(t: Transform, radius: number): void {
+  private rebuildBodyGrid(): void {
+    this.bodyGrid.clear();
     for (const id of this.world.query("Body", "Transform")) {
-      const body = this.world.require<Body>(id, "Body");
-      if (!body.solid) continue;
+      const body = this.world.get<Body>(id, "Body");
+      const t = this.world.get<Transform>(id, "Transform");
+      if (!body || !t || !body.solid) continue;
+      const cx = Math.floor(t.x / 10);
+      const cz = Math.floor(t.z / 10);
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oz = -1; oz <= 1; oz++) {
+          const key = `${cx + ox},${cz + oz}`;
+          const bucket = this.bodyGrid.get(key);
+          if (bucket) bucket.push(id);
+          else this.bodyGrid.set(key, [id]);
+        }
+      }
+    }
+    this.bodyGridAge = 0;
+  }
+
+  private resolveCollisions(t: Transform, radius: number): void {
+    // Solid geometry is static; refreshing the grid about once a second keeps
+    // it correct even after the editor has moved things around.
+    this.bodyGridAge += 1;
+    if (this.bodyGridAge > 60 || this.bodyGrid.size === 0) this.rebuildBodyGrid();
+
+    const bucket = this.bodyGrid.get(`${Math.floor(t.x / 10)},${Math.floor(t.z / 10)}`);
+    if (!bucket) return;
+    for (const id of bucket) {
+      const body = this.world.get<Body>(id, "Body");
+      if (!body || !body.solid) continue;
       const bt = this.world.require<Transform>(id, "Transform");
       const dx = t.x - bt.x;
       const dz = t.z - bt.z;
@@ -654,7 +705,10 @@ export class MedievalWorld {
 
   // ---------------------------------------------------------------- rendering
 
-  buildInstances(out: Instance[], selected: Entity | null, time: number): void {
+  buildInstances(out: Instance[], selected: Entity | null, time: number, view?: Vec3): void {
+    // The basin is bigger than the fog can show, so anything behind the far
+    // plane is dropped before it reaches the instancing buffer.
+    const cull = 158 * 158;
     const flame = this.world.query("Appearance").find((id) => {
       const meta = this.world.get<Meta>(id, "Meta");
       return meta?.name === "Campfire Flame";
@@ -666,6 +720,11 @@ export class MedievalWorld {
 
     for (const id of this.world.query("Transform", "Appearance")) {
       const t = this.world.require<Transform>(id, "Transform");
+      if (view && id !== selected) {
+        const dx = t.x - view.x;
+        const dz = t.z - view.z;
+        if (dx * dx + dz * dz > cull) continue;
+      }
       const a = this.world.require<Appearance>(id, "Appearance");
       const c = this.world.get<Character>(id, "Character");
 
