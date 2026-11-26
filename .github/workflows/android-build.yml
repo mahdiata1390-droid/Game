@@ -35,8 +35,23 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # The runner image ships an Android SDK; using it directly avoids the
+      # licence-prompt failure of android-actions/setup-android on ubuntu-26.04.
+      - name: Configure Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          test -d "$sdk" || { echo "no Android SDK at $sdk"; exit 1; }
+          sdkmanager="$sdk/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager" || sdkmanager=$(find "$sdk/cmdline-tools" -name sdkmanager -type f | head -1)
+          test -x "$sdkmanager"
+          yes | "$sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$sdkmanager" --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_HOME=$sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$sdk" >> "$GITHUB_ENV"
+          echo "$sdk/platform-tools" >> "$GITHUB_PATH"
+          "$sdkmanager" --version
 
       - name: Install dependencies
         run: npm ci
