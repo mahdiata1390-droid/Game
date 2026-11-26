@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Medieval Sandbox</string>
+    <string name="title_activity_main">Medieval Sandbox</string>
+    <string name="package_name">com.mahdiata1390.medievalsandbox</string>
+    <string name="custom_url_scheme">com.mahdiata1390.medievalsandbox</string>
+</resources>

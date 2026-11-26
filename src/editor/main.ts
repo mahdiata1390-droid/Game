@@ -40,6 +40,8 @@ const hudWarband = $("hud-warband");
 const hudFoes = $("hud-foes");
 const hudLog = $("hud-log");
 const searchEl = $<HTMLInputElement>("hierarchy-search");
+const touchStickEl = $("touch-stick");
+const touchKnobEl = $("touch-knob");
 
 let game: MedievalWorld;
 let renderer: Renderer;
@@ -65,6 +67,7 @@ function start(): void {
   game = new MedievalWorld();
   refreshWorldUI();
   boot.classList.add("hidden");
+  initTouchControls();
   setStatus("World ready — press Play to take command.");
   // Development-only handle so the world can be staged and inspected from the
   // console. Production builds strip it.
@@ -265,22 +268,48 @@ function newWorld(): void {
   setStatus("New world generated.");
 }
 
+function setPlaying(next: boolean): void {
+  playing = next;
+  syncPlayButtons();
+  setStatus(next ? "Simulation running." : "Simulation paused.");
+}
+
+let touchLayer = false;
+
 function syncPlayButtons(): void {
   $("btn-play").classList.toggle("active", playing);
   modePill.textContent = playing ? "Playing" : "Edit";
   modePill.classList.toggle("playing", playing);
+  $("touch-play").textContent = playing ? "Pause" : "Play";
 }
 
-$("btn-play").addEventListener("click", () => {
-  playing = true;
-  syncPlayButtons();
-  setStatus("Simulation running.");
-});
-$("btn-stop").addEventListener("click", () => {
-  playing = false;
-  syncPlayButtons();
-  setStatus("Simulation paused.");
-});
+// Touch build: the editor chrome is hidden, so the stick, the strike button and a
+// play toggle are the whole interface. The simulation starts on its own because a
+// phone has no visible Play button.
+function initTouchControls(): void {
+  const touch = input.isTouch || "ontouchstart" in window;
+  if (!touch) return;
+  touchLayer = true;
+  document.body.classList.add("touch");
+  $("touch-strike").addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    input.queueAttack();
+  });
+  $("touch-play").addEventListener("click", () => setPlaying(!playing));
+  setPlaying(true);
+}
+
+function updateTouchVisual(): void {
+  const visual = input.stickVisual;
+  touchStickEl.classList.toggle("active", visual.active);
+  if (!visual.active) return;
+  touchStickEl.style.left = `${visual.originX}px`;
+  touchStickEl.style.top = `${visual.originY}px`;
+  touchKnobEl.style.transform = `translate(${visual.x * 30}px, ${visual.y * 30}px)`;
+}
+
+$("btn-play").addEventListener("click", () => setPlaying(true));
+$("btn-stop").addEventListener("click", () => setPlaying(false));
 $("btn-save").addEventListener("click", saveScene);
 $("btn-load").addEventListener("click", loadSavedScene);
 $("btn-reset").addEventListener("click", newWorld);
@@ -387,6 +416,7 @@ function frame(now: number): void {
     updateHud();
   }
 
+  if (touchLayer) updateTouchVisual();
   input.endFrame();
   requestAnimationFrame(frame);
 }
@@ -403,6 +433,9 @@ function updateHud(): void {
   hudFoes.textContent = String(game.aliveEnemies);
   hudLog.textContent = game.log;
 }
+
+// The Android back button pauses the sandbox before the activity leaves.
+window.addEventListener("forge:pause", () => setPlaying(false));
 
 loadPacks();
 requestAnimationFrame(() => start());

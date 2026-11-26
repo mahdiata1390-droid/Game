@@ -1,0 +1,131 @@
+name: Android APK Build
+
+# Packages the current Forge Engine game (Vite/WebGL2, bundled locally into the
+# Capacitor WebView) as an installable release APK and uploads it.
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the game
+        run: npm run build
+
+      - name: Sync game into the Android project
+        run: npx cap sync android
+
+      - name: Verify the game is bundled
+        shell: bash
+        run: |
+          set -euo pipefail
+          assets=android/app/src/main/assets/public
+          test -s "$assets/index.html"
+          js=$(find "$assets" -name '*.js' -size +40k | head -1)
+          test -n "$js" || { echo "game bundle missing from Android assets"; exit 1; }
+          grep -q 'id="scene"' "$assets/index.html"
+          grep -q 'id="touch-ui"' "$assets/index.html"
+          echo "bundled: $js ($(stat -c%s "$js") bytes)"
+          ls -l "$assets" "$assets/assets"
+
+      - name: Restore signing key
+        uses: actions/cache@v4
+        with:
+          path: android/app/medieval-sandbox-release.jks
+          key: medieval-sandbox-release-keystore-v1
+
+      - name: Prepare signing key
+        shell: bash
+        env:
+          SIGNING_PASSWORD: medievalsandbox-test-key
+        run: |
+          set -euo pipefail
+          if [ ! -f android/app/medieval-sandbox-release.jks ]; then
+            keytool -genkeypair -v \
+              -keystore android/app/medieval-sandbox-release.jks \
+              -alias medieval-sandbox \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$SIGNING_PASSWORD" -keypass "$SIGNING_PASSWORD" \
+              -dname "CN=Medieval Sandbox, OU=Forge Engine, O=Mahdiata, L=Unknown, ST=Unknown, C=US"
+          fi
+          cat > android/keystore.properties <<EOF
+          storeFile=medieval-sandbox-release.jks
+          storePassword=$SIGNING_PASSWORD
+          keyAlias=medieval-sandbox
+          keyPassword=$SIGNING_PASSWORD
+          EOF
+
+      - name: Build release APK
+        run: cd android && ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          test -s "$apk"
+          size=$(stat -c%s "$apk")
+          echo "APK size: $size bytes"
+          test "$size" -gt 1000000
+          unzip -l "$apk" | tee apk-contents.txt
+          grep -q 'classes.dex' apk-contents.txt
+          grep -q 'assets/public/index.html' apk-contents.txt
+          grep -q 'assets/public/assets/' apk-contents.txt
+          buildtools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$buildtools/apksigner" verify --print-certs "$apk"
+          "$buildtools/aapt2" dump badging "$apk" | head -3
+          cp "$apk" android/app/build/outputs/apk/release/medieval-sandbox.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: medieval-sandbox-android
+          path: android/app/build/outputs/apk/release/medieval-sandbox.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Summary
+        shell: bash
+        run: |
+          apk=android/app/build/outputs/apk/release/medieval-sandbox.apk
+          {
+            echo "## Medieval Sandbox APK"
+            echo ""
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Branch: \`${{ github.ref_name }}\`"
+            echo "- APK: \`medieval-sandbox.apk\` — $(du -h "$apk" | cut -f1)"
+            echo "- Artifact: **medieval-sandbox-android**"
+            echo "- sha256: \`$(sha256sum "$apk" | cut -d' ' -f1)\`"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -15,7 +15,10 @@ export class Input {
   private stickId: number | null = null;
   private lookId: number | null = null;
   private stickOrigin = { x: 0, y: 0 };
+  private lookLast = { x: 0, y: 0 };
   stick = { x: 0, y: 0 };
+  /** Screen-space stick state, in CSS pixels, for the on-screen joystick. */
+  readonly stickVisual = { active: false, originX: 0, originY: 0, x: 0, y: 0 };
 
   private target: HTMLElement;
 
@@ -47,6 +50,11 @@ export class Input {
 
   wasPressed(code: string): boolean {
     return this.pressed.has(code);
+  }
+
+  /** Queue a strike from an on-screen button. */
+  queueAttack(): void {
+    this.attackQueued = true;
   }
 
   get moving(): boolean {
@@ -84,6 +92,9 @@ export class Input {
     this.keys.clear();
     this.stick.x = 0;
     this.stick.y = 0;
+    this.stickVisual.active = false;
+    this.stickVisual.x = 0;
+    this.stickVisual.y = 0;
   };
 
   private onMouseDown = (event: MouseEvent) => {
@@ -113,8 +124,14 @@ export class Input {
         this.stickId = touch.identifier;
         this.stickOrigin = { x: touch.clientX, y: touch.clientY };
         this.stick = { x: 0, y: 0 };
+        this.stickVisual.active = true;
+        this.stickVisual.originX = touch.clientX;
+        this.stickVisual.originY = touch.clientY;
+        this.stickVisual.x = 0;
+        this.stickVisual.y = 0;
       } else if (this.lookId === null) {
         this.lookId = touch.identifier;
+        this.lookLast = { x: touch.clientX, y: touch.clientY };
         this.attackQueued = true;
       }
     }
@@ -131,8 +148,14 @@ export class Input {
           x: Math.max(-1, Math.min(1, dx / max)),
           y: Math.max(-1, Math.min(1, dy / max)),
         };
+        this.stickVisual.x = this.stick.x;
+        this.stickVisual.y = this.stick.y;
       } else if (touch.identifier === this.lookId) {
-        this.lookX += (touch as Touch & { movementX?: number }).movementX ?? 0;
+        // Touch events carry no movementX/Y, so track the last position ourselves;
+        // without this the camera could not be turned on a phone at all.
+        this.lookX += touch.clientX - this.lookLast.x;
+        this.lookY += touch.clientY - this.lookLast.y;
+        this.lookLast = { x: touch.clientX, y: touch.clientY };
       }
     }
     event.preventDefault();
@@ -143,6 +166,9 @@ export class Input {
       if (touch.identifier === this.stickId) {
         this.stickId = null;
         this.stick = { x: 0, y: 0 };
+        this.stickVisual.active = false;
+        this.stickVisual.x = 0;
+        this.stickVisual.y = 0;
       }
       if (touch.identifier === this.lookId) this.lookId = null;
     }

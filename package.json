@@ -10,12 +10,20 @@
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "typecheck": "tsc --noEmit",
     "build:single": "node tools/inline-build.mjs",
+    "android:sync": "npm run build && cap sync android",
+    "android:apk": "cd android && ./gradlew assembleRelease",
     "packs:list": "node tools/fetch-packs.mjs --list",
     "packs:fetch": "node tools/fetch-packs.mjs",
     "packs:verify": "node tools/fetch-packs.mjs --verify"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.2.4",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.4",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/core": "^6.2.4"
   }
 }
