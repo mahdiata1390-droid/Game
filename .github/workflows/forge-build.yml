@@ -1,0 +1,101 @@
+name: Forge Engine Build
+
+# Builds the actual Forge Engine game (Vite + TypeScript + WebGL2) and uploads the
+# playable build. The retired Unity and Godot prototypes have their own workflows
+# and are untouched by this one.
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: forge-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build playable game
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck and build
+        run: npm run build
+
+      - name: Verify build output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s dist/index.html
+          js=$(find dist/assets -name '*.js' -size +40k | head -1)
+          test -n "$js" || { echo "no game bundle in dist/assets"; exit 1; }
+          test -n "$(find dist/assets -name '*.css' -size +1k)" || { echo "no stylesheet in dist/assets"; exit 1; }
+          echo "bundle: $js ($(stat -c%s "$js") bytes)"
+          du -sh dist
+
+      - name: Package single-file build
+        run: node tools/inline-build.mjs
+
+      - name: Add play instructions to the artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > dist/PLAY-ME.txt <<TXT
+          Forge Engine — medieval sandbox, GitHub Actions build
+          Commit: ${{ github.sha }}
+          Branch: ${{ github.ref_name }}
+          Run:    ${{ github.run_id }}
+
+          Fastest way to play
+          -------------------
+          1. Extract this zip.
+          2. Double-click medieval-sandbox.html. It is fully self-contained
+             (WebGL2, no server, no network, no external assets).
+
+          Hosting it properly
+          -------------------
+          index.html + assets/ are the same build served as a normal static site:
+            npm run preview        (in the repository), or any static host.
+
+          Controls: WASD move, drag to look, wheel to zoom, Space strike, F first person.
+          TXT
+          # The heredoc body is indented for readability in YAML; strip the common indent.
+          sed -i 's/^          //' dist/PLAY-ME.txt
+          cat dist/PLAY-ME.txt
+
+      - name: Upload playable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: forge-engine-web
+          path: dist/**
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Summary
+        shell: bash
+        run: |
+          {
+            echo "## Forge Engine build"
+            echo ""
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Branch: \`${{ github.ref_name }}\`"
+            echo "- Artifact: **forge-engine-web** (contains \`medieval-sandbox.html\`)"
+            echo ""
+            echo '```'
+            find dist -type f -printf '%10s  %p\n' | sort -k2
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

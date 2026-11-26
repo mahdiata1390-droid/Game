@@ -9,6 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "typecheck": "tsc --noEmit",
+    "build:single": "node tools/inline-build.mjs",
     "packs:list": "node tools/fetch-packs.mjs --list",
     "packs:fetch": "node tools/fetch-packs.mjs",
     "packs:verify": "node tools/fetch-packs.mjs --verify"
