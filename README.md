@@ -2,6 +2,23 @@
 
 Offline-first medieval fantasy sandbox for Android.
 
+## Release 1.0.0
+
+Version **1.0.0** (versionCode 10000, package `com.mahdiata1390.medievalsandbox`) is the
+first public Android release. GitHub Actions builds the signed APK and uploads it with its
+SHA-256 and release notes as the `medieval-sandbox-android-1.0.0` artifact; pushing a `v*`
+tag also opens a draft GitHub Release.
+
+- [Release notes](RELEASE_NOTES.md) — what is in the build, install steps, requirements, credits.
+- Build workflow: [.github/workflows/android-build.yml](.github/workflows/android-build.yml).
+- Version lives in [android/app/build.gradle](android/app/build.gradle) (`versionName` / `versionCode`).
+
+```bash
+npm ci
+npm run build && npx cap sync android
+cd android && ./gradlew assembleRelease   # needs an Android SDK + release keystore
+```
+
 ## Forge Engine (own engine, new)
 
 The active path is now **Forge Engine**, our own WebGL2 + TypeScript engine and editor, running the medieval world without Unity or Godot. It boots with zero binary assets, draws the whole scene in one instanced draw call, and includes a scene format, hierarchy/inspector editor, and an asset-pack registry with sizes and licences.
@@ -35,6 +52,9 @@ All visuals remain temporary primitive placeholders. Resource nodes are colored 
 
 ## Honest build status
 
-The Unity project files and scripts have been committed, but Unity Editor compilation, Play Mode testing, Android packaging, and real-device testing have **not** been performed. There is no verified APK yet.
+The Forge Engine path does produce a verified, signed APK (see the release section above and
+[RELEASE_NOTES.md](RELEASE_NOTES.md)). The legacy Unity project files below are still in the
+repository, but Unity Editor compilation, Play Mode testing and Unity-based Android packaging
+have **not** been performed.
 
 An Android build requires Unity 2022.3 with Android Build Support (SDK/NDK + OpenJDK). Unity Editor does not run natively on iPhone; a compatible computer or configured cloud build runner is required. A cloud build also needs valid Unity licensing/CI credentials.

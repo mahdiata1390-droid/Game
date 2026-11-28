@@ -1,7 +1,10 @@
 name: Android APK Build
 
 # Packages the current Forge Engine game (Vite/WebGL2, bundled locally into the
-# Capacitor WebView) as an installable release APK and uploads it.
+# Capacitor WebView) as a signed release APK and uploads a publishable set of
+# release files: the APK, its SHA-256 and the release notes.
+#
+# Pushing a tag like v1.0.0 also opens a draft GitHub Release with those files.
 
 on:
   push:
@@ -19,6 +22,11 @@ jobs:
     name: Build release APK
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    outputs:
+      version_name: ${{ steps.version.outputs.name }}
+      version_code: ${{ steps.version.outputs.code }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+      artifact: ${{ steps.package.outputs.artifact }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,6 +61,22 @@ jobs:
           echo "$sdk/platform-tools" >> "$GITHUB_PATH"
           "$sdkmanager" --version
 
+      - name: Read the app version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle=android/app/build.gradle
+          name=$(sed -n 's/^ *versionName "\(.*\)"/\1/p' "$gradle" | head -1)
+          code=$(sed -n 's/^ *versionCode \([0-9][0-9]*\)/\1/p' "$gradle" | head -1)
+          test -n "$name" || { echo "no versionName in $gradle"; exit 1; }
+          test -n "$code" || { echo "no versionCode in $gradle"; exit 1; }
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "VERSION_NAME=$name" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$code" >> "$GITHUB_ENV"
+          echo "Building Medieval Sandbox $name (versionCode $code)"
+
       - name: Install dependencies
         run: npm ci
 
@@ -72,10 +96,17 @@ jobs:
           test -n "$js" || { echo "game bundle missing from Android assets"; exit 1; }
           grep -q 'id="scene"' "$assets/index.html"
           grep -q 'id="touch-ui"' "$assets/index.html"
+          test -d "$assets/audio/music"
+          test -d "$assets/art"
           echo "bundled: $js ($(stat -c%s "$js") bytes)"
+          du -sh "$assets/audio" "$assets/art"
           ls -l "$assets" "$assets/assets"
 
-      - name: Restore signing key
+      # Signing. A repository keystore (ANDROID_KEYSTORE_BASE64 plus its
+      # passwords) is used when configured; otherwise CI generates a key once
+      # and keeps it in the Actions cache so release builds stay signed.
+      - name: Restore generated signing key
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 == '' }}
         uses: actions/cache@v4
         with:
           path: android/app/medieval-sandbox-release.jks
@@ -84,23 +115,38 @@ jobs:
       - name: Prepare signing key
         shell: bash
         env:
-          SIGNING_PASSWORD: medievalsandbox-test-key
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          if [ ! -f android/app/medieval-sandbox-release.jks ]; then
+          keystore=android/app/medieval-sandbox-release.jks
+          storepass=${ANDROID_KEYSTORE_PASSWORD:-medievalsandbox-test-key}
+          keyalias=${ANDROID_KEY_ALIAS:-medieval-sandbox}
+          keypass=${ANDROID_KEY_PASSWORD:-$storepass}
+          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            echo "using the repository release keystore"
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore"
+          elif [ ! -f "$keystore" ]; then
+            echo "generating a release keystore"
             keytool -genkeypair -v \
-              -keystore android/app/medieval-sandbox-release.jks \
-              -alias medieval-sandbox \
+              -keystore "$keystore" \
+              -alias "$keyalias" \
               -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass "$SIGNING_PASSWORD" -keypass "$SIGNING_PASSWORD" \
+              -storepass "$storepass" -keypass "$keypass" \
               -dname "CN=Medieval Sandbox, OU=Forge Engine, O=Mahdiata, L=Unknown, ST=Unknown, C=US"
+          else
+            echo "reusing the cached release keystore"
           fi
           cat > android/keystore.properties <<EOF
           storeFile=medieval-sandbox-release.jks
-          storePassword=$SIGNING_PASSWORD
-          keyAlias=medieval-sandbox
-          keyPassword=$SIGNING_PASSWORD
+          storePassword=$storepass
+          keyAlias=$keyalias
+          keyPassword=$keypass
           EOF
+          keytool -list -keystore "$keystore" -storepass "$storepass" -alias "$keyalias" \
+            | sed -n 's/.*(SHA-256):/SHA-256:/p' | tee signing-fingerprint.txt || true
 
       - name: Build release APK
         run: cd android && ./gradlew assembleRelease --no-daemon --stacktrace
@@ -109,7 +155,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          apk=android/app/build/outputs/apk/release/app-release.apk
+          apk=$(find android/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' ! -name '*unsigned*' | head -1)
+          test -n "$apk"
           test -s "$apk"
           size=$(stat -c%s "$apk")
           echo "APK size: $size bytes"
@@ -118,29 +165,107 @@ jobs:
           grep -q 'classes.dex' apk-contents.txt
           grep -q 'assets/public/index.html' apk-contents.txt
           grep -q 'assets/public/assets/' apk-contents.txt
+          grep -q 'assets/public/audio/music/' apk-contents.txt
+          grep -q 'assets/public/art/' apk-contents.txt
           buildtools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           "$buildtools/apksigner" verify --print-certs "$apk"
-          "$buildtools/aapt2" dump badging "$apk" | head -3
-          cp "$apk" android/app/build/outputs/apk/release/medieval-sandbox.apk
+          badging=$("$buildtools/aapt2" dump badging "$apk")
+          echo "$badging" | head -3
+          header=$(echo "$badging" | head -1)
+          echo "$header" | grep -q "package: name='com.mahdiata1390.medievalsandbox'"
+          echo "$header" | grep -q "versionCode='$VERSION_CODE'"
+          echo "$header" | grep -q "versionName='$VERSION_NAME'"
+          echo "verified Medieval Sandbox $VERSION_NAME (versionCode $VERSION_CODE)"
 
-      - name: Upload APK
+      - name: Package release files
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=$(find android/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' ! -name '*unsigned*' | head -1)
+          test -s "$src"
+          artifact=medieval-sandbox-android-$VERSION_NAME
+          name=medieval-sandbox-$VERSION_NAME.apk
+          mkdir -p release
+          cp "$src" "release/$name"
+          sha=$(sha256sum "release/$name" | cut -d' ' -f1)
+          printf '%s  %s\n' "$sha" "$name" > "release/$name.sha256"
+          cp RELEASE_NOTES.md release/RELEASE_NOTES.md
+          cp public/audio/CREDITS.md release/CREDITS-audio.md
+          cp signing-fingerprint.txt release/signing-fingerprint.txt
+          {
+            echo "version=$VERSION_NAME"
+            echo "version_code=$VERSION_CODE"
+            echo "sha256=$sha"
+            echo "artifact=$artifact"
+          } >> "$GITHUB_OUTPUT"
+          ls -l release
+          echo "sha256 $sha"
+
+      - name: Upload release files
         uses: actions/upload-artifact@v4
         with:
-          name: medieval-sandbox-android
-          path: android/app/build/outputs/apk/release/medieval-sandbox.apk
+          name: ${{ steps.package.outputs.artifact }}
+          path: release/*
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
 
       - name: Summary
         shell: bash
         run: |
-          apk=android/app/build/outputs/apk/release/medieval-sandbox.apk
+          apk=release/medieval-sandbox-$VERSION_NAME.apk
           {
-            echo "## Medieval Sandbox APK"
+            echo "## Medieval Sandbox $VERSION_NAME (versionCode $VERSION_CODE)"
             echo ""
-            echo "- Commit: \`${{ github.sha }}\`"
-            echo "- Branch: \`${{ github.ref_name }}\`"
-            echo "- APK: \`medieval-sandbox.apk\` — $(du -h "$apk" | cut -f1)"
-            echo "- Artifact: **medieval-sandbox-android**"
-            echo "- sha256: \`$(sha256sum "$apk" | cut -d' ' -f1)\`"
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| Version | \`$VERSION_NAME\` (code \`$VERSION_CODE\`) |"
+            echo "| Package | \`com.mahdiata1390.medievalsandbox\` |"
+            echo "| APK | \`medieval-sandbox-$VERSION_NAME.apk\` — $(du -h "$apk" | cut -f1) |"
+            echo "| sha256 | \`${{ steps.package.outputs.sha256 }}\` |"
+            echo "| Artifact | **${{ steps.package.outputs.artifact }}** (90 days) |"
+            echo "| Signing | $(sed -n '1p' release/signing-fingerprint.txt 2>/dev/null || echo 'see signing-fingerprint.txt') |"
+            echo "| Commit | \`${{ github.sha }}\` on \`${{ github.ref_name }}\` |"
+            echo ""
+            echo "Sideload with \`adb install -r medieval-sandbox-$VERSION_NAME.apk\`, or copy the"
+            echo "APK to the device and open it. It runs offline and needs Android 5.1+."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  release:
+    name: Draft GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: apk
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download release files
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.apk.outputs.artifact }}
+          path: release
+
+      - name: Create draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_NAME: ${{ needs.apk.outputs.version_name }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if [ "$tag" != "v$VERSION_NAME" ]; then
+            echo "warning: tag $tag does not match app version $VERSION_NAME"
+          fi
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "draft for $tag already exists; uploading files"
+            gh release upload "$tag" release/* --clobber
+          else
+            gh release create "$tag" \
+              --draft \
+              --title "Medieval Sandbox $VERSION_NAME" \
+              --notes-file release/RELEASE_NOTES.md \
+              release/*
+          fi
+          echo "Draft release: ${{ github.server_url }}/${{ github.repository }}/releases"

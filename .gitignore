@@ -33,5 +33,8 @@ dev-server.pid
 
 # Android signing material (CI creates and caches its own key)
 android/keystore.properties
+signing-fingerprint.txt
+release/
+
 android/app/*.jks
 android/app/*.keystore
