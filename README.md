@@ -6,8 +6,20 @@ Offline-first medieval fantasy sandbox for Android.
 
 Version **1.0.0** (versionCode 10000, package `com.mahdiata1390.medievalsandbox`) is the
 first public Android release. GitHub Actions builds the signed APK and uploads it with its
-SHA-256 and release notes as the `medieval-sandbox-android-1.0.0` artifact; pushing a `v*`
-tag also opens a draft GitHub Release.
+SHA-256 and release notes as the `medieval-sandbox-android-1.0.0` artifact.
+
+The `v1.0.0` tag sits on `2702c3e`. Pushing a `v*` tag runs the `release` job, which opens a
+**draft** GitHub Release holding `medieval-sandbox-1.0.0.apk`, its `.sha256`, the release
+notes, the audio credits and `signing-fingerprint.txt`. For `v1.0.0` that draft exists as
+*Medieval Sandbox 1.0.0*; publishing it is the only manual step, so nothing goes live by
+accident:
+
+```bash
+gh release edit v1.0.0 --draft=false    # publish the draft that the tag opened
+```
+
+Bump `versionCode` in the same file before any later upload — Play and Android both refuse
+two builds with the same code.
 
 - [Release notes](RELEASE_NOTES.md) — what is in the build, install steps, requirements, credits.
 - Build workflow: [.github/workflows/android-build.yml](.github/workflows/android-build.yml).
