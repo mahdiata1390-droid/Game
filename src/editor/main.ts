@@ -15,6 +15,8 @@ import {
   type Transform,
 } from "../game/world";
 import { Council } from "./council";
+import { AudioDirector } from "../engine/audio";
+import { COAST_X } from "../game/geography";
 
 const SCENE_KEY = "forge.scene.v1";
 
@@ -49,6 +51,7 @@ let renderer: Renderer;
 let input: Input;
 let council: Council | null = null;
 const rig = new CameraRig();
+const audio = new AudioDirector();
 let playing = false;
 let selected: Entity | null = null;
 let filter = "";
@@ -67,6 +70,8 @@ function start(): void {
   renderer = new Renderer(canvas, atlas);
   input = new Input(canvas);
   game = new MedievalWorld();
+  game.onSound = (id) => audio.play(id);
+  audio.setMusic("overworld");
   refreshWorldUI();
   boot.classList.add("hidden");
   initTouchControls();
@@ -254,6 +259,7 @@ function loadSavedScene(): void {
     next.player = player;
     next.refresh();
     game = next;
+    game.onSound = (id) => audio.play(id);
     playing = false;
     syncPlayButtons();
     refreshWorldUI();
@@ -266,6 +272,7 @@ function loadSavedScene(): void {
 
 function newWorld(): void {
   game = new MedievalWorld();
+  game.onSound = (id) => audio.play(id);
   playing = false;
   syncPlayButtons();
   refreshWorldUI();
@@ -288,12 +295,16 @@ function initCouncil(): void {
       game.advanceDay();
       setStatus(`Day ${game.day}: the council has ruled.`);
     },
+    onSfx: (id) => audio.play(id),
   });
 }
 
 function openCouncil(): void {
   if (!council) return;
   setPlaying(false);
+  audio.setMusic("council");
+  audio.setAmbience("fire");
+  audio.play("gate");
   council.show();
   setStatus("The council is seated.");
 }
@@ -302,6 +313,7 @@ function toggleCouncil(): void {
   if (!council) return;
   if (council.open) {
     council.close();
+    audio.setMusic("overworld");
     setStatus("The council rises.");
   } else {
     openCouncil();
@@ -343,6 +355,7 @@ function initTouchControls(): void {
     input.queueAttack();
   });
   $("touch-play").addEventListener("click", () => setPlaying(!playing));
+  $("touch-audio").addEventListener("click", toggleAudio);
   setPlaying(true);
 }
 
@@ -355,6 +368,24 @@ function updateTouchVisual(): void {
   touchKnobEl.style.transform = `translate(${visual.x * 30}px, ${visual.y * 30}px)`;
 }
 
+function toggleAudio(): void {
+  const muted = audio.toggleMute();
+  syncAudioButton(muted);
+  setStatus(muted ? "Sound muted." : "Sound on.");
+}
+
+function syncAudioButton(muted: boolean): void {
+  const button = $("btn-audio");
+  button.textContent = muted ? "♪ Muted" : "♪ Sound";
+  button.classList.toggle("active", !muted);
+  button.setAttribute("aria-pressed", String(!muted));
+  const touch = $("touch-audio");
+  touch.textContent = muted ? "♪̸" : "♪";
+  touch.setAttribute("aria-label", muted ? "Unmute sound" : "Mute sound");
+}
+
+syncAudioButton(audio.muted);
+$("btn-audio").addEventListener("click", toggleAudio);
 $("btn-council").addEventListener("click", openCouncil);
 $("btn-play").addEventListener("click", () => setPlaying(true));
 $("btn-stop").addEventListener("click", () => setPlaying(false));
@@ -462,6 +493,7 @@ function frame(now: number): void {
     perfEl.textContent = `${fps.toFixed(0)} fps`;
     statsEl.textContent = `${instances.length} instances · ${renderer.stats.drawCalls} draw call · ${(renderer.stats.gpuInstancesKiB / 1024).toFixed(2)} MiB`;
     updateHud();
+    updateAudioScene();
   }
 
   if (touchLayer) updateTouchVisual();
@@ -482,8 +514,51 @@ function updateHud(): void {
   hudLog.textContent = game.log;
 }
 
+// Audio may only start from a real gesture; the first tap or key starts the
+// score and everything after it is unlocked.
+let ambientCueAt = 0;
+function wakeAudio(): void {
+  audio.unlock();
+  updateAudioScene();
+}
+for (const type of ["pointerdown", "keydown", "touchstart"] as const) {
+  window.addEventListener(type, wakeAudio, { once: true, passive: true });
+}
+
+// The score follows the sandbox: drums when a warband closes on the player,
+// a night bed after dusk, surf on the Silver Sea coast, and a hearth indoors.
+function updateAudioScene(): void {
+  if (!audio.unlocked || !game) return;
+  if (council?.open) return;
+  const here = game.world.get<Transform>(game.player, "Transform");
+  if (!here) return;
+  let danger = false;
+  for (const id of game.world.query("Character", "Transform")) {
+    const other = game.world.get<Character>(id, "Character");
+    if (!other || other.faction !== "enemy" || other.hp <= 0) continue;
+    const at = game.world.get<Transform>(id, "Transform");
+    if (!at) continue;
+    if (Math.hypot(at.x - here.x, at.z - here.z) < 26) {
+      danger = true;
+      break;
+    }
+  }
+  const night = game.hour < 6 || game.hour > 20;
+  audio.setMusic(danger ? "battle" : night ? "night" : "overworld");
+  const coastal = here.x > COAST_X - 46;
+  audio.setAmbience(coastal ? "waves" : "wind");
+  const now = performance.now();
+  if (now > ambientCueAt) {
+    ambientCueAt = now + 22000 + Math.random() * 26000;
+    audio.play(coastal ? "seagull" : "crows", { volume: 0.28 });
+  }
+}
+
 // The Android back button pauses the sandbox before the activity leaves.
-window.addEventListener("forge:pause", () => setPlaying(false));
+window.addEventListener("forge:pause", () => {
+  setPlaying(false);
+  audio.setMusic("campaign");
+});
 
 loadPacks();
 requestAnimationFrame(() => start());

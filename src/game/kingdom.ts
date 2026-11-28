@@ -152,6 +152,10 @@ export class Kingdom {
   notice = "The council is seated. The basin waits.";
   private random = mulberry(771131);
   private warCount = 0;
+  /** day each rival's war with the company began, so they must first muster */
+  private warSince: Partial<Record<PowerId, number>> = {};
+  /** holdings that have been written into the chronicle as a last stand */
+  private lastStand = new Set<string>();
 
   constructor() {
     this.holdings = SITES.map((site) => this.makeHolding(site));
@@ -430,6 +434,7 @@ export class Kingdom {
     const power = this.playerPower;
     if (!power.atWar.includes(other)) power.atWar.push(other);
     if (!this.powers[other].atWar.includes(this.player)) this.powers[other].atWar.push(this.player);
+    if (this.warSince[other] === undefined) this.warSince[other] = this.day;
     this.powers[other].opinion[this.player] = Math.min(this.powers[other].opinion[this.player], -40);
     power.opinion[other] = Math.min(power.opinion[other], -40);
     if (record) {
@@ -441,6 +446,7 @@ export class Kingdom {
 
   private endWar(other: PowerId): void {
     const power = this.playerPower;
+    delete this.warSince[other];
     power.atWar = power.atWar.filter((id) => id !== other);
     this.powers[other].atWar = this.powers[other].atWar.filter((id) => id !== this.player);
   }
@@ -512,12 +518,32 @@ export class Kingdom {
       const attacker = this.powers[siege.by];
       const defender = this.powers[holding.owner];
       const field = this.armyOf(siege.by);
-      const wall = holding.garrison + holding.walls * 45;
+      // The defenders are the garrison, the wall itself, and the share of the
+      // owner's field army that turns out to relieve the place. Without that
+      // third term a holder's army never defended anything and every siege
+      // simply counted down the attacker's strength.
+      const defenderHoldings = Math.max(1, this.holdings.filter((h) => h.owner === holding.owner).length);
+      const relieving = (this.armyOf(holding.owner) / defenderHoldings) * 0.42;
+      // The company stands to its own walls a little harder than a hired lord.
+      const muster = holding.owner === this.player ? 1.3 : 1;
+      const wall = (holding.garrison + holding.walls * 80 + relieving) * muster;
       const siegeBonus = 1 + attacker.troops.siege * 0.18;
-      // No storm is resolved in a single night: a siege grinds for at least
-      // three days and never stalls completely.
+      // No storm is resolved in a single night: a siege grinds for days and
+      // never stalls completely.
       const rate = ((field * siegeBonus) / Math.max(1, wall)) * 6;
-      siege.progress += Math.min(34, Math.max(0.5, rate));
+      siege.progress += Math.min(18, Math.max(0.5, rate));
+      // The last holding of the company is never taken outright: the council
+      // can be beaten back to one banner, but not erased from the map.
+      if (holding.owner === this.player && this.playerHoldings.length === 1) {
+        siege.progress = Math.min(siege.progress, 96);
+        if (!this.lastStand.has(holding.id)) {
+          this.lastStand.add(holding.id);
+          this.record(
+            "court",
+            `The last banner of the company holds at ${holding.name}. The council can be beaten back, but it will not be erased.`,
+          );
+        }
+      }
       if (siege.progress >= 100) {
         const previous = holding.owner;
         holding.owner = siege.by;
@@ -562,7 +588,16 @@ export class Kingdom {
     for (const id of ids) {
       const power = this.powers[id];
       if (power.atWar.length === 0 || this.random() > 0.22) continue;
-      const enemies = this.holdings.filter((holding) => power.atWar.includes(holding.owner) && !holding.siege);
+      const enemies = this.holdings.filter((holding) => {
+        if (!power.atWar.includes(holding.owner) || holding.siege) return false;
+        if (holding.owner !== this.player) return true;
+        // A rival will not invest the company on the day war is declared: it
+        // musters first, needs a clear advantage in the field, and never opens
+        // a second siege while one of the company's holdings is already pressed.
+        if (this.day - (this.warSince[id] ?? this.day) < 10) return false;
+        if (this.armyOf(id) < this.armyOf(this.player) * 1.8) return false;
+        return !this.holdings.some((other) => other.owner === this.player && other.siege);
+      });
       if (enemies.length === 0) continue;
       const home = this.holdings.filter((holding) => holding.owner === id);
       if (home.length === 0) continue;

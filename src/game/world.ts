@@ -8,6 +8,7 @@ import { ATLAS_TILE as TILE } from "../engine/textures";
 import type { Input } from "../engine/input";
 import type { Camera, Instance, Light } from "../engine/renderer";
 import { buildSettlement as buildSettlementGeometry } from "./architecture";
+import type { SfxId } from "../engine/audio";
 import { emitFigure } from "./figures";
 import { CHAMPIONS, houseOf, unitTitle, WEAPON_PROFILE } from "./houses";
 import { COAST_X, MAP_HALF, SITES, type Site } from "./geography";
@@ -85,6 +86,8 @@ export class MedievalWorld {
   log = "Click or press Space to strike.";
   /** the campaign that runs on top of the sandbox, one tick per in-game day */
   readonly kingdom = new Kingdom();
+  /** set by the host so the sandbox can score its own combat */
+  onSound?: (id: SfxId) => void;
   private spawnCooldown = 0;
   private random = rng(20261125);
   /**
@@ -519,6 +522,7 @@ export class MedievalWorld {
     }
     if (!best) {
       this.log = "You swing at empty air.";
+      this.onSound?.("sword-draw");
       return;
     }
     const target = this.world.require<Character>(best, "Character");
@@ -528,8 +532,10 @@ export class MedievalWorld {
       this.kill(best);
       this.log = `${target.name} falls. +12 gold.`;
       this.gold += 12;
+      this.onSound?.("armour");
     } else {
       this.log = `You strike ${target.name} for ${c.damage}.`;
+      this.onSound?.("sword-clash");
     }
   }
 
@@ -563,6 +569,7 @@ export class MedievalWorld {
           const vc = this.world.require<Character>(victim, "Character");
           vc.hp -= c.damage;
           this.world.require<Appearance>(victim, "Appearance").flash = 1;
+          if (victim === this.player) this.onSound?.("armour");
           if (vc.hp <= 0 && victim === this.player) this.downPlayer(vc);
           else if (vc.hp <= 0) this.kill(victim);
         }

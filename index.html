@@ -17,6 +17,7 @@
         </div>
         <div class="toolbar">
           <button id="btn-council" class="btn council-btn" type="button">♔ Council <kbd>M</kbd></button>
+          <button id="btn-audio" class="btn" type="button" aria-pressed="true" title="Toggle music and effects">♪ Sound</button>
           <button id="btn-play" class="btn primary" type="button">▶ Play</button>
           <button id="btn-stop" class="btn" type="button">■ Stop</button>
           <span class="divider"></span>
@@ -55,7 +56,13 @@
           </div>
           <div id="hud-log" class="hud-log">Click or press Space to strike.</div>
         </div>
-        <div id="boot" class="boot">Building the world…</div>
+        <div id="boot" class="boot">
+          <div class="boot-card">
+            <img class="boot-crest" src="/art/app-icon.png" alt="The company's crest" />
+            <h1>Medieval Sandbox</h1>
+            <p>Building the basin…</p>
+          </div>
+        </div>
         <div class="controls-hint">
           <span><kbd>WASD</kbd> move</span>
           <span><kbd>Drag</kbd> look</span>
@@ -85,6 +92,7 @@
       <div id="touch-stick" class="touch-stick"><span id="touch-knob" class="touch-knob"></span></div>
       <button id="touch-strike" class="touch-strike" type="button">Strike</button>
       <button id="touch-council" class="touch-toggle touch-council" type="button">Council</button>
+      <button id="touch-audio" class="touch-toggle touch-audio" type="button" aria-label="Mute sound">♪</button>
       <button id="touch-play" class="touch-toggle" type="button">Pause</button>
     </div>
     <script type="module" src="/src/editor/main.ts"></script>

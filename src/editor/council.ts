@@ -18,6 +18,14 @@ import {
 } from "../game/kingdom";
 import { CHAMPIONS, HOUSES, WEAPON_PROFILE, houseOf, type House, type HouseId } from "../game/houses";
 import { ATLAS_TILE } from "../engine/textures";
+import type { SfxId } from "../engine/audio";
+
+/** Painted portraits for the powers that have one; the rest read from their crest. */
+const CHAMPION_PORTRAIT: Partial<Record<string, string>> = {
+  free_company: "art/champion-company.jpg",
+  north_kingdom: "art/champion-north.jpg",
+  river_kingdom: "art/champion-river.jpg",
+};
 
 type TabId = "realm" | "ledger" | "army" | "diplomacy" | "champions" | "heraldry" | "chronicle" | "codex";
 
@@ -140,6 +148,8 @@ export type CouncilOptions = {
   onChange?: (message: string, ok: boolean) => void;
   /** advance the calendar one day; the council re-renders afterwards */
   onEndDay?: () => void;
+  /** play one of the packaged sounds, if the host has audio */
+  onSfx?: (id: SfxId) => void;
 };
 
 export class Council {
@@ -153,6 +163,7 @@ export class Council {
   readonly kingdom: Kingdom;
   private onChange: (message: string, ok: boolean) => void;
   private onEndDay?: () => void;
+  private onSfx: (id: SfxId) => void;
   open = false;
 
   constructor(options: CouncilOptions) {
@@ -160,6 +171,7 @@ export class Council {
     this.selected = options.focus ?? this.kingdom.playerHoldings[0]?.id ?? "kingsbridge";
     this.onChange = options.onChange ?? (() => {});
     this.onEndDay = options.onEndDay;
+    this.onSfx = options.onSfx ?? (() => {});
 
     this.root = el("div", "council");
     this.root.setAttribute("aria-hidden", "true");
@@ -179,6 +191,7 @@ export class Council {
     endDay.type = "button";
     endDay.title = "Advance the calendar: taxes, harvests, marches and sieges all move.";
     endDay.addEventListener("click", () => {
+      this.onSfx("bell");
       this.onEndDay?.();
       this.render();
     });
@@ -197,6 +210,7 @@ export class Council {
       const label = el("span", "tab-label", tab.label);
       button.append(glyph, label);
       button.addEventListener("click", () => {
+        this.onSfx("page");
         this.tab = tab.id;
         this.render();
       });
@@ -428,6 +442,7 @@ export class Council {
       }
 
       group.addEventListener("click", () => {
+        this.onSfx("page");
         this.selected = holding.id;
         this.render();
       });
@@ -522,6 +537,7 @@ export class Council {
           button.title = plan.blurb;
           button.addEventListener("click", () => {
             const result = k.build(holding.id, kind);
+            this.onSfx(kind === "farms" ? "chop" : "anvil");
             this.act(result.ok, result.message);
           });
           buildRow.append(button);
@@ -532,6 +548,7 @@ export class Council {
         withdraw.type = "button";
         withdraw.addEventListener("click", () => {
           const result = k.withdraw(holding.id);
+          this.onSfx("horn");
           this.act(result.ok, result.message);
         });
         detail.append(withdraw);
@@ -541,6 +558,7 @@ export class Council {
         march.type = "button";
         march.addEventListener("click", () => {
           const result = k.march(holding.id);
+          this.onSfx(result.ok ? "horse-gallop" : "page");
           this.act(result.ok, result.message);
         });
         const odds = el("p", "muted small", `Field army ${army} against ${holding.garrison} garrison and ${holding.walls} wall tiers.`);
@@ -668,7 +686,10 @@ export class Council {
       this.stat("Warband", `${k.fieldArmySize()}`, "followers in the field"),
     );
     summary.append(row);
-    this.bodyEl.append(summary);
+    const siege = el("img", "tab-banner") as HTMLImageElement;
+    siege.src = "art/siege.jpg";
+    siege.alt = "Trebuchets and mangonels dragged to the walls of a rival holding.";
+    this.bodyEl.append(siege, summary);
 
     const grid = el("div", "troop-grid");
     for (const id of TROOP_ORDER) {
@@ -690,6 +711,7 @@ export class Council {
         buy.textContent = `+${n}`;
         buy.addEventListener("click", () => {
           const result = k.recruit(id as TroopId, n);
+          this.onSfx(result.ok ? "coins" : "page");
           this.act(result.ok, result.message);
         });
         actions.append(buy);
@@ -742,6 +764,7 @@ export class Council {
       gift.append(el("strong", undefined, "Send a gift"), el("span", undefined, "120 gold · +14 opinion"));
       gift.addEventListener("click", () => {
         const result = k.diplomacy(house.id as PowerId, "gift");
+        this.onSfx(result.ok ? "coins" : "page");
         this.act(result.ok, result.message);
       });
       actions.append(gift);
@@ -755,6 +778,7 @@ export class Council {
       );
       treaty.addEventListener("click", () => {
         const result = k.diplomacy(house.id as PowerId, treatyKind);
+        this.onSfx(result.ok ? "cheer" : "page");
         this.act(result.ok, result.message);
       });
       actions.append(treaty);
@@ -765,6 +789,7 @@ export class Council {
         war.append(el("strong", undefined, "Declare war"), el("span", undefined, "opens the field"));
         war.addEventListener("click", () => {
           const result = k.diplomacy(house.id as PowerId, "war");
+          this.onSfx(result.ok ? "war-drums" : "page");
           this.act(result.ok, result.message);
         });
         actions.append(war);
@@ -772,7 +797,10 @@ export class Council {
       card.append(actions);
       grid.append(card);
     }
-    this.bodyEl.append(grid);
+    const harbour = el("img", "tab-banner") as HTMLImageElement;
+    harbour.src = "art/port.jpg";
+    harbour.alt = "War galleys at the quays of a Silver Sea harbour.";
+    this.bodyEl.append(harbour, grid);
   }
 
   // --------------------------------------------------------------- champions
@@ -784,7 +812,16 @@ export class Council {
       const card = el("article", "champion-card");
       card.style.setProperty("--house", rgb(house.banner));
       const portrait = el("div", "champion-portrait");
-      portrait.append(crestSvg(house, 54));
+      const art = CHAMPION_PORTRAIT[house.id];
+      if (art) {
+        const image = el("img", "champion-art") as HTMLImageElement;
+        image.src = art;
+        image.alt = `${CHAMPIONS[house.id] ?? "Warden"}, ${house.name}`;
+        image.loading = "lazy";
+        portrait.classList.add("has-art");
+        portrait.append(image);
+      }
+      portrait.append(crestSvg(house, art ? 36 : 54));
       const info = el("div", "champion-info");
       info.append(
         el("h3", undefined, CHAMPIONS[house.id] ?? "Warden"),
