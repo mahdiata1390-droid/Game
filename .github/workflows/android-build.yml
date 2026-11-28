@@ -105,8 +105,9 @@ jobs:
       # Signing. A repository keystore (ANDROID_KEYSTORE_BASE64 plus its
       # passwords) is used when configured; otherwise CI generates a key once
       # and keeps it in the Actions cache so release builds stay signed.
+      # Harmless when a repository keystore is configured: the next step then
+      # overwrites whatever this cache restored.
       - name: Restore generated signing key
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 == '' }}
         uses: actions/cache@v4
         with:
           path: android/app/medieval-sandbox-release.jks
